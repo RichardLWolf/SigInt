@@ -171,7 +171,7 @@ Partial Class frmMain
         trkContrast.TabIndex = 10
         trkContrast.TickFrequency = 10
         trkContrast.TickStyle = TickStyle.None
-        trkContrast.Value = 10
+        trkContrast.Value = 100
         ' 
         ' panWaterfall
         ' 
