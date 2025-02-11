@@ -209,143 +209,148 @@ Public Class frmMain
     End Sub
 
     Private Function GenerateSignalBitmap(buffer As Byte(), width As Integer, height As Integer) As Bitmap
-        Dim bmp As New Bitmap(width, height)
-        Dim centerFreq As Double = 1600000000.0 ' 1.6 GHz
-        Dim sampleRate As Double = 2048000.0 ' 2.048 MHz
-        Dim fftSize As Integer = buffer.Length \ 2
-        Dim binWidth As Double = sampleRate / fftSize ' Base bin width
+        If width > 0 And height > 0 Then
+            Dim bmp As New Bitmap(width, height)
+            Dim centerFreq As Double = 1600000000.0 ' 1.6 GHz
+            Dim sampleRate As Double = 2048000.0 ' 2.048 MHz
+            Dim fftSize As Integer = buffer.Length \ 2
+            Dim binWidth As Double = sampleRate / fftSize ' Base bin width
 
-        ' Determine how many FFT bins to display based on zoom factor
-        Dim displayBins As Integer = Math.Max(1, CInt((fftSize \ 2) * pZoomFactor)) 'pZoomFactor is 0.1 to 1.0
-        Dim zoomedBinWidth As Double = sampleRate / displayBins ' Adjust bin width dynamically
+            ' Determine how many FFT bins to display based on zoom factor
+            Dim displayBins As Integer = Math.Max(1, CInt((fftSize \ 2) * pZoomFactor)) 'pZoomFactor is 0.1 to 1.0
+            Dim zoomedBinWidth As Double = sampleRate / displayBins ' Adjust bin width dynamically
 
-        ' Define range parameters
-        Dim adjustedMaxDb As Double = pDbOffset ' This will be from 0 to -150
-        Dim adjustedMinDb As Double = adjustedMaxDb - pDbRange ' pDbRange controls the spread from 10dB to 150dB
+            ' Define range parameters
+            Dim adjustedMaxDb As Double = pDbOffset ' This will be from 0 to -150
+            Dim adjustedMinDb As Double = adjustedMaxDb - pDbRange ' pDbRange controls the spread from 10dB to 150dB
 
-        Using g As Graphics = Graphics.FromImage(bmp)
-            g.Clear(Color.Black)
-            g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
-            g.TextRenderingHint = Drawing.Text.TextRenderingHint.ClearTypeGridFit
+            Using g As Graphics = Graphics.FromImage(bmp)
+                g.Clear(Color.Black)
+                g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+                g.TextRenderingHint = Drawing.Text.TextRenderingHint.ClearTypeGridFit
 
-            Dim font As New Font("Segoe UI", 10, FontStyle.Bold)
-            Dim textBrush As Brush = Brushes.White
-            Dim gridPen As New Pen(Color.Gray, 1) With {.DashStyle = Drawing2D.DashStyle.Dash}
-            Dim centerPen As New Pen(Color.Red, 2)
-            Dim waveformPen As New Pen(Color.White, 2)
+                Dim font As New Font("Segoe UI", 10, FontStyle.Bold)
+                Dim textBrush As Brush = Brushes.White
+                Dim gridPen As New Pen(Color.Gray, 1) With {.DashStyle = Drawing2D.DashStyle.Dash}
+                Dim centerPen As New Pen(Color.Red, 2)
+                Dim waveformPen As New Pen(Color.White, 2)
 
-            ' Graph bounds
-            Dim graphRect As New Rectangle(55, 10, width - 110, height - 45)
+                ' Graph bounds
+                Dim graphRect As New Rectangle(55, 10, width - 110, height - 45)
 
-            ' Adjust Y-axis ticks dynamically based on pDbRange
-            Dim tickSpacing As Double = Math.Max(10, pDbRange / 10)
+                ' Adjust Y-axis ticks dynamically based on pDbRange
+                Dim tickSpacing As Double = Math.Max(10, pDbRange / 10)
 
-            ' Draw Y-axis Grid and Labels
-            Dim rightAlign As New StringFormat() With {.Alignment = StringAlignment.Far, .LineAlignment = StringAlignment.Center}
-            Dim leftAlign As New StringFormat() With {.Alignment = StringAlignment.Near, .LineAlignment = StringAlignment.Center}
-            For dBValue As Double = adjustedMinDb To adjustedMaxDb Step tickSpacing
-                Dim y As Integer = graphRect.Bottom - CInt((dBValue - adjustedMinDb) / (adjustedMaxDb - adjustedMinDb) * graphRect.Height)
-                Dim dBText As String = CInt(dBValue).ToString() & " dB"
-                ' Draw left-hand dB label (right-aligned)
-                g.DrawString(dBText, font, textBrush, New PointF(graphRect.Left - 5, y), rightAlign)
-                ' draw right-hand side
-                g.DrawString(dBText, font, textBrush, New PointF(graphRect.Right + 5, y), leftAlign)
-                ' draw grid line
-                g.DrawLine(gridPen, graphRect.Left, y, graphRect.Right, y)
-            Next
-
-            ' Draw X-axis Grid and Labels (Frequencies, ensuring proper spacing)
-            ' Determine the new frequency range after zooming
-            Dim displayFreqSpan As Double = sampleRate * pZoomFactor ' Actual frequency span displayed
-            Dim minFreq As Double = centerFreq - (displayFreqSpan / 2)
-            Dim maxFreq As Double = centerFreq + (displayFreqSpan / 2)
-            ' Define how many frequency labels to display dynamically (adjustable)
-            Dim numLabels As Integer = 8 ' Keep a reasonable number of labels
-            Dim freqStep As Double = displayFreqSpan / numLabels ' Frequency step between labels
-            Dim centerAlign As New StringFormat() With {.Alignment = StringAlignment.Center, .LineAlignment = StringAlignment.Near}
-            ' Draw X-axis Grid and Labels (Frequencies, dynamically spaced)
-            For i As Integer = 0 To numLabels
-                ' Compute the X-position for this label
-                Dim x As Integer = graphRect.Left + CInt((i / numLabels) * graphRect.Width)
-                ' Compute the corresponding frequency for this position
-                Dim freq As Double = minFreq + (i * freqStep)
-                ' Draw vertical grid line
-                g.DrawLine(gridPen, x, graphRect.Top, x, graphRect.Bottom)
-                ' Format and draw frequency label centered
-                'g.DrawString((freq / 1000000000.0).ToString("0.000000") & " GHz", font, textBrush, x - 20, graphRect.Bottom + 10)
-                ' Draw centered frequency label
-                g.DrawString((freq / 1000000000.0).ToString("0.000000") & " GHz", font, textBrush, New PointF(x, graphRect.Bottom + 15), centerAlign)
-
-            Next
-
-            ' Draw Center Frequency Marker
-            Dim centerX As Integer = graphRect.Left + CInt(graphRect.Width / 2)
-            g.DrawLine(centerPen, centerX, graphRect.Top, centerX, graphRect.Bottom)
-
-
-            ' Convert raw IQ data to complex values
-            Dim complexData(fftSize - 1) As Complex
-            For i As Integer = 0 To buffer.Length - 2 Step 2
-                Dim pdInPhase As Double = (buffer(i) - 127.5) / 127.5
-                Dim pdQuad As Double = (buffer(i + 1) - 127.5) / 127.5
-                complexData(i \ 2) = New Complex(pdInPhase, pdQuad)
-            Next
-
-            ' Perform FFT
-            Fourier.Forward(complexData, FourierOptions.NoScaling)
-
-            ' Convert FFT output to dB power levels
-            Dim powerLevels(displayBins - 1) As Double
-            Dim binRatio As Double = (fftSize \ 2) / displayBins
-
-            ' Apply Zoom by Averaging FFT Bins
-            For i As Integer = 0 To displayBins - 1
-                Dim sum As Double = 0
-                Dim count As Integer = 0
-                For j As Integer = 0 To Math.Max(1, CInt(binRatio)) - 1
-                    Dim idx As Integer = (i * CInt(binRatio)) + j
-                    If idx < fftSize \ 2 Then
-                        'sum += 20 * Math.Log10(Math.Max(complexData(idx).Magnitude, 0.0000000001))
-                        sum += 10 * Math.Log10(Math.Max(complexData(idx).Magnitude ^ 2, 0.0000000001))
-                        count += 1
-                    End If
+                ' Draw Y-axis Grid and Labels
+                Dim rightAlign As New StringFormat() With {.Alignment = StringAlignment.Far, .LineAlignment = StringAlignment.Center}
+                Dim leftAlign As New StringFormat() With {.Alignment = StringAlignment.Near, .LineAlignment = StringAlignment.Center}
+                For dBValue As Double = adjustedMinDb To adjustedMaxDb Step tickSpacing
+                    Dim y As Integer = graphRect.Bottom - CInt((dBValue - adjustedMinDb) / (adjustedMaxDb - adjustedMinDb) * graphRect.Height)
+                    Dim dBText As String = CInt(dBValue).ToString() & " dB"
+                    ' Draw left-hand dB label (right-aligned)
+                    g.DrawString(dBText, font, textBrush, New PointF(graphRect.Left - 5, y), rightAlign)
+                    ' draw right-hand side
+                    g.DrawString(dBText, font, textBrush, New PointF(graphRect.Right + 5, y), leftAlign)
+                    ' draw grid line
+                    g.DrawLine(gridPen, graphRect.Left, y, graphRect.Right, y)
                 Next
-                If count > 0 Then powerLevels(i) = sum / count
-                'powerLevels(i) = Math.Max(adjustedMinDb, Math.Min(adjustedMaxDb, powerLevels(i))) ' Apply dB range limits
-                powerLevels(i) = Math.Max(adjustedMinDb, Math.Min(adjustedMaxDb, powerLevels(i) - 70)) ' Apply dB range limits and normalize the noise floor 
-            Next
 
-            ' Draw Signal Graph with Gradient Fill
-            Dim path As New Drawing2D.GraphicsPath()
-            Dim points(displayBins - 1) As PointF
-            Dim baseY As Integer = graphRect.Bottom
+                ' Draw X-axis Grid and Labels (Frequencies, ensuring proper spacing)
+                ' Determine the new frequency range after zooming
+                Dim displayFreqSpan As Double = sampleRate * pZoomFactor ' Actual frequency span displayed
+                Dim minFreq As Double = centerFreq - (displayFreqSpan / 2)
+                Dim maxFreq As Double = centerFreq + (displayFreqSpan / 2)
+                ' Define how many frequency labels to display dynamically (adjustable)
+                Dim numLabels As Integer = 8 ' Keep a reasonable number of labels
+                Dim freqStep As Double = displayFreqSpan / numLabels ' Frequency step between labels
+                Dim centerAlign As New StringFormat() With {.Alignment = StringAlignment.Center, .LineAlignment = StringAlignment.Near}
+                ' Draw X-axis Grid and Labels (Frequencies, dynamically spaced)
+                For i As Integer = 0 To numLabels
+                    ' Compute the X-position for this label
+                    Dim x As Integer = graphRect.Left + CInt((i / numLabels) * graphRect.Width)
+                    ' Compute the corresponding frequency for this position
+                    Dim freq As Double = minFreq + (i * freqStep)
+                    ' Draw vertical grid line
+                    g.DrawLine(gridPen, x, graphRect.Top, x, graphRect.Bottom)
+                    ' Format and draw frequency label centered
+                    'g.DrawString((freq / 1000000000.0).ToString("0.000000") & " GHz", font, textBrush, x - 20, graphRect.Bottom + 10)
+                    ' Draw centered frequency label
+                    g.DrawString((freq / 1000000000.0).ToString("0.000000") & " GHz", font, textBrush, New PointF(x, graphRect.Bottom + 15), centerAlign)
 
-            For i As Integer = 0 To displayBins - 1
-                Dim x As Integer = graphRect.Left + CInt((i / (displayBins - 1.0)) * graphRect.Width)
-                Dim y As Integer = graphRect.Bottom - CInt((powerLevels(i) - adjustedMinDb) / (adjustedMaxDb - adjustedMinDb) * graphRect.Height)
-                points(i) = New PointF(x, y)
-            Next
-            Dim gradientBounds As New Rectangle(graphRect.Left, CInt(points.Min(Function(p) p.Y)), Math.Max(1, graphRect.Width), Math.Max(1, graphRect.Bottom - CInt(points.Min(Function(p) p.Y))))
-            Dim gradientBrush As New Drawing2D.LinearGradientBrush(gradientBounds, Color.Blue, Color.Transparent, Drawing2D.LinearGradientMode.Vertical)
+                Next
+
+                ' Draw Center Frequency Marker
+                Dim centerX As Integer = graphRect.Left + CInt(graphRect.Width / 2)
+                g.DrawLine(centerPen, centerX, graphRect.Top, centerX, graphRect.Bottom)
+
+
+                ' Convert raw IQ data to complex values
+                Dim complexData(fftSize - 1) As Complex
+                For i As Integer = 0 To buffer.Length - 2 Step 2
+                    Dim pdInPhase As Double = (buffer(i) - 127.5) / 127.5
+                    Dim pdQuad As Double = (buffer(i + 1) - 127.5) / 127.5
+                    complexData(i \ 2) = New Complex(pdInPhase, pdQuad)
+                Next
+
+                ' Perform FFT
+                Fourier.Forward(complexData, FourierOptions.NoScaling)
+
+                ' Convert FFT output to dB power levels
+                Dim powerLevels(displayBins - 1) As Double
+                Dim binRatio As Double = (fftSize \ 2) / displayBins
+
+                ' Apply Zoom by Averaging FFT Bins
+                For i As Integer = 0 To displayBins - 1
+                    Dim sum As Double = 0
+                    Dim count As Integer = 0
+                    For j As Integer = 0 To Math.Max(1, CInt(binRatio)) - 1
+                        Dim idx As Integer = (i * CInt(binRatio)) + j
+                        If idx < fftSize \ 2 Then
+                            'sum += 20 * Math.Log10(Math.Max(complexData(idx).Magnitude, 0.0000000001))
+                            sum += 10 * Math.Log10(Math.Max(complexData(idx).Magnitude ^ 2, 0.0000000001))
+                            count += 1
+                        End If
+                    Next
+                    If count > 0 Then powerLevels(i) = sum / count
+                    'powerLevels(i) = Math.Max(adjustedMinDb, Math.Min(adjustedMaxDb, powerLevels(i))) ' Apply dB range limits
+                    powerLevels(i) = Math.Max(adjustedMinDb, Math.Min(adjustedMaxDb, powerLevels(i) - 70)) ' Apply dB range limits and normalize the noise floor 
+                Next
+
+                ' Draw Signal Graph with Gradient Fill
+                Dim path As New Drawing2D.GraphicsPath()
+                Dim points(displayBins - 1) As PointF
+                Dim baseY As Integer = graphRect.Bottom
+
+                For i As Integer = 0 To displayBins - 1
+                    Dim x As Integer = graphRect.Left + CInt((i / (displayBins - 1.0)) * graphRect.Width)
+                    Dim y As Integer = graphRect.Bottom - CInt((powerLevels(i) - adjustedMinDb) / (adjustedMaxDb - adjustedMinDb) * graphRect.Height)
+                    points(i) = New PointF(x, y)
+                Next
+                Dim gradientBounds As New Rectangle(graphRect.Left, CInt(points.Min(Function(p) p.Y)), Math.Max(1, graphRect.Width), Math.Max(1, graphRect.Bottom - CInt(points.Min(Function(p) p.Y))))
+                Dim gradientBrush As New Drawing2D.LinearGradientBrush(gradientBounds, Color.Blue, Color.Transparent, Drawing2D.LinearGradientMode.Vertical)
 
 
 
-            ' Fill with Gradient Below the Curve
-            path.AddLines(points)
-            path.AddLine(points.Last(), New PointF(points.Last().X, baseY))
-            path.AddLine(New PointF(points(0).X, baseY), points(0))
-            g.FillPath(gradientBrush, path)
+                ' Fill with Gradient Below the Curve
+                path.AddLines(points)
+                path.AddLine(points.Last(), New PointF(points.Last().X, baseY))
+                path.AddLine(New PointF(points(0).X, baseY), points(0))
+                g.FillPath(gradientBrush, path)
 
-            ' Draw Waveform Line
-            If points.Count > 1 Then
-                g.DrawLines(waveformPen, points)
-            End If
+                ' Draw Waveform Line
+                If points.Count > 1 Then
+                    g.DrawLines(waveformPen, points)
+                End If
 
-            ' update waterfall image
-            ' Call GenerateWaterfallBitmap(powerLevels)
-        End Using
+                ' update waterfall image
+                ' Call GenerateWaterfallBitmap(powerLevels)
+            End Using
+            Return bmp
+        Else
+            Return foSignalBMP
+        End If
 
-        Return bmp
+
     End Function
 
     'Private Sub GenerateWaterfallBitmap(pdPowerLevels As Double())

@@ -22,6 +22,7 @@ Partial Class frmMain
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmMain))
         cboDeviceList = New ComboBox()
         lblSdrDevices = New Label()
         panSignal = New Panel()
@@ -190,6 +191,7 @@ Partial Class frmMain
         Controls.Add(cboDeviceList)
         DoubleBuffered = True
         Font = New Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        Icon = CType(resources.GetObject("$this.Icon"), Icon)
         Margin = New Padding(4)
         Name = "frmMain"
         Text = "SigInt"
