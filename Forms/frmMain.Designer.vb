@@ -27,18 +27,19 @@ Partial Class frmMain
         panSignal = New Panel()
         btnStartStop = New Button()
         trkZoomFactor = New TrackBar()
-        lblZoom = New Label()
-        lblRange = New Label()
         trkRange = New TrackBar()
-        lblOffset = New Label()
         trkOffset = New TrackBar()
-        lblContrast = New Label()
-        trkContrast = New TrackBar()
-        panWaterfall = New Panel()
+        grpZoom = New GroupBox()
+        grpRange = New GroupBox()
+        grpOffset = New GroupBox()
+        btnBrowseLogs = New Button()
+        lblEvents = New Label()
         CType(trkZoomFactor, ComponentModel.ISupportInitialize).BeginInit()
         CType(trkRange, ComponentModel.ISupportInitialize).BeginInit()
         CType(trkOffset, ComponentModel.ISupportInitialize).BeginInit()
-        CType(trkContrast, ComponentModel.ISupportInitialize).BeginInit()
+        grpZoom.SuspendLayout()
+        grpRange.SuspendLayout()
+        grpOffset.SuspendLayout()
         SuspendLayout()
         ' 
         ' cboDeviceList
@@ -61,11 +62,11 @@ Partial Class frmMain
         ' 
         ' panSignal
         ' 
-        panSignal.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        panSignal.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
         panSignal.BackColor = Color.Black
         panSignal.Location = New Point(12, 70)
         panSignal.Name = "panSignal"
-        panSignal.Size = New Size(940, 300)
+        panSignal.Size = New Size(1005, 421)
         panSignal.TabIndex = 2
         ' 
         ' btnStartStop
@@ -80,122 +81,109 @@ Partial Class frmMain
         ' trkZoomFactor
         ' 
         trkZoomFactor.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        trkZoomFactor.Location = New Point(982, 33)
+        trkZoomFactor.Location = New Point(6, 23)
         trkZoomFactor.Maximum = 100
         trkZoomFactor.Minimum = 1
         trkZoomFactor.Name = "trkZoomFactor"
-        trkZoomFactor.Orientation = Orientation.Vertical
-        trkZoomFactor.Size = New Size(45, 139)
+        trkZoomFactor.Size = New Size(188, 45)
         trkZoomFactor.TabIndex = 4
         trkZoomFactor.TickFrequency = 10
-        trkZoomFactor.TickStyle = TickStyle.None
+        trkZoomFactor.TickStyle = TickStyle.Both
         trkZoomFactor.Value = 100
-        ' 
-        ' lblZoom
-        ' 
-        lblZoom.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        lblZoom.AutoSize = True
-        lblZoom.Location = New Point(982, 9)
-        lblZoom.Name = "lblZoom"
-        lblZoom.Size = New Size(50, 21)
-        lblZoom.TabIndex = 5
-        lblZoom.Text = "100%"
-        ' 
-        ' lblRange
-        ' 
-        lblRange.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        lblRange.AutoSize = True
-        lblRange.Location = New Point(977, 176)
-        lblRange.Name = "lblRange"
-        lblRange.Size = New Size(54, 21)
-        lblRange.TabIndex = 7
-        lblRange.Text = "Range"
         ' 
         ' trkRange
         ' 
         trkRange.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        trkRange.Location = New Point(982, 201)
+        trkRange.Location = New Point(6, 23)
         trkRange.Maximum = 150
         trkRange.Minimum = 10
         trkRange.Name = "trkRange"
-        trkRange.Orientation = Orientation.Vertical
-        trkRange.Size = New Size(45, 139)
+        trkRange.Size = New Size(188, 45)
         trkRange.TabIndex = 6
         trkRange.TickFrequency = 10
-        trkRange.TickStyle = TickStyle.None
+        trkRange.TickStyle = TickStyle.Both
         trkRange.Value = 100
-        ' 
-        ' lblOffset
-        ' 
-        lblOffset.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        lblOffset.AutoSize = True
-        lblOffset.Location = New Point(977, 343)
-        lblOffset.Name = "lblOffset"
-        lblOffset.Size = New Size(52, 21)
-        lblOffset.TabIndex = 9
-        lblOffset.Text = "Offset"
         ' 
         ' trkOffset
         ' 
         trkOffset.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        trkOffset.Location = New Point(982, 368)
+        trkOffset.Location = New Point(6, 23)
         trkOffset.Maximum = 0
         trkOffset.Minimum = -150
         trkOffset.Name = "trkOffset"
-        trkOffset.Orientation = Orientation.Vertical
-        trkOffset.Size = New Size(45, 139)
+        trkOffset.Size = New Size(188, 45)
         trkOffset.TabIndex = 8
         trkOffset.TickFrequency = 10
-        trkOffset.TickStyle = TickStyle.None
+        trkOffset.TickStyle = TickStyle.Both
         trkOffset.Value = -20
         ' 
-        ' lblContrast
+        ' grpZoom
         ' 
-        lblContrast.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        lblContrast.AutoSize = True
-        lblContrast.Location = New Point(958, 510)
-        lblContrast.Name = "lblContrast"
-        lblContrast.Size = New Size(69, 21)
-        lblContrast.TabIndex = 11
-        lblContrast.Text = "Contrast"
+        grpZoom.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
+        grpZoom.BackColor = SystemColors.ControlDark
+        grpZoom.Controls.Add(trkZoomFactor)
+        grpZoom.Location = New Point(12, 497)
+        grpZoom.Name = "grpZoom"
+        grpZoom.Size = New Size(200, 74)
+        grpZoom.TabIndex = 12
+        grpZoom.TabStop = False
+        grpZoom.Text = "Zoom - 100%"
         ' 
-        ' trkContrast
+        ' grpRange
         ' 
-        trkContrast.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        trkContrast.Location = New Point(982, 535)
-        trkContrast.Maximum = 100
-        trkContrast.Minimum = 10
-        trkContrast.Name = "trkContrast"
-        trkContrast.Orientation = Orientation.Vertical
-        trkContrast.Size = New Size(45, 139)
-        trkContrast.TabIndex = 10
-        trkContrast.TickFrequency = 10
-        trkContrast.TickStyle = TickStyle.None
-        trkContrast.Value = 100
+        grpRange.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
+        grpRange.BackColor = SystemColors.ControlDark
+        grpRange.Controls.Add(trkRange)
+        grpRange.Location = New Point(231, 497)
+        grpRange.Name = "grpRange"
+        grpRange.Size = New Size(200, 74)
+        grpRange.TabIndex = 13
+        grpRange.TabStop = False
+        grpRange.Text = "Range - 100dB"
         ' 
-        ' panWaterfall
+        ' grpOffset
         ' 
-        panWaterfall.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
-        panWaterfall.BackColor = Color.Black
-        panWaterfall.Location = New Point(12, 384)
-        panWaterfall.Name = "panWaterfall"
-        panWaterfall.Size = New Size(940, 300)
-        panWaterfall.TabIndex = 12
+        grpOffset.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
+        grpOffset.BackColor = SystemColors.ControlDark
+        grpOffset.Controls.Add(trkOffset)
+        grpOffset.Location = New Point(450, 497)
+        grpOffset.Name = "grpOffset"
+        grpOffset.Size = New Size(200, 74)
+        grpOffset.TabIndex = 14
+        grpOffset.TabStop = False
+        grpOffset.Text = "Offset  -20dB"
+        ' 
+        ' btnBrowseLogs
+        ' 
+        btnBrowseLogs.Anchor = AnchorStyles.Bottom Or AnchorStyles.Right
+        btnBrowseLogs.Location = New Point(864, 521)
+        btnBrowseLogs.Name = "btnBrowseLogs"
+        btnBrowseLogs.Size = New Size(153, 50)
+        btnBrowseLogs.TabIndex = 17
+        btnBrowseLogs.Text = "📂 Browse Logs"
+        btnBrowseLogs.TextImageRelation = TextImageRelation.ImageBeforeText
+        btnBrowseLogs.UseVisualStyleBackColor = True
+        ' 
+        ' lblEvents
+        ' 
+        lblEvents.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        lblEvents.Location = New Point(450, 34)
+        lblEvents.Name = "lblEvents"
+        lblEvents.Size = New Size(567, 28)
+        lblEvents.TabIndex = 18
+        lblEvents.Text = "No Signals Deteceted"
+        lblEvents.TextAlign = ContentAlignment.MiddleRight
         ' 
         ' frmMain
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(1029, 696)
-        Controls.Add(panWaterfall)
-        Controls.Add(lblContrast)
-        Controls.Add(trkContrast)
-        Controls.Add(lblOffset)
-        Controls.Add(trkOffset)
-        Controls.Add(lblRange)
-        Controls.Add(trkRange)
-        Controls.Add(lblZoom)
-        Controls.Add(trkZoomFactor)
+        ClientSize = New Size(1029, 583)
+        Controls.Add(lblEvents)
+        Controls.Add(btnBrowseLogs)
+        Controls.Add(grpOffset)
+        Controls.Add(grpRange)
+        Controls.Add(grpZoom)
         Controls.Add(btnStartStop)
         Controls.Add(panSignal)
         Controls.Add(lblSdrDevices)
@@ -208,7 +196,12 @@ Partial Class frmMain
         CType(trkZoomFactor, ComponentModel.ISupportInitialize).EndInit()
         CType(trkRange, ComponentModel.ISupportInitialize).EndInit()
         CType(trkOffset, ComponentModel.ISupportInitialize).EndInit()
-        CType(trkContrast, ComponentModel.ISupportInitialize).EndInit()
+        grpZoom.ResumeLayout(False)
+        grpZoom.PerformLayout()
+        grpRange.ResumeLayout(False)
+        grpRange.PerformLayout()
+        grpOffset.ResumeLayout(False)
+        grpOffset.PerformLayout()
         ResumeLayout(False)
         PerformLayout()
     End Sub
@@ -218,13 +211,14 @@ Partial Class frmMain
     Friend WithEvents panSignal As Panel
     Friend WithEvents btnStartStop As Button
     Friend WithEvents trkZoomFactor As TrackBar
-    Friend WithEvents lblZoom As Label
-    Friend WithEvents lblRange As Label
     Friend WithEvents trkRange As TrackBar
-    Friend WithEvents lblOffset As Label
     Friend WithEvents trkOffset As TrackBar
-    Friend WithEvents lblContrast As Label
-    Friend WithEvents trkContrast As TrackBar
-    Friend WithEvents panWaterfall As Panel
+    Friend WithEvents grpZoom As GroupBox
+    Friend WithEvents grpRange As GroupBox
+    Friend WithEvents grpOffset As GroupBox
+    Friend WithEvents Label1 As Label
+    Friend WithEvents txtLogFile As TextBox
+    Friend WithEvents btnBrowseLogs As Button
+    Friend WithEvents lblEvents As Label
 
 End Class

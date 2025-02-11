@@ -4,6 +4,8 @@ Imports System.IO.Compression
 Imports System.Threading
 
 Public Class RtlSdrApi
+
+#Region " rtlsdr.dll imports  "
     <DllImport("rtlsdr.dll", CallingConvention:=CallingConvention.Cdecl)>
     Public Shared Function rtlsdr_get_device_count() As UInteger
     End Function
@@ -61,7 +63,7 @@ Public Class RtlSdrApi
     <DllImport("rtlsdr.dll", CallingConvention:=CallingConvention.Cdecl)>
     Public Shared Function rtlsdr_set_tuner_gain(dev As IntPtr, gain As Integer) As Integer
     End Function
-
+#End Region
 
 
     Public Structure SdrDevice
@@ -82,12 +84,15 @@ Public Class RtlSdrApi
     Public Event ErrorOccurred(ByVal sender As Object, ByVal message As String)
     Public Event SignalChange(ByVal sender As Object, ByVal SignalFound As Boolean)
 
+
     Private pDeviceHandle As IntPtr = IntPtr.Zero
     Private pCenterFrequency As UInteger
     Private pDeviceIndex As Integer
+    Private msLogFolder As String = "C:\"
     Private pMonitorThread As Thread
     Private pRunning As Boolean = False
     Private pSyncContext As SynchronizationContext
+    Private miSignalEvents As Integer = 0
 
     ' Circular buffer for pre-trigger storage
     Private pIqQueue As New Queue(Of Byte())()
@@ -102,6 +107,7 @@ Public Class RtlSdrApi
     Private pRecordingBuffer As New List(Of Byte()) ' Holds IQ data during an event
     Private pSampleRate As Integer = 2048000 ' SDR sample rate (2.048 MSPS)
 
+    Private mtStartMonitor As Date = DateTime.Now
 
     ' Buffer for UI visualization
     Private pIqBuffer() As Byte
@@ -118,6 +124,12 @@ Public Class RtlSdrApi
     Public ReadOnly Property IsRecording As Boolean
         Get
             Return pSignalDetected
+        End Get
+    End Property
+
+    Public ReadOnly Property SignalEventCount As Integer
+        Get
+            Return miSignalEvents
         End Get
     End Property
 
@@ -143,6 +155,7 @@ Public Class RtlSdrApi
         pCenterFrequency = centerFrequency
         pDeviceIndex = deviceIndex
         pSyncContext = SynchronizationContext.Current ' Capture UI thread context
+        msLogFolder = clsLogger.LogPath
     End Sub
 
     Public Sub StartMonitor()
@@ -171,36 +184,32 @@ Public Class RtlSdrApi
             ' Open the RTL-SDR device
             Dim result As Integer = RtlSdrApi.rtlsdr_open(pDeviceHandle, CUInt(pDeviceIndex))
             If result <> 0 Then
+                clsLogger.Log("RtlSdrApi.MonitorThread", "Failed to open RTL-SDR device, result code was " & result & ".")
                 RaiseError("Failed to open RTL-SDR device.")
                 Exit Sub
             End If
 
-            ' 2️⃣ Reset buffer (important to clear any stale data)
+            ' Reset buffer (important to clear any stale data)
             result = rtlsdr_reset_buffer(pDeviceHandle)
 
-            ' 3️⃣ Set sample rate (e.g., 2.048 MSPS)
+            ' Set sample rate (e.g., 2.048 MSPS)
             result = RtlSdrApi.rtlsdr_set_sample_rate(pDeviceHandle, 2048000)
-            Debug.WriteLine("Set sample rate result: " & result)
 
-            ' 4️⃣ Set center frequency (e.g., 1.6 GHz)
+            ' Set center frequency (e.g., 1.6 GHz)
             result = RtlSdrApi.rtlsdr_set_center_freq(pDeviceHandle, 1600000000)
-            Debug.WriteLine("Set frequency result: " & result)
 
-            ' 5️⃣ Enable manual gain mode (1 = manual, 0 = auto)
+            ' Enable manual gain mode (1 = manual, 0 = auto)
             result = RtlSdrApi.rtlsdr_set_tuner_gain_mode(pDeviceHandle, 1)
-            Debug.WriteLine("Set manual gain mode result: " & result)
 
-            ' 6️⃣ Set gain manually (try values between 100-500)
+            ' Set gain manually (try values between 100-500)
             result = RtlSdrApi.rtlsdr_set_tuner_gain(pDeviceHandle, 300)
-            Debug.WriteLine("Set tuner gain result: " & result)
-
-            ' 7️⃣ Start streaming data (if applicable)
-            Debug.WriteLine("RTL-SDR initialized successfully!")
 
             ' Set center frequency
             RtlSdrApi.rtlsdr_set_center_freq(pDeviceHandle, pCenterFrequency)
 
-            Debug.WriteLine("*** Starting IQ data read ***")
+            mtStartMonitor = DateTime.Now
+            miSignalEvents = 0
+            clsLogger.Log("RtlSdrApi.MonitorThread", $"Starting monitor IQ data stream {mtStartMonitor:MM/dd/yyyy HH:mm:ss}.")
 
             ' Start streaming IQ data
             Dim bytesRead As Integer = 0
@@ -210,6 +219,7 @@ Public Class RtlSdrApi
                 result = RtlSdrApi.rtlsdr_read_sync(pDeviceHandle, tempBuffer, pBufferSize, bytesRead)
                 If result <> 0 Then
                     RaiseError("Error reading IQ samples.")
+                    clsLogger.Log("RtlSdrApi.MonitorThread", $"Error reading IQ data buffer, result code was {result}, stopping thread.")
                     Exit While
                 End If
 
@@ -234,7 +244,8 @@ Public Class RtlSdrApi
                     If Not pSignalDetected Then
                         pSignalDetected = True
                         pRecordingStartTime = Date.Now
-                        Debug.WriteLine("🔹 Signal Detected! Power: " & power)
+                        miSignalEvents = miSignalEvents + 1
+                        clsLogger.Log("RtlSdrApi.MonitorThread", $"🔹 Signal Detected! Power: {power}.")
                         ' Save pre-buffered IQ data
                         SyncLock pIqQueue
                             pRecordingBuffer.AddRange(pIqQueue.ToList())
@@ -244,7 +255,7 @@ Public Class RtlSdrApi
                     End If
                     ' check of max time
                     If (DateTime.Now - pRecordingStartTime).TotalSeconds > pMaxRecordingTime Then
-                        Debug.WriteLine("⏳ Max recording time reached. Stopping recording.")
+                        clsLogger.Log("RtlSdrApi.MonitorThread", $"⏳ Max recording time reached. Stopping recording.")
                         StopRecording()
                     Else
                         ' Save new IQ data
@@ -255,15 +266,17 @@ Public Class RtlSdrApi
                 Else
                     If pSignalDetected Then
                         pSignalDetected = False
-                        Debug.WriteLine("🔻 Signal Lost! Power: " & power)
+                        clsLogger.Log("RtlSdrApi.MonitorThread", $"🔻 Signal Lost! Power: {power}.")
                         StopRecording()
                     End If
                 End If
             End While
-            Debug.WriteLine("*** Stopping IQ data read ***")
+            Dim ptEnd As Date = DateTime.Now
+            Dim poElapsed As TimeSpan = ptEnd.Subtract(mtStartMonitor)
+            clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ending at {ptEnd:MM/dd/yyyy HH:mm:ss} with {IIf(miSignalEvents = 0, "no", miSignalEvents)} signal event{IIf(miSignalEvents > 1, "s", "")}, {modMain.FullDisplayElapsed(poElapsed.TotalSeconds)}")
 
         Catch ex As Exception
-            RaiseError("Unexpected error: " & ex.Message)
+            clsLogger.LogException("rtlSdrApi.MonitorThread", ex)
 
         Finally
             ' Cleanup SDR device
@@ -276,7 +289,7 @@ Public Class RtlSdrApi
                 RaiseSignalChange(False)
             End If
             pSignalDetected = False
-            Debug.WriteLine("### END MONITOR THREAD ###")
+            clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ended.")
         End Try
     End Sub
 
@@ -300,7 +313,7 @@ Public Class RtlSdrApi
 
             ' Generate timestamped filename with adjusted start time
             Dim timestamp As String = adjustedStartTimeUtc.ToString("yyyyMMdd_HHmmss.fff") & "Z"
-            Dim outputFile As String = $"IQ_Record_{timestamp}.zip"
+            Dim outputFile As String = System.IO.Path.Combine(msLogFolder, $"IQ_Record_{timestamp}.zip")
 
             Using fs As New FileStream(outputFile, FileMode.Create)
                 Using zip As New ZipArchive(fs, ZipArchiveMode.Create)
@@ -334,9 +347,10 @@ Public Class RtlSdrApi
                     End Using
                 End Using
             End Using
-            Debug.WriteLine($"✅ Saved to {outputFile} (Start: {adjustedStartTime})")
+            clsLogger.Log("RtlSdrApi.SaveIqDataToZip", $"✅ Saved to {outputFile} (Start: {adjustedStartTime})")
 
         Catch ex As Exception
+            clsLogger.LogException("RtlSdrAPI.SaveIqDataToZip", ex)
             RaiseError("Error saving IQ data: " & ex.Message)
 
         Finally
