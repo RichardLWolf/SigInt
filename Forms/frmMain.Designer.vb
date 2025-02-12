@@ -22,29 +22,33 @@ Partial Class frmMain
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        components = New ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmMain))
         cboDeviceList = New ComboBox()
         lblSdrDevices = New Label()
         panSignal = New Panel()
-        btnStartStop = New Button()
-        trkZoomFactor = New TrackBar()
-        trkRange = New TrackBar()
-        trkOffset = New TrackBar()
-        grpZoom = New GroupBox()
-        grpRange = New GroupBox()
-        grpOffset = New GroupBox()
-        btnBrowseLogs = New Button()
         lblEvents = New Label()
-        CType(trkZoomFactor, ComponentModel.ISupportInitialize).BeginInit()
-        CType(trkRange, ComponentModel.ISupportInitialize).BeginInit()
-        CType(trkOffset, ComponentModel.ISupportInitialize).BeginInit()
-        grpZoom.SuspendLayout()
-        grpRange.SuspendLayout()
-        grpOffset.SuspendLayout()
+        Panel1 = New Panel()
+        Label3 = New Label()
+        lblDiv = New Label()
+        sldOffset = New CustomSlider()
+        sldRange = New CustomSlider()
+        sldZoom = New CustomSlider()
+        lblOffset = New Label()
+        Label2 = New Label()
+        Label1 = New Label()
+        picStartStop = New PictureBox()
+        PictureBox1 = New PictureBox()
+        ToolTip1 = New ToolTip(components)
+        Panel1.SuspendLayout()
+        CType(picStartStop, ComponentModel.ISupportInitialize).BeginInit()
+        CType(PictureBox1, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
         ' cboDeviceList
         ' 
+        cboDeviceList.BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        cboDeviceList.ForeColor = Color.White
         cboDeviceList.FormattingEnabled = True
         cboDeviceList.Location = New Point(13, 34)
         cboDeviceList.Margin = New Padding(4)
@@ -55,11 +59,12 @@ Partial Class frmMain
         ' lblSdrDevices
         ' 
         lblSdrDevices.AutoSize = True
+        lblSdrDevices.ForeColor = Color.White
         lblSdrDevices.Location = New Point(12, 9)
         lblSdrDevices.Name = "lblSdrDevices"
-        lblSdrDevices.Size = New Size(118, 21)
+        lblSdrDevices.Size = New Size(135, 21)
         lblSdrDevices.TabIndex = 1
-        lblSdrDevices.Text = "SDR Device List"
+        lblSdrDevices.Text = "Select SDR Device"
         ' 
         ' panSignal
         ' 
@@ -67,125 +72,184 @@ Partial Class frmMain
         panSignal.BackColor = Color.Black
         panSignal.Location = New Point(12, 70)
         panSignal.Name = "panSignal"
-        panSignal.Size = New Size(1005, 421)
+        panSignal.Size = New Size(950, 465)
         panSignal.TabIndex = 2
-        ' 
-        ' btnStartStop
-        ' 
-        btnStartStop.Location = New Point(273, 34)
-        btnStartStop.Name = "btnStartStop"
-        btnStartStop.Size = New Size(100, 30)
-        btnStartStop.TabIndex = 3
-        btnStartStop.Text = "Start Monitor"
-        btnStartStop.UseVisualStyleBackColor = True
-        ' 
-        ' trkZoomFactor
-        ' 
-        trkZoomFactor.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        trkZoomFactor.Location = New Point(6, 23)
-        trkZoomFactor.Maximum = 100
-        trkZoomFactor.Minimum = 1
-        trkZoomFactor.Name = "trkZoomFactor"
-        trkZoomFactor.Size = New Size(188, 45)
-        trkZoomFactor.TabIndex = 4
-        trkZoomFactor.TickFrequency = 10
-        trkZoomFactor.TickStyle = TickStyle.Both
-        trkZoomFactor.Value = 100
-        ' 
-        ' trkRange
-        ' 
-        trkRange.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        trkRange.Location = New Point(6, 23)
-        trkRange.Maximum = 150
-        trkRange.Minimum = 10
-        trkRange.Name = "trkRange"
-        trkRange.Size = New Size(188, 45)
-        trkRange.TabIndex = 6
-        trkRange.TickFrequency = 10
-        trkRange.TickStyle = TickStyle.Both
-        trkRange.Value = 100
-        ' 
-        ' trkOffset
-        ' 
-        trkOffset.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        trkOffset.Location = New Point(6, 23)
-        trkOffset.Maximum = 0
-        trkOffset.Minimum = -150
-        trkOffset.Name = "trkOffset"
-        trkOffset.Size = New Size(188, 45)
-        trkOffset.TabIndex = 8
-        trkOffset.TickFrequency = 10
-        trkOffset.TickStyle = TickStyle.Both
-        trkOffset.Value = -20
-        ' 
-        ' grpZoom
-        ' 
-        grpZoom.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
-        grpZoom.BackColor = SystemColors.ControlDark
-        grpZoom.Controls.Add(trkZoomFactor)
-        grpZoom.Location = New Point(12, 497)
-        grpZoom.Name = "grpZoom"
-        grpZoom.Size = New Size(200, 74)
-        grpZoom.TabIndex = 12
-        grpZoom.TabStop = False
-        grpZoom.Text = "Zoom - 100%"
-        ' 
-        ' grpRange
-        ' 
-        grpRange.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
-        grpRange.BackColor = SystemColors.ControlDark
-        grpRange.Controls.Add(trkRange)
-        grpRange.Location = New Point(231, 497)
-        grpRange.Name = "grpRange"
-        grpRange.Size = New Size(200, 74)
-        grpRange.TabIndex = 13
-        grpRange.TabStop = False
-        grpRange.Text = "Range - 100dB"
-        ' 
-        ' grpOffset
-        ' 
-        grpOffset.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
-        grpOffset.BackColor = SystemColors.ControlDark
-        grpOffset.Controls.Add(trkOffset)
-        grpOffset.Location = New Point(450, 497)
-        grpOffset.Name = "grpOffset"
-        grpOffset.Size = New Size(200, 74)
-        grpOffset.TabIndex = 14
-        grpOffset.TabStop = False
-        grpOffset.Text = "Offset  -20dB"
-        ' 
-        ' btnBrowseLogs
-        ' 
-        btnBrowseLogs.Anchor = AnchorStyles.Bottom Or AnchorStyles.Right
-        btnBrowseLogs.Location = New Point(864, 521)
-        btnBrowseLogs.Name = "btnBrowseLogs"
-        btnBrowseLogs.Size = New Size(153, 50)
-        btnBrowseLogs.TabIndex = 17
-        btnBrowseLogs.Text = "📂 Browse Logs"
-        btnBrowseLogs.TextImageRelation = TextImageRelation.ImageBeforeText
-        btnBrowseLogs.UseVisualStyleBackColor = True
         ' 
         ' lblEvents
         ' 
         lblEvents.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        lblEvents.Location = New Point(450, 34)
+        lblEvents.ForeColor = Color.Coral
+        lblEvents.Location = New Point(574, 34)
         lblEvents.Name = "lblEvents"
-        lblEvents.Size = New Size(567, 28)
+        lblEvents.Size = New Size(443, 28)
         lblEvents.TabIndex = 18
         lblEvents.Text = "No Signals Deteceted"
         lblEvents.TextAlign = ContentAlignment.MiddleRight
+        ' 
+        ' Panel1
+        ' 
+        Panel1.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Right
+        Panel1.BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        Panel1.Controls.Add(Label3)
+        Panel1.Controls.Add(lblDiv)
+        Panel1.Controls.Add(sldOffset)
+        Panel1.Controls.Add(sldRange)
+        Panel1.Controls.Add(sldZoom)
+        Panel1.Controls.Add(lblOffset)
+        Panel1.Controls.Add(Label2)
+        Panel1.Controls.Add(Label1)
+        Panel1.Location = New Point(968, 70)
+        Panel1.Name = "Panel1"
+        Panel1.Size = New Size(59, 475)
+        Panel1.TabIndex = 20
+        ' 
+        ' Label3
+        ' 
+        Label3.BackColor = Color.Silver
+        Label3.Location = New Point(1, 305)
+        Label3.Name = "Label3"
+        Label3.Size = New Size(56, 3)
+        Label3.TabIndex = 29
+        ' 
+        ' lblDiv
+        ' 
+        lblDiv.BackColor = Color.Silver
+        lblDiv.Location = New Point(4, 147)
+        lblDiv.Name = "lblDiv"
+        lblDiv.Size = New Size(56, 3)
+        lblDiv.TabIndex = 28
+        ' 
+        ' sldOffset
+        ' 
+        sldOffset.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldOffset.DisplayValue = True
+        sldOffset.KnobColor = Color.DodgerBlue
+        sldOffset.Location = New Point(4, 339)
+        sldOffset.Maximum = 50
+        sldOffset.Minimum = -100
+        sldOffset.Name = "sldOffset"
+        sldOffset.Size = New Size(50, 120)
+        sldOffset.TabIndex = 27
+        sldOffset.TextColor = Color.White
+        sldOffset.TickColor = Color.LightGray
+        sldOffset.TickSpacing = 10
+        ToolTip1.SetToolTip(sldOffset, "Y-Axis dB sttarting offset")
+        sldOffset.TrackColor = Color.Gray
+        sldOffset.TrackHighlightColor = Color.LightGray
+        sldOffset.Value = -20
+        sldOffset.Vertical = True
+        ' 
+        ' sldRange
+        ' 
+        sldRange.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldRange.DisplayValue = True
+        sldRange.KnobColor = Color.DodgerBlue
+        sldRange.Location = New Point(4, 179)
+        sldRange.Maximum = 150
+        sldRange.Minimum = 10
+        sldRange.Name = "sldRange"
+        sldRange.Size = New Size(50, 120)
+        sldRange.TabIndex = 26
+        sldRange.TextColor = Color.White
+        sldRange.TickColor = Color.LightGray
+        sldRange.TickSpacing = 10
+        ToolTip1.SetToolTip(sldRange, "dB range (Y-axis) to display")
+        sldRange.TrackColor = Color.Gray
+        sldRange.TrackHighlightColor = Color.LightGray
+        sldRange.Value = 100
+        sldRange.Vertical = True
+        ' 
+        ' sldZoom
+        ' 
+        sldZoom.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldZoom.DisplayValue = True
+        sldZoom.KnobColor = Color.DodgerBlue
+        sldZoom.Location = New Point(4, 24)
+        sldZoom.Maximum = 100
+        sldZoom.Minimum = 10
+        sldZoom.Name = "sldZoom"
+        sldZoom.Size = New Size(50, 120)
+        sldZoom.TabIndex = 25
+        sldZoom.TextColor = Color.White
+        sldZoom.TickColor = Color.LightGray
+        sldZoom.TickSpacing = 10
+        ToolTip1.SetToolTip(sldZoom, "Zoom level 100%=full spectrum, 10%=small spectrum")
+        sldZoom.TrackColor = Color.Gray
+        sldZoom.TrackHighlightColor = Color.LightGray
+        sldZoom.Value = 100
+        sldZoom.Vertical = True
+        ' 
+        ' lblOffset
+        ' 
+        lblOffset.AutoSize = True
+        lblOffset.BackColor = Color.Transparent
+        lblOffset.ForeColor = Color.White
+        lblOffset.Location = New Point(3, 315)
+        lblOffset.Name = "lblOffset"
+        lblOffset.Size = New Size(52, 21)
+        lblOffset.TabIndex = 24
+        lblOffset.Text = "Offset"
+        lblOffset.TextAlign = ContentAlignment.MiddleCenter
+        ToolTip1.SetToolTip(lblOffset, "Y-Axis dB sttarting offset")
+        ' 
+        ' Label2
+        ' 
+        Label2.AutoSize = True
+        Label2.BackColor = Color.Transparent
+        Label2.ForeColor = Color.White
+        Label2.Location = New Point(2, 155)
+        Label2.Name = "Label2"
+        Label2.Size = New Size(54, 21)
+        Label2.TabIndex = 22
+        Label2.Text = "Range"
+        Label2.TextAlign = ContentAlignment.MiddleCenter
+        ToolTip1.SetToolTip(Label2, "dB range (Y-axis) to display")
+        ' 
+        ' Label1
+        ' 
+        Label1.AutoSize = True
+        Label1.BackColor = Color.Transparent
+        Label1.ForeColor = Color.White
+        Label1.Location = New Point(4, 0)
+        Label1.Name = "Label1"
+        Label1.Size = New Size(51, 21)
+        Label1.TabIndex = 20
+        Label1.Text = "Zoom"
+        Label1.TextAlign = ContentAlignment.MiddleCenter
+        ToolTip1.SetToolTip(Label1, "Zoom level 100%=full spectrum, 10%=small spectrum")
+        ' 
+        ' picStartStop
+        ' 
+        picStartStop.Image = CType(resources.GetObject("picStartStop.Image"), Image)
+        picStartStop.Location = New Point(273, 34)
+        picStartStop.Name = "picStartStop"
+        picStartStop.Size = New Size(29, 29)
+        picStartStop.SizeMode = PictureBoxSizeMode.StretchImage
+        picStartStop.TabIndex = 21
+        picStartStop.TabStop = False
+        ToolTip1.SetToolTip(picStartStop, "Start/Stop monitoring")
+        ' 
+        ' PictureBox1
+        ' 
+        PictureBox1.Image = CType(resources.GetObject("PictureBox1.Image"), Image)
+        PictureBox1.Location = New Point(340, 34)
+        PictureBox1.Name = "PictureBox1"
+        PictureBox1.Size = New Size(29, 29)
+        PictureBox1.SizeMode = PictureBoxSizeMode.StretchImage
+        PictureBox1.TabIndex = 22
+        PictureBox1.TabStop = False
+        ToolTip1.SetToolTip(PictureBox1, "Browse log folder")
         ' 
         ' frmMain
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(1029, 583)
+        BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        ClientSize = New Size(1029, 547)
+        Controls.Add(PictureBox1)
+        Controls.Add(picStartStop)
+        Controls.Add(Panel1)
         Controls.Add(lblEvents)
-        Controls.Add(btnBrowseLogs)
-        Controls.Add(grpOffset)
-        Controls.Add(grpRange)
-        Controls.Add(grpZoom)
-        Controls.Add(btnStartStop)
         Controls.Add(panSignal)
         Controls.Add(lblSdrDevices)
         Controls.Add(cboDeviceList)
@@ -195,15 +259,10 @@ Partial Class frmMain
         Margin = New Padding(4)
         Name = "frmMain"
         Text = "SigInt"
-        CType(trkZoomFactor, ComponentModel.ISupportInitialize).EndInit()
-        CType(trkRange, ComponentModel.ISupportInitialize).EndInit()
-        CType(trkOffset, ComponentModel.ISupportInitialize).EndInit()
-        grpZoom.ResumeLayout(False)
-        grpZoom.PerformLayout()
-        grpRange.ResumeLayout(False)
-        grpRange.PerformLayout()
-        grpOffset.ResumeLayout(False)
-        grpOffset.PerformLayout()
+        Panel1.ResumeLayout(False)
+        Panel1.PerformLayout()
+        CType(picStartStop, ComponentModel.ISupportInitialize).EndInit()
+        CType(PictureBox1, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
         PerformLayout()
     End Sub
@@ -211,16 +270,19 @@ Partial Class frmMain
     Friend WithEvents cboDeviceList As ComboBox
     Friend WithEvents lblSdrDevices As Label
     Friend WithEvents panSignal As Panel
-    Friend WithEvents btnStartStop As Button
-    Friend WithEvents trkZoomFactor As TrackBar
-    Friend WithEvents trkRange As TrackBar
-    Friend WithEvents trkOffset As TrackBar
-    Friend WithEvents grpZoom As GroupBox
-    Friend WithEvents grpRange As GroupBox
-    Friend WithEvents grpOffset As GroupBox
     Friend WithEvents Label1 As Label
     Friend WithEvents txtLogFile As TextBox
-    Friend WithEvents btnBrowseLogs As Button
     Friend WithEvents lblEvents As Label
+    Friend WithEvents Panel1 As Panel
+    Friend WithEvents Label2 As Label
+    Friend WithEvents lblOffset As Label
+    Friend WithEvents sldZoom As CustomSlider
+    Friend WithEvents sldRange As CustomSlider
+    Friend WithEvents sldOffset As CustomSlider
+    Friend WithEvents lblDiv As Label
+    Friend WithEvents Label3 As Label
+    Friend WithEvents picStartStop As PictureBox
+    Friend WithEvents PictureBox1 As PictureBox
+    Friend WithEvents ToolTip1 As ToolTip
 
 End Class

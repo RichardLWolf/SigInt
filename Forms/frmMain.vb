@@ -15,12 +15,12 @@ Public Class frmMain
     Private foBitmapsLock As New Object()
 
     Private pZoomFactor As Double = 1.0 ' Default 100% view (1.0 = full spectrum)
-    Private pDbOffset As Double = -10 ' Adjusts the dB scaling visually
+    Private pDbOffset As Double = -20 ' Adjusts the dB scaling visually (0 to -100)
     Private pDbRange As Double = 100 ' 100dB range default (10db to 150db)
     Private pContrast As Double = 1.0 ' Adjusts signal intensity scaling
-    Private foNotify As New NotifyIcon With {.Icon = SystemIcons.Information, .Visible = True}
+    Private foNotify As New NotifyIcon With {.Icon = SystemIcons.Information}
 
-    Private Sub btnBrowseLogs_Click(sender As Object, e As EventArgs) Handles btnBrowseLogs.Click
+    Private Sub btnBrowseLogs_Click(sender As Object, e As EventArgs)
         Try
             Process.Start("explorer.exe", clsLogger.LogPath)
         Catch ex As Exception
@@ -29,7 +29,7 @@ Public Class frmMain
     End Sub
 
 
-    Private Sub btnStartStop_Click(sender As Object, e As EventArgs) Handles btnStartStop.Click
+    Private Sub btnStartStop_Click(sender As Object, e As EventArgs)
         If cboDeviceList.SelectedItem IsNot Nothing Then
             Dim poItem As RtlSdrApi.SdrDevice = cboDeviceList.SelectedItem
             If poItem.DeviceIndex < 0 Then
@@ -39,16 +39,13 @@ Public Class frmMain
                 If foSDR Is Nothing Then
                     foSDR = New RtlSdrApi(CLng(1.6 * 10 ^ 9), poItem.DeviceIndex) ' 1.6 GHz = 1,600,000,000 Hz 
                     pContrast = 1.0
-                    pDbOffset = trkOffset.Value
-                    pDbRange = trkRange.Value
-                    pZoomFactor = trkZoomFactor.Value / 100.0 ' Convert range 10-100 → 0.1-1.0
                 End If
-
                 If foSDR.IsRunning Then
                     foSDR.StopMonitor()
-                    btnStartStop.Text = "START"
+                    'picStartStop.Image = My.Resources
+                    'btnStartStop.Text = "START"
                 Else
-                    btnStartStop.Text = "STOP"
+                    '                    btnStartStop.Text = "STOP"
                     foSDR.StartMonitor()
                     Dim worker As New Threading.Thread(AddressOf Worker_GenerateBitmap)
                     worker.IsBackground = True
@@ -78,6 +75,14 @@ Public Class frmMain
         End If
     End Sub
 
+
+    Private Sub frmMain_Closing(sender As Object, e As CancelEventArgs) Handles Me.Closing
+        If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
+            foSDR.StopMonitor()
+        End If
+    End Sub
+
+
     Private Sub frmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         DoubleBuffered = True
 
@@ -93,12 +98,17 @@ Public Class frmMain
         End If
         cboDeviceList.SelectedIndex = 0
 
-        trkZoomFactor.Value = 100
-        trkZoomFactor_Scroll(Nothing, Nothing)
-        trkOffset.Value = -10
-        trkOffset_Scroll(Nothing, Nothing)
-        trkRange.Value = 100
-        trkRange_Scroll(Nothing, Nothing)
+        sldZoom.Value = 100
+        sldOffset.Value = -20
+        sldRange.Value = 100
+
+
+        'trkZoomFactor.Value = 100
+        'trkZoomFactor_Scroll(Nothing, Nothing)
+        'trkOffset.Value = -10
+        'trkOffset_Scroll(Nothing, Nothing)
+        'trkRange.Value = 100
+        'trkRange_Scroll(Nothing, Nothing)
 
         If clsLogger.ValidateLogFolder() = False Then
             MsgBox($"Failed to create program log file folder:{ControlChars.CrLf}{clsLogger.LogFileName}")
@@ -127,6 +137,15 @@ Public Class frmMain
         End If
     End Sub
 
+
+    Private Sub sldOffset_ValueChanged(sender As Object, e As EventArgs) Handles sldOffset.ValueChanged
+        pDbOffset = sldOffset.Value
+    End Sub
+
+    Private Sub sldRange_ValueChanged(sender As Object, e As EventArgs) Handles sldRange.ValueChanged
+        pDbRange = sldRange.Value
+    End Sub
+
     'Private Sub panWaterfall_Paint(sender As Object, e As PaintEventArgs) Handles panWaterfall.Paint
     '    Dim g As Graphics = e.Graphics
 
@@ -146,21 +165,21 @@ Public Class frmMain
     '    pContrast = trkContrast.Value / 100.0
     'End Sub
 
-    Private Sub trkOffset_Scroll(sender As Object, e As EventArgs) Handles trkOffset.Scroll
-        pDbOffset = trkOffset.Value
-        grpOffset.Text = $"Offset - {trkOffset.Value}dB"
-    End Sub
+    'Private Sub trkOffset_Scroll(sender As Object, e As EventArgs)
+    '    pDbOffset = trkOffset.Value
+    '    grpOffset.Text = $"Offset - {trkOffset.Value}dB"
+    'End Sub
 
-    Private Sub trkRange_Scroll(sender As Object, e As EventArgs) Handles trkRange.Scroll
-        pDbRange = trkRange.Value
-        grpRange.Text = $"Range - {trkRange.Value}dB"
-    End Sub
+    'Private Sub trkRange_Scroll(sender As Object, e As EventArgs)
+    '    pDbRange = trkRange.Value
+    '    grpRange.Text = $"Range - {trkRange.Value}dB"
+    'End Sub
 
-    Private Sub trkZoomFactor_Scroll(sender As Object, e As EventArgs) Handles trkZoomFactor.Scroll
-        ' convert to zoom factor
-        pZoomFactor = trkZoomFactor.Value / 100.0 ' Convert range 10-100 → 0.1-1.0
-        grpZoom.Text = $"Zoom - {trkZoomFactor.Value}%"
-    End Sub
+    'Private Sub trkZoomFactor_Scroll(sender As Object, e As EventArgs)
+    '    ' convert to zoom factor
+    '    pZoomFactor = trkZoomFactor.Value / 100.0 ' Convert range 10-100 → 0.1-1.0
+    '    grpZoom.Text = $"Zoom - {trkZoomFactor.Value}%"
+    'End Sub
 
 
     Private Sub Worker_GenerateBitmap()
@@ -206,10 +225,9 @@ Public Class frmMain
         'End If
     End Sub
 
-    Private Sub frmMain_Closing(sender As Object, e As CancelEventArgs) Handles Me.Closing
-        If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
-            foSDR.StopMonitor()
-        End If
+    Private Sub sldZoom_ValueChanged(sender As Object, e As EventArgs) Handles sldZoom.ValueChanged
+        '     convert to zoom factor
+        pZoomFactor = sldZoom.Value / 100.0 ' Convert range 10-100 → 0.1-1.0
     End Sub
 
     Private Function GenerateSignalBitmap(buffer As Byte(), width As Integer, height As Integer) As Bitmap
