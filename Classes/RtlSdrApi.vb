@@ -2,6 +2,8 @@
 Imports System.IO
 Imports System.IO.Compression
 Imports System.Threading
+Imports MathNet.Numerics.IntegralTransforms
+Imports System.Numerics
 
 Public Class RtlSdrApi
 
@@ -85,45 +87,44 @@ Public Class RtlSdrApi
     Public Event SignalChange(ByVal sender As Object, ByVal SignalFound As Boolean)
 
 
-    Private pDeviceHandle As IntPtr = IntPtr.Zero
-    Private pCenterFrequency As UInteger
-    Private pDeviceIndex As Integer
+    Private miDeviceHandle As IntPtr = IntPtr.Zero
+    Private miCenterFrequency As UInteger
+    Private miDeviceIndex As Integer
     Private msLogFolder As String = "C:\"
-    Private pMonitorThread As Thread
-    Private pRunning As Boolean = False
-    Private pSyncContext As SynchronizationContext
+    Private moMonitorThread As Thread
+    Private mbRunning As Boolean = False
+    Private moSyncContext As SynchronizationContext
     Private miSignalEvents As Integer = 0
+    Private miSignalWindow As Integer = 1   ' 1 "bin" about 250Hz on each side of center frequency
 
     ' Circular buffer for pre-trigger storage
-    Private pIqQueue As New Queue(Of Byte())()
-    Private pQueueMaxSize As Integer = 10 ' Adjust for X seconds of pre-buffering
-    ' Signal detection parameters
-    Private pPowerThreshold As Double = 5000 ' Adjust as needed
-    Private pSignalDetected As Boolean = False
+    Private mqQueue As New Queue(Of Byte())()
+    Private miQueueMaxSize As Integer = 10 ' Adjust for X seconds of pre-buffering
+    Private mbSignalDetected As Boolean = False
     ' Recording limit
-    Private pRecordingStartTime As Date
-    Private pMaxRecordingTime As Integer = 60 ' Max seconds to record per event
+    Private mtRecordingStartTime As Date
+    Private miMaxRecordingTime As Integer = 60 ' Max seconds to record per event
     ' File writing and recording state
-    Private pRecordingBuffer As New List(Of Byte()) ' Holds IQ data during an event
-    Private pSampleRate As Integer = 2048000 ' SDR sample rate (2.048 MSPS)
+    Private myRecordingBuffer As New List(Of Byte()) ' Holds IQ data during an event
+    Private miSampleRate As Integer = 2048000 ' SDR sample rate (2.048 MSPS)
 
     Private mtStartMonitor As Date = DateTime.Now
 
     ' Buffer for UI visualization
-    Private pIqBuffer() As Byte
-    Private pBufferSize As Integer = 16384 ' Standard RTL-SDR buffer size
+    Private myIqBuffer() As Byte
+    Private miBufferSize As Integer = 16384 ' Standard RTL-SDR buffer size
 
 
 
     Public ReadOnly Property IsRunning As Boolean
         Get
-            Return pRunning
+            Return mbRunning
         End Get
     End Property
 
     Public ReadOnly Property IsRecording As Boolean
         Get
-            Return pSignalDetected
+            Return mbSignalDetected
         End Get
     End Property
 
@@ -133,48 +134,48 @@ Public Class RtlSdrApi
         End Get
     End Property
 
-    Public Property PowerThreshold As Double
+    Public Property SignalWindow As Integer
         Get
-            Return pPowerThreshold
+            Return miSignalWindow
         End Get
-        Set(value As Double)
-            pPowerThreshold = value
+        Set(value As Integer)
+            miSignalWindow = value
         End Set
     End Property
 
     ' Public method to retrieve the latest buffer (for UI visualization)
     Public Function GetBuffer() As Byte()
-        SyncLock pIqBuffer
-            Return If(pIqBuffer IsNot Nothing, CType(pIqBuffer.Clone(), Byte()), Nothing)
+        SyncLock myIqBuffer
+            Return If(myIqBuffer IsNot Nothing, CType(myIqBuffer.Clone(), Byte()), Nothing)
         End SyncLock
     End Function
 
 
 
     Public Sub New(centerFrequency As UInteger, deviceIndex As Integer)
-        pCenterFrequency = centerFrequency
-        pDeviceIndex = deviceIndex
-        pSyncContext = SynchronizationContext.Current ' Capture UI thread context
+        miCenterFrequency = centerFrequency
+        miDeviceIndex = deviceIndex
+        moSyncContext = SynchronizationContext.Current ' Capture UI thread context
         msLogFolder = clsLogger.LogPath
     End Sub
 
     Public Sub StartMonitor()
-        If pRunning Then Exit Sub ' Prevent duplicate threads
+        If mbRunning Then Exit Sub ' Prevent duplicate threads
 
-        ReDim pIqBuffer(pBufferSize - 1) ' Initialize buffer
-        pSignalDetected = False
+        ReDim myIqBuffer(miBufferSize - 1) ' Initialize buffer
+        mbSignalDetected = False
 
-        pMonitorThread = New Thread(AddressOf MonitorThread)
-        pMonitorThread.IsBackground = True
-        pRunning = True
-        pMonitorThread.Start()
+        moMonitorThread = New Thread(AddressOf MonitorThread)
+        moMonitorThread.IsBackground = True
+        mbRunning = True
+        moMonitorThread.Start()
     End Sub
 
     ' Stop monitoring
     Public Sub StopMonitor()
-        pRunning = False
-        If pMonitorThread IsNot Nothing AndAlso pMonitorThread.IsAlive Then
-            pMonitorThread.Join(500) ' Wait for thread to exit cleanly
+        mbRunning = False
+        If moMonitorThread IsNot Nothing AndAlso moMonitorThread.IsAlive Then
+            moMonitorThread.Join(500) ' Wait for thread to exit cleanly
         End If
     End Sub
 
@@ -182,7 +183,7 @@ Public Class RtlSdrApi
     Private Sub MonitorThread()
         Try
             ' Open the RTL-SDR device
-            Dim result As Integer = RtlSdrApi.rtlsdr_open(pDeviceHandle, CUInt(pDeviceIndex))
+            Dim result As Integer = RtlSdrApi.rtlsdr_open(miDeviceHandle, CUInt(miDeviceIndex))
             If result <> 0 Then
                 clsLogger.Log("RtlSdrApi.MonitorThread", "Failed to open RTL-SDR device, result code was " & result & ".")
                 RaiseError("Failed to open RTL-SDR device.")
@@ -190,22 +191,22 @@ Public Class RtlSdrApi
             End If
 
             ' Reset buffer (important to clear any stale data)
-            result = rtlsdr_reset_buffer(pDeviceHandle)
+            result = rtlsdr_reset_buffer(miDeviceHandle)
 
             ' Set sample rate (e.g., 2.048 MSPS)
-            result = RtlSdrApi.rtlsdr_set_sample_rate(pDeviceHandle, 2048000)
+            result = RtlSdrApi.rtlsdr_set_sample_rate(miDeviceHandle, 2048000)
 
             ' Set center frequency (e.g., 1.6 GHz)
-            result = RtlSdrApi.rtlsdr_set_center_freq(pDeviceHandle, 1600000000)
+            result = RtlSdrApi.rtlsdr_set_center_freq(miDeviceHandle, 1600000000)
 
             ' Enable manual gain mode (1 = manual, 0 = auto)
-            result = RtlSdrApi.rtlsdr_set_tuner_gain_mode(pDeviceHandle, 1)
+            result = RtlSdrApi.rtlsdr_set_tuner_gain_mode(miDeviceHandle, 1)
 
             ' Set gain manually (try values between 100-500)
-            result = RtlSdrApi.rtlsdr_set_tuner_gain(pDeviceHandle, 300)
+            result = RtlSdrApi.rtlsdr_set_tuner_gain(miDeviceHandle, 300)
 
             ' Set center frequency
-            RtlSdrApi.rtlsdr_set_center_freq(pDeviceHandle, pCenterFrequency)
+            RtlSdrApi.rtlsdr_set_center_freq(miDeviceHandle, miCenterFrequency)
 
             mtStartMonitor = DateTime.Now
             miSignalEvents = 0
@@ -214,9 +215,9 @@ Public Class RtlSdrApi
             ' Start streaming IQ data
             Dim bytesRead As Integer = 0
 
-            While pRunning
-                Dim tempBuffer(pBufferSize - 1) As Byte ' Temp buffer for this read
-                result = RtlSdrApi.rtlsdr_read_sync(pDeviceHandle, tempBuffer, pBufferSize, bytesRead)
+            While mbRunning
+                Dim tempBuffer(miBufferSize - 1) As Byte ' Temp buffer for this read
+                result = RtlSdrApi.rtlsdr_read_sync(miDeviceHandle, tempBuffer, miBufferSize, bytesRead)
                 If result <> 0 Then
                     RaiseError("Error reading IQ samples.")
                     clsLogger.Log("RtlSdrApi.MonitorThread", $"Error reading IQ data buffer, result code was {result}, stopping thread.")
@@ -224,49 +225,50 @@ Public Class RtlSdrApi
                 End If
 
                 ' Store in UI buffer
-                SyncLock pIqBuffer
-                    Array.Copy(tempBuffer, pIqBuffer, pBufferSize)
+                SyncLock myIqBuffer
+                    Array.Copy(tempBuffer, myIqBuffer, miBufferSize)
                 End SyncLock
 
                 ' Store in circular queue
-                SyncLock pIqQueue
-                    pIqQueue.Enqueue(tempBuffer)
-                    If pIqQueue.Count > pQueueMaxSize Then
-                        pIqQueue.Dequeue() ' Remove oldest buffer
+                SyncLock mqQueue
+                    mqQueue.Enqueue(tempBuffer)
+                    If mqQueue.Count > miQueueMaxSize Then
+                        mqQueue.Dequeue() ' Remove oldest buffer
                     End If
                 End SyncLock
 
-                ' Analyze signal power
-                Dim power As Double = CalculateSignalPower(tempBuffer)
-
-                ' Check if power exceeds threshold
-                If power > pPowerThreshold Then
-                    If Not pSignalDetected Then
-                        pSignalDetected = True
-                        pRecordingStartTime = Date.Now
+                ' Analyze data for a signal at center frequency
+                Dim dNoiseFloor As Double = CalculateNoiseFloor(tempBuffer) ' Get noise level
+                Dim dSignalPower As Double = CalculatePowerAtFrequency(tempBuffer) ' Get signal power
+                ' Detect signal if power is significantly above noise floor
+                If dSignalPower > (dNoiseFloor + 10) Then
+                    ' Signal detected (10 dB above noise floor)
+                    If Not mbSignalDetected Then
+                        mbSignalDetected = True
+                        mtRecordingStartTime = Date.Now
                         miSignalEvents = miSignalEvents + 1
-                        clsLogger.Log("RtlSdrApi.MonitorThread", $"🔹 Signal Detected! Power: {power}.")
+                        clsLogger.Log("RtlSdrApi.MonitorThread", $"🔹 Signal Detected! Strength: {dSignalPower}dB, noise floor: {dNoiseFloor}dB.")
                         ' Save pre-buffered IQ data
-                        SyncLock pIqQueue
-                            pRecordingBuffer.AddRange(pIqQueue.ToList())
-                            pIqQueue.Clear() ' Reset queue
+                        SyncLock mqQueue
+                            myRecordingBuffer.AddRange(mqQueue.ToList())
+                            mqQueue.Clear() ' Reset queue
                         End SyncLock
                         RaiseSignalChange(True)
                     End If
                     ' check of max time
-                    If (DateTime.Now - pRecordingStartTime).TotalSeconds > pMaxRecordingTime Then
+                    If (DateTime.Now - mtRecordingStartTime).TotalSeconds > miMaxRecordingTime Then
                         clsLogger.Log("RtlSdrApi.MonitorThread", $"⏳ Max recording time reached. Stopping recording.")
                         StopRecording()
                     Else
                         ' Save new IQ data
-                        SyncLock pRecordingBuffer
-                            pRecordingBuffer.Add(tempBuffer)
+                        SyncLock myRecordingBuffer
+                            myRecordingBuffer.Add(tempBuffer)
                         End SyncLock
                     End If
                 Else
-                    If pSignalDetected Then
-                        pSignalDetected = False
-                        clsLogger.Log("RtlSdrApi.MonitorThread", $"🔻 Signal Lost! Power: {power}.")
+                    If mbSignalDetected Then
+                        mbSignalDetected = False
+                        clsLogger.Log("RtlSdrApi.MonitorThread", $"🔻 Signal Lost! Strength: {dSignalPower}dB, noise floor: {dNoiseFloor}dB.")
                         StopRecording()
                     End If
                 End If
@@ -280,21 +282,21 @@ Public Class RtlSdrApi
 
         Finally
             ' Cleanup SDR device
-            If pDeviceHandle <> IntPtr.Zero Then
-                RtlSdrApi.rtlsdr_close(pDeviceHandle)
-                pDeviceHandle = IntPtr.Zero
+            If miDeviceHandle <> IntPtr.Zero Then
+                RtlSdrApi.rtlsdr_close(miDeviceHandle)
+                miDeviceHandle = IntPtr.Zero
             End If
-            pRunning = False
-            If pSignalDetected Then
+            mbRunning = False
+            If mbSignalDetected Then
                 RaiseSignalChange(False)
             End If
-            pSignalDetected = False
+            mbSignalDetected = False
             clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ended.")
         End Try
     End Sub
 
     Private Sub StopRecording()
-        pSignalDetected = False
+        mbSignalDetected = False
         SaveIqDataToZip()
         RaiseSignalChange(False)
     End Sub
@@ -302,13 +304,13 @@ Public Class RtlSdrApi
     Private Sub SaveIqDataToZip()
         Try
             ' Calculate pre-buffer time in seconds
-            Dim samplesPerBuffer As Integer = pBufferSize \ 2 ' IQ samples per buffer
-            Dim timePerBuffer As Double = samplesPerBuffer / pSampleRate
-            Dim preBufferTime As Double = timePerBuffer * pQueueMaxSize
+            Dim samplesPerBuffer As Integer = miBufferSize \ 2 ' IQ samples per buffer
+            Dim timePerBuffer As Double = samplesPerBuffer / miSampleRate
+            Dim preBufferTime As Double = timePerBuffer * miQueueMaxSize
 
             ' Adjust the timestamp for accurate event timing
 
-            Dim adjustedStartTime As DateTime = pRecordingStartTime.AddSeconds(-preBufferTime)
+            Dim adjustedStartTime As DateTime = mtRecordingStartTime.AddSeconds(-preBufferTime)
             Dim adjustedStartTimeUtc As DateTime = adjustedStartTime.ToUniversalTime()
 
             ' Generate timestamped filename with adjusted start time
@@ -320,8 +322,8 @@ Public Class RtlSdrApi
                     Dim iqentry As ZipArchiveEntry = zip.CreateEntry("signal.iq", CompressionLevel.Optimal)
 
                     Using entryStream As Stream = iqentry.Open()
-                        SyncLock pRecordingBuffer
-                            For Each chunk In pRecordingBuffer
+                        SyncLock myRecordingBuffer
+                            For Each chunk In myRecordingBuffer
                                 entryStream.Write(chunk, 0, chunk.Length)
                             Next
                         End SyncLock
@@ -335,11 +337,10 @@ Public Class RtlSdrApi
                             Dim metadata As String = $"
 {{
     ""UTC_Start_Time"": ""{adjustedStartTimeUtc:yyyy-MM-ddTHH:mm:ss.fffZ}"",
-    ""Center_Frequency_Hz"": {pCenterFrequency},
-    ""Sample_Rate_Hz"": {pSampleRate},
-    ""Total_IQ_Bytes"": {pRecordingBuffer.Sum(Function(b) b.Length)},
-    ""Recording_Duration_S"": {(DateTime.Now - pRecordingStartTime).TotalSeconds:F2},
-    ""Power_Threshold"": {pPowerThreshold},
+    ""Center_Frequency_Hz"": {miCenterFrequency},
+    ""Sample_Rate_Hz"": {miSampleRate},
+    ""Total_IQ_Bytes"": {myRecordingBuffer.Sum(Function(b) b.Length)},
+    ""Recording_Duration_S"": {(DateTime.Now - mtRecordingStartTime).TotalSeconds:F2},
     ""Software_Version"": ""{appVersion}""
 }}"
                             writer.Write(metadata)
@@ -355,34 +356,104 @@ Public Class RtlSdrApi
 
         Finally
             ' Clear recording buffer
-            SyncLock pRecordingBuffer
-                pRecordingBuffer.Clear()
+            SyncLock myRecordingBuffer
+                myRecordingBuffer.Clear()
             End SyncLock
         End Try
     End Sub
 
 
-    Private Function CalculateSignalPower(buffer As Byte()) As Double
-        Dim power As Double = 0
+    Private Function CalculatePowerAtFrequency(buffer As Byte()) As Double
+        Dim iSampleCount As Integer = buffer.Length \ 2 ' Number of IQ samples
+        Dim aoIQData(iSampleCount - 1) As Complex
+
+        ' Convert bytes to normalized IQ values (-1 to 1)
         For i As Integer = 0 To buffer.Length - 2 Step 2
-            Dim piInPhase As Double = buffer(i) - 127 ' Convert byte to signed value
-            Dim piQuad As Double = buffer(i + 1) - 127
-            power += (piInPhase * piInPhase + piQuad * piQuad) ' Compute magnitude
+            Dim dInPhase As Double = (buffer(i) - 127.5) / 127.5
+            Dim dQuad As Double = (buffer(i + 1) - 127.5) / 127.5
+            aoIQData(i \ 2) = New Complex(dInPhase, dQuad)
         Next
-        Return power / (buffer.Length / 2) ' Normalize
+
+        ' Perform FFT
+        Fourier.Forward(aoIQData, FourierOptions.NoScaling)
+
+        ' Frequency resolution (Hz per bin)
+        Dim dFreqResolution As Double = miSampleRate / iSampleCount
+        Dim iCenterBin As Integer = CInt(Math.Round(miCenterFrequency / dFreqResolution))
+
+        ' Calculate power over the defined window
+        Dim dPowerSum As Double = 0
+        Dim iBinsUsed As Integer = 0
+
+        For iOffset As Integer = -miSignalWindow To miSignalWindow
+            Dim iBin As Integer = iCenterBin + iOffset
+            If iBin >= 0 AndAlso iBin < iSampleCount Then
+                dPowerSum += aoIQData(iBin).Magnitude * aoIQData(iBin).Magnitude
+                iBinsUsed += 1
+            End If
+        Next
+
+        ' Average power across selected bins
+        Dim dAvgPower As Double = dPowerSum / iBinsUsed
+
+        ' Convert to dB scale
+        Return 10 * Math.Log10(dAvgPower)
     End Function
+
+    Private Function CalculateNoiseFloor(buffer As Byte()) As Double
+        Dim iSampleCount As Integer = buffer.Length \ 2 ' Number of IQ samples
+        If iSampleCount < 1000 Then
+            Return -70 'insufficent data to determine noise floor, return a reasonable default
+        End If
+
+        Dim aoIQData(iSampleCount - 1) As Complex
+
+        ' Convert bytes to normalized IQ values (-1 to 1)
+        For piIndex As Integer = 0 To buffer.Length - 2 Step 2
+            Dim dInPhase As Double = (buffer(piIndex) - 127.5) / 127.5
+            Dim dQuad As Double = (buffer(piIndex + 1) - 127.5) / 127.5
+            aoIQData(piIndex \ 2) = New Complex(dInPhase, dQuad)
+        Next
+
+        ' Perform FFT
+        Fourier.Forward(aoIQData, FourierOptions.NoScaling)
+
+        ' Frequency resolution (Hz per bin)
+        Dim dFreqResolution As Double = miSampleRate / iSampleCount
+
+        ' Use the first 500 and last 500 bins as "quiet" noise bins
+        Dim iNoiseBinCount As Integer = 1000 ' Number of bins to average
+        Dim dNoisePowerSum As Double = 0
+
+        ' Sum power from first 500 and last 500 bins
+        For i As Integer = 0 To 499
+            dNoisePowerSum += aoIQData(i).Magnitude * aoIQData(i).Magnitude
+        Next
+        For i As Integer = iSampleCount - 500 To iSampleCount - 1
+            dNoisePowerSum += aoIQData(i).Magnitude * aoIQData(i).Magnitude
+        Next
+
+        ' Compute average noise power
+        Dim dAvgNoisePower As Double = dNoisePowerSum / iNoiseBinCount
+
+        ' Convert to dB
+        Return 10 * Math.Log10(dAvgNoisePower)
+    End Function
+
+
+
 
     ' Retrieve stored pre-trigger data (for recording)
     Public Function GetPreTriggerData() As List(Of Byte())
-        SyncLock pIqQueue
-            Return pIqQueue.ToList()
+        SyncLock mqQueue
+            Return mqQueue.ToList()
         End SyncLock
     End Function
 
     ' Raises an error event on the UI thread
     Private Sub RaiseError(message As String)
-        If pSyncContext IsNot Nothing Then
-            pSyncContext.Post(Sub(state) RaiseEvent ErrorOccurred(Me, message), Nothing)
+        If moSyncContext IsNot Nothing Then
+            moSyncContext.Post(Sub(state) RaiseEvent ErrorOccurred(Me, message), Nothing)
         Else
             RaiseEvent ErrorOccurred(Me, message)
         End If
@@ -392,8 +463,8 @@ Public Class RtlSdrApi
 
     ' Raises an error event on the UI thread
     Private Sub RaiseSignalChange(ByVal SignalFound As Boolean)
-        If pSyncContext IsNot Nothing Then
-            pSyncContext.Post(Sub(state) RaiseEvent SignalChange(Me, SignalFound), Nothing)
+        If moSyncContext IsNot Nothing Then
+            moSyncContext.Post(Sub(state) RaiseEvent SignalChange(Me, SignalFound), Nothing)
         Else
             RaiseEvent SignalChange(Me, SignalFound)
         End If
