@@ -7,6 +7,7 @@ Imports System.Drawing.Imaging
 Imports System.ComponentModel
 
 
+
 Public Class frmMain
     Private WithEvents foSDR As RtlSdrApi = Nothing
     Private foSignalBMP As Bitmap = Nothing
@@ -17,7 +18,7 @@ Public Class frmMain
     Private pDbOffset As Double = -10 ' Adjusts the dB scaling visually
     Private pDbRange As Double = 100 ' 100dB range default (10db to 150db)
     Private pContrast As Double = 1.0 ' Adjusts signal intensity scaling
-
+    Private foNotify As New NotifyIcon With {.Icon = SystemIcons.Information, .Visible = True}
 
     Private Sub btnBrowseLogs_Click(sender As Object, e As EventArgs) Handles btnBrowseLogs.Click
         Try
@@ -71,6 +72,9 @@ Public Class frmMain
             lblEvents.Text = "No signals found during this session."
         Else
             lblEvents.Text = $"{foSDR.SignalEventCount} event{IIf(foSDR.SignalEventCount > 1, "s", "")} detected this session."
+            If SignalFound Then
+                foNotify.ShowBalloonTip(3000, "1.6Ghz Signal Detected", "Signal 10dB above noise floor was detected.", ToolTipIcon.Info)
+            End If
         End If
     End Sub
 
@@ -429,6 +433,8 @@ Public Class frmMain
     '        Return New Size(panWaterfall.Width, panWaterfall.Height)
     '    End If
     'End Function
+
+
 
 
 
