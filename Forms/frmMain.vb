@@ -267,6 +267,10 @@ Public Class frmMain
 
             ' Determine how many FFT bins to display based on zoom factor
             Dim displayBins As Integer = Math.Max(1, CInt((fftSize \ 2) * pZoomFactor)) 'pZoomFactor is 0.1 to 1.0
+
+            displayBins = Math.Min(displayBins, (fftSize \ 2) - 2) ' Ensure range is valid
+
+
             Dim zoomedBinWidth As Double = sampleRate / displayBins ' Adjust bin width dynamically
 
             ' Define range parameters
@@ -286,6 +290,7 @@ Public Class frmMain
 
                 ' Graph bounds
                 Dim graphRect As New Rectangle(55, 10, width - 110, height - 45)
+
 
                 ' Adjust Y-axis ticks dynamically based on pDbRange
                 Dim tickSpacing As Double = Math.Max(10, pDbRange / 10)
@@ -348,22 +353,68 @@ Public Class frmMain
                 Dim powerLevels(displayBins - 1) As Double
                 Dim binRatio As Double = (fftSize \ 2) / displayBins
 
+
                 ' Apply Zoom by Averaging FFT Bins
+                'For i As Integer = 0 To displayBins - 1
+                '    Dim sum As Double = 0
+                '    Dim count As Integer = 0
+                '    For j As Integer = 0 To Math.Max(1, CInt(binRatio)) - 1
+                '        Dim idx As Integer = (i * CInt(binRatio)) + j
+                '        If idx > 0 And idx < fftSize \ 2 - 1 Then
+                '            'sum += 20 * Math.Log10(Math.Max(complexData(idx).Magnitude, 0.0000000001))
+                '            sum += 10 * Math.Log10(Math.Max(complexData(idx).Magnitude ^ 2, 0.0000000001))
+                '            count += 1
+                '        End If
+                '    Next
+                '    If count > 0 Then powerLevels(i) = sum / count
+                '    powerLevels(i) = Math.Max(adjustedMinDb, Math.Min(adjustedMaxDb, powerLevels(i) - 70)) ' Apply dB range limits and normalize the noise floor 
+                'Next
+
+                Dim binsPerDisplay As Double = (fftSize / 2.0) / displayBins
+
                 For i As Integer = 0 To displayBins - 1
+                    Dim firstBin As Integer = Math.Max(1, CInt(i * binsPerDisplay)) ' Avoid bin 0
+                    Dim lastBin As Integer = Math.Min((i + 1) * CInt(binsPerDisplay) - 1, (fftSize \ 2) - 1)
+
+                    ' SIMD Optimized Sum
+                    Dim sumVector As Vector(Of Double) = Vector(Of Double).Zero
+                    Dim j As Integer = firstBin
+
+                    While j <= lastBin - Vector(Of Double).Count
+                        Dim magnitudes As New Vector(Of Double)(
+                                {complexData(j).Magnitude ^ 2, complexData(j + 1).Magnitude ^ 2,
+                                complexData(j + 2).Magnitude ^ 2, complexData(j + 3).Magnitude ^ 2,
+                                complexData(j + 4).Magnitude ^ 2, complexData(j + 5).Magnitude ^ 2,
+                                complexData(j + 6).Magnitude ^ 2, complexData(j + 7).Magnitude ^ 2}
+                                )
+                        sumVector += magnitudes
+                        j += Vector(Of Double).Count
+                    End While
+
+                    ' Reduce SIMD sum to scalar
                     Dim sum As Double = 0
-                    Dim count As Integer = 0
-                    For j As Integer = 0 To Math.Max(1, CInt(binRatio)) - 1
-                        Dim idx As Integer = (i * CInt(binRatio)) + j
-                        If idx < fftSize \ 2 Then
-                            'sum += 20 * Math.Log10(Math.Max(complexData(idx).Magnitude, 0.0000000001))
-                            sum += 10 * Math.Log10(Math.Max(complexData(idx).Magnitude ^ 2, 0.0000000001))
-                            count += 1
-                        End If
+                    For k As Integer = 0 To Vector(Of Double).Count - 1
+                        sum += sumVector(k)
                     Next
-                    If count > 0 Then powerLevels(i) = sum / count
-                    'powerLevels(i) = Math.Max(adjustedMinDb, Math.Min(adjustedMaxDb, powerLevels(i))) ' Apply dB range limits
-                    powerLevels(i) = Math.Max(adjustedMinDb, Math.Min(adjustedMaxDb, powerLevels(i) - 70)) ' Apply dB range limits and normalize the noise floor 
+
+                    ' Process remaining bins that didn't fit in SIMD batch
+                    While j <= lastBin
+                        sum += complexData(j).Magnitude ^ 2
+                        j += 1
+                    End While
+
+                    ' Convert to dB scale AFTER summing
+                    If lastBin >= firstBin Then
+                        sum = 10 * Math.Log10(sum / (lastBin - firstBin + 1)) ' Compute log10 after sum
+                    Else
+                        sum = adjustedMinDb ' Avoid divide by zero
+                    End If
+
+                    ' Apply noise floor correction (-70 dB offset)
+                    powerLevels(i) = Math.Max(adjustedMinDb, Math.Min(adjustedMaxDb, sum - 70))
                 Next
+
+
 
                 ' Draw Signal Graph with Gradient Fill
                 Dim path As New Drawing2D.GraphicsPath()
@@ -371,14 +422,12 @@ Public Class frmMain
                 Dim baseY As Integer = graphRect.Bottom
 
                 For i As Integer = 0 To displayBins - 1
-                    Dim x As Integer = graphRect.Left + CInt((i / (displayBins - 1.0)) * graphRect.Width)
+                    Dim x As Integer = graphRect.Left + CInt(((i + 0.5) / (displayBins - 1.0)) * graphRect.Width)
                     Dim y As Integer = graphRect.Bottom - CInt((powerLevels(i) - adjustedMinDb) / (adjustedMaxDb - adjustedMinDb) * graphRect.Height)
                     points(i) = New PointF(x, y)
                 Next
                 Dim gradientBounds As New Rectangle(graphRect.Left, CInt(points.Min(Function(p) p.Y)), Math.Max(1, graphRect.Width), Math.Max(1, graphRect.Bottom - CInt(points.Min(Function(p) p.Y))))
                 Dim gradientBrush As New Drawing2D.LinearGradientBrush(gradientBounds, Color.Blue, Color.Transparent, Drawing2D.LinearGradientMode.Vertical)
-
-
 
                 ' Fill with Gradient Below the Curve
                 path.AddLines(points)
@@ -393,6 +442,9 @@ Public Class frmMain
 
                 ' update waterfall image
                 ' Call GenerateWaterfallBitmap(powerLevels)
+
+
+
             End Using
             Return bmp
         Else
