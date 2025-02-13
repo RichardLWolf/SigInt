@@ -38,11 +38,11 @@ Partial Class frmMain
         Label2 = New Label()
         Label1 = New Label()
         picStartStop = New PictureBox()
-        PictureBox1 = New PictureBox()
+        picBrowseFolder = New PictureBox()
         ToolTip1 = New ToolTip(components)
         Panel1.SuspendLayout()
         CType(picStartStop, ComponentModel.ISupportInitialize).BeginInit()
-        CType(PictureBox1, ComponentModel.ISupportInitialize).BeginInit()
+        CType(picBrowseFolder, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
         ' cboDeviceList
@@ -229,16 +229,16 @@ Partial Class frmMain
         picStartStop.TabStop = False
         ToolTip1.SetToolTip(picStartStop, "Start/Stop monitoring")
         ' 
-        ' PictureBox1
+        ' picBrowseFolder
         ' 
-        PictureBox1.Image = CType(resources.GetObject("PictureBox1.Image"), Image)
-        PictureBox1.Location = New Point(340, 34)
-        PictureBox1.Name = "PictureBox1"
-        PictureBox1.Size = New Size(29, 29)
-        PictureBox1.SizeMode = PictureBoxSizeMode.StretchImage
-        PictureBox1.TabIndex = 22
-        PictureBox1.TabStop = False
-        ToolTip1.SetToolTip(PictureBox1, "Browse log folder")
+        picBrowseFolder.Image = CType(resources.GetObject("picBrowseFolder.Image"), Image)
+        picBrowseFolder.Location = New Point(340, 34)
+        picBrowseFolder.Name = "picBrowseFolder"
+        picBrowseFolder.Size = New Size(29, 29)
+        picBrowseFolder.SizeMode = PictureBoxSizeMode.StretchImage
+        picBrowseFolder.TabIndex = 22
+        picBrowseFolder.TabStop = False
+        ToolTip1.SetToolTip(picBrowseFolder, "Browse log folder")
         ' 
         ' frmMain
         ' 
@@ -246,7 +246,7 @@ Partial Class frmMain
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
         ClientSize = New Size(1029, 547)
-        Controls.Add(PictureBox1)
+        Controls.Add(picBrowseFolder)
         Controls.Add(picStartStop)
         Controls.Add(Panel1)
         Controls.Add(lblEvents)
@@ -262,7 +262,7 @@ Partial Class frmMain
         Panel1.ResumeLayout(False)
         Panel1.PerformLayout()
         CType(picStartStop, ComponentModel.ISupportInitialize).EndInit()
-        CType(PictureBox1, ComponentModel.ISupportInitialize).EndInit()
+        CType(picBrowseFolder, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
         PerformLayout()
     End Sub
@@ -282,7 +282,7 @@ Partial Class frmMain
     Friend WithEvents lblDiv As Label
     Friend WithEvents Label3 As Label
     Friend WithEvents picStartStop As PictureBox
-    Friend WithEvents PictureBox1 As PictureBox
+    Friend WithEvents picBrowseFolder As PictureBox
     Friend WithEvents ToolTip1 As ToolTip
 
 End Class

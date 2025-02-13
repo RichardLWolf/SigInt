@@ -21,43 +21,10 @@ Public Class frmMain
     Private foNotify As New NotifyIcon With {.Icon = SystemIcons.Information}
 
     Private Sub btnBrowseLogs_Click(sender As Object, e As EventArgs)
-        Try
-            Process.Start("explorer.exe", clsLogger.LogPath)
-        Catch ex As Exception
-            MsgBox("Failed to start windows process in folder " & clsLogger.LogPath, MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "Cannot Start Process")
-        End Try
+
     End Sub
 
 
-    Private Sub btnStartStop_Click(sender As Object, e As EventArgs)
-        If cboDeviceList.SelectedItem IsNot Nothing Then
-            Dim poItem As RtlSdrApi.SdrDevice = cboDeviceList.SelectedItem
-            If poItem.DeviceIndex < 0 Then
-                MsgBox("Please select a device from the dropdown.", MsgBoxStyle.OkOnly, "No SDR Device Selected")
-                cboDeviceList.Focus()
-            Else
-                If foSDR Is Nothing Then
-                    foSDR = New RtlSdrApi(CLng(1.6 * 10 ^ 9), poItem.DeviceIndex) ' 1.6 GHz = 1,600,000,000 Hz 
-                    pContrast = 1.0
-                End If
-                If foSDR.IsRunning Then
-                    foSDR.StopMonitor()
-                    'picStartStop.Image = My.Resources
-                    'btnStartStop.Text = "START"
-                Else
-                    '                    btnStartStop.Text = "STOP"
-                    foSDR.StartMonitor()
-                    Dim worker As New Threading.Thread(AddressOf Worker_GenerateBitmap)
-                    worker.IsBackground = True
-                    worker.Start()
-                End If
-                panSignal.Invalidate()
-            End If
-        Else
-            MsgBox("Please select a device from the dropdown.", MsgBoxStyle.OkOnly, "No SDR Device Selected")
-            cboDeviceList.Focus()
-        End If
-    End Sub
 
     Private Sub foSDR_ErrorOccurred(sender As Object, message As String) Handles foSDR.ErrorOccurred
         MsgBox($"An error occurred monitoring the RTL-SDR:{ControlChars.CrLf}{message}", MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "SDR Error")
@@ -101,14 +68,9 @@ Public Class frmMain
         sldZoom.Value = 100
         sldOffset.Value = -20
         sldRange.Value = 100
-
-
-        'trkZoomFactor.Value = 100
-        'trkZoomFactor_Scroll(Nothing, Nothing)
-        'trkOffset.Value = -10
-        'trkOffset_Scroll(Nothing, Nothing)
-        'trkRange.Value = 100
-        'trkRange_Scroll(Nothing, Nothing)
+        sldOffset_ValueChanged(Nothing, Nothing)
+        sldRange_ValueChanged(Nothing, Nothing)
+        sldZoom_ValueChanged(Nothing, Nothing)
 
         If clsLogger.ValidateLogFolder() = False Then
             MsgBox($"Failed to create program log file folder:{ControlChars.CrLf}{clsLogger.LogFileName}")
@@ -137,6 +99,70 @@ Public Class frmMain
         End If
     End Sub
 
+    Private Sub picBrowseFolder_MouseClick(sender As Object, e As MouseEventArgs) Handles picBrowseFolder.MouseClick
+        Try
+            Process.Start("explorer.exe", clsLogger.LogPath)
+        Catch ex As Exception
+            MsgBox("Failed to start windows process in folder " & clsLogger.LogPath, MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "Cannot Start Process")
+        End Try
+    End Sub
+
+    Private Sub picBrowseFolder_MouseEnter(sender As Object, e As EventArgs) Handles picBrowseFolder.MouseEnter
+        picBrowseFolder.Image = My.Resources.folder_blue
+    End Sub
+
+    Private Sub picBrowseFolder_MouseLeave(sender As Object, e As EventArgs) Handles picBrowseFolder.MouseLeave
+        picBrowseFolder.Image = My.Resources.folder_green
+    End Sub
+
+    Private Sub picStartStop_Click(sender As Object, e As EventArgs) Handles picStartStop.MouseClick
+        If cboDeviceList.SelectedItem IsNot Nothing Then
+            Dim poItem As RtlSdrApi.SdrDevice = cboDeviceList.SelectedItem
+            If poItem.DeviceIndex < 0 Then
+                MsgBox("Please select a device from the dropdown.", MsgBoxStyle.OkOnly, "No SDR Device Selected")
+                cboDeviceList.Focus()
+            Else
+                If foSDR Is Nothing Then
+                    foSDR = New RtlSdrApi(CLng(1.6 * 10 ^ 9), poItem.DeviceIndex) ' 1.6 GHz = 1,600,000,000 Hz 
+                    pContrast = 1.0
+                End If
+                If foSDR.IsRunning Then
+                    foSDR.StopMonitor()
+                    picStartStop.Image = My.Resources.media_play_green
+                Else
+                    '                    btnStartStop.Text = "STOP"
+                    foSDR.StartMonitor()
+                    picStartStop.Image = My.Resources.media_stop_red
+                    Dim worker As New Threading.Thread(AddressOf Worker_GenerateBitmap)
+                    worker.IsBackground = True
+                    worker.Start()
+                End If
+                panSignal.Invalidate()
+            End If
+        Else
+            MsgBox("Please select a device from the dropdown.", MsgBoxStyle.OkOnly, "No SDR Device Selected")
+            cboDeviceList.Focus()
+        End If
+    End Sub
+
+    Private Sub picStartStop_MouseEnter(sender As Object, e As EventArgs) Handles picStartStop.MouseEnter
+        If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
+            picStartStop.Image = My.Resources.media_stop
+        Else
+            picStartStop.Image = My.Resources.media_play
+        End If
+    End Sub
+
+    Private Sub picStartStop_MouseLeave(sender As Object, e As EventArgs) Handles picStartStop.MouseLeave
+        If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
+            picStartStop.Image = My.Resources.media_stop_red
+        Else
+            picStartStop.Image = My.Resources.media_play_green
+        End If
+    End Sub
+
+
+
 
     Private Sub sldOffset_ValueChanged(sender As Object, e As EventArgs) Handles sldOffset.ValueChanged
         pDbOffset = sldOffset.Value
@@ -144,6 +170,11 @@ Public Class frmMain
 
     Private Sub sldRange_ValueChanged(sender As Object, e As EventArgs) Handles sldRange.ValueChanged
         pDbRange = sldRange.Value
+    End Sub
+
+    Private Sub sldZoom_ValueChanged(sender As Object, e As EventArgs) Handles sldZoom.ValueChanged
+        '     convert to zoom factor
+        pZoomFactor = sldZoom.Value / 100.0 ' Convert range 10-100 → 0.1-1.0
     End Sub
 
     'Private Sub panWaterfall_Paint(sender As Object, e As PaintEventArgs) Handles panWaterfall.Paint
@@ -225,10 +256,6 @@ Public Class frmMain
         'End If
     End Sub
 
-    Private Sub sldZoom_ValueChanged(sender As Object, e As EventArgs) Handles sldZoom.ValueChanged
-        '     convert to zoom factor
-        pZoomFactor = sldZoom.Value / 100.0 ' Convert range 10-100 → 0.1-1.0
-    End Sub
 
     Private Function GenerateSignalBitmap(buffer As Byte(), width As Integer, height As Integer) As Bitmap
         If width > 0 And height > 0 Then
