@@ -19,6 +19,7 @@ Public Class frmMain
     Private fddBRange As Double = 100   ' dB range to display on Y-axis (100dB range, 10dB minimum to 150dB maximum)
     Private foNotify As New NotifyIcon With {.Icon = SystemIcons.Information}
 
+    Private foConfig As clsAppConfig
 
     Private Sub foSDR_ErrorOccurred(sender As Object, message As String) Handles foSDR.ErrorOccurred
         MsgBox($"An error occurred monitoring the RTL-SDR:{ControlChars.CrLf}{message}", MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "SDR Error")
@@ -41,10 +42,13 @@ Public Class frmMain
         If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
             foSDR.StopMonitor()
         End If
+        foConfig.Save()
     End Sub
 
 
     Private Sub frmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        foConfig = clsAppConfig.Load
+
         DoubleBuffered = True
 
         Dim fi As System.Reflection.PropertyInfo = GetType(Control).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance Or System.Reflection.BindingFlags.NonPublic)

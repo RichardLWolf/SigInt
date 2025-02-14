@@ -2,6 +2,15 @@
 
 Module modMain
 
+    Function FormatHertz(ByVal piFrequencyHz As UInteger) As String
+        Select Case piFrequencyHz
+            Case Is >= 1_000_000_000UI : Return (piFrequencyHz \ 1_000_000_000UI).ToString("0") & "." & ((piFrequencyHz Mod 1_000_000_000UI) \ 1_000_000UI).ToString("000") & " GHz"
+            Case Is >= 1_000_000UI : Return (piFrequencyHz \ 1_000_000UI).ToString("0") & "." & ((piFrequencyHz Mod 1_000_000UI) \ 1_000UI).ToString("000") & " MHz"
+            Case Is >= 1_000UI : Return (piFrequencyHz \ 1_000UI).ToString("0") & "." & (piFrequencyHz Mod 1_000UI).ToString("000") & " kHz"
+            Case Else : Return piFrequencyHz.ToString("0") & " Hz"
+        End Select
+    End Function
+
 
     Public Function FullDisplayElapsed(ByVal TotalSeconds As Long) As String
         Dim piDays As Integer
