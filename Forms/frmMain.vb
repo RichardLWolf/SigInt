@@ -14,16 +14,10 @@ Public Class frmMain
     'Private foWaterfallBMP As Bitmap = Nothing
     Private foBitmapsLock As New Object()
 
-    Private pZoomFactor As Double = 1.0 ' Default 100% view (1.0 = full spectrum)
-    Private pDbOffset As Double = -20 ' Adjusts the dB scaling visually (0 to -100)
-    Private pDbRange As Double = 100 ' 100dB range default (10db to 150db)
-    Private pContrast As Double = 1.0 ' Adjusts signal intensity scaling
+    Private fdZoomFactor As Double = 0 ' no zoom, show full graph, to 1.0 (show double resolution).
+    Private fddBOffset As Double = -20 ' Adjusts the dB scaling this value is added to the Y-axis start (0 to -100) 
+    Private fddBRange As Double = 100   ' dB range to display on Y-axis (100dB range, 10dB minimum to 150dB maximum)
     Private foNotify As New NotifyIcon With {.Icon = SystemIcons.Information}
-
-    Private Sub btnBrowseLogs_Click(sender As Object, e As EventArgs)
-
-    End Sub
-
 
 
     Private Sub foSDR_ErrorOccurred(sender As Object, message As String) Handles foSDR.ErrorOccurred
@@ -65,7 +59,7 @@ Public Class frmMain
         End If
         cboDeviceList.SelectedIndex = 0
 
-        sldZoom.Value = 100
+        sldZoom.Value = 0
         sldOffset.Value = -20
         sldRange.Value = 100
         sldOffset_ValueChanged(Nothing, Nothing)
@@ -123,8 +117,7 @@ Public Class frmMain
                 cboDeviceList.Focus()
             Else
                 If foSDR Is Nothing Then
-                    foSDR = New RtlSdrApi(CLng(1.6 * 10 ^ 9), poItem.DeviceIndex) ' 1.6 GHz = 1,600,000,000 Hz 
-                    pContrast = 1.0
+                    foSDR = New RtlSdrApi(poItem.DeviceIndex, CLng(1.6 * 10 ^ 9)) ' 1.6 GHz = 1,600,000,000 Hz 
                 End If
                 If foSDR.IsRunning Then
                     foSDR.StopMonitor()
@@ -161,57 +154,18 @@ Public Class frmMain
         End If
     End Sub
 
-
-
-
     Private Sub sldOffset_ValueChanged(sender As Object, e As EventArgs) Handles sldOffset.ValueChanged
-        pDbOffset = sldOffset.Value
+        fddBOffset = sldOffset.Value
     End Sub
 
     Private Sub sldRange_ValueChanged(sender As Object, e As EventArgs) Handles sldRange.ValueChanged
-        pDbRange = sldRange.Value
+        fddBRange = sldRange.Value
     End Sub
 
     Private Sub sldZoom_ValueChanged(sender As Object, e As EventArgs) Handles sldZoom.ValueChanged
         '     convert to zoom factor
-        pZoomFactor = sldZoom.Value / 100.0 ' Convert range 10-100 → 0.1-1.0
+        fdZoomFactor = sldZoom.Value / 100.0 ' Convert range 10-100 → 0.1-1.0
     End Sub
-
-    'Private Sub panWaterfall_Paint(sender As Object, e As PaintEventArgs) Handles panWaterfall.Paint
-    '    Dim g As Graphics = e.Graphics
-
-    '    If foSDR Is Nothing OrElse Not foSDR.IsRunning Then
-    '        g.Clear(Color.Black) ' Clear panel background
-    '    Else
-    '        ' Draw the latest signal bitmap if available
-    '        If foWaterfallBMP IsNot Nothing Then
-    '            SyncLock foBitmapsLock
-    '                g.DrawImage(foWaterfallBMP, 0, 0, panWaterfall.Width, panWaterfall.Height)
-    '            End SyncLock
-    '        End If
-    '    End If
-    'End Sub
-
-    'Private Sub trkContrast_Scroll(sender As Object, e As EventArgs)
-    '    pContrast = trkContrast.Value / 100.0
-    'End Sub
-
-    'Private Sub trkOffset_Scroll(sender As Object, e As EventArgs)
-    '    pDbOffset = trkOffset.Value
-    '    grpOffset.Text = $"Offset - {trkOffset.Value}dB"
-    'End Sub
-
-    'Private Sub trkRange_Scroll(sender As Object, e As EventArgs)
-    '    pDbRange = trkRange.Value
-    '    grpRange.Text = $"Range - {trkRange.Value}dB"
-    'End Sub
-
-    'Private Sub trkZoomFactor_Scroll(sender As Object, e As EventArgs)
-    '    ' convert to zoom factor
-    '    pZoomFactor = trkZoomFactor.Value / 100.0 ' Convert range 10-100 → 0.1-1.0
-    '    grpZoom.Text = $"Zoom - {trkZoomFactor.Value}%"
-    'End Sub
-
 
     Private Sub Worker_GenerateBitmap()
         While foSDR IsNot Nothing AndAlso foSDR.IsRunning
@@ -245,270 +199,234 @@ Public Class frmMain
                 End Using
             End If
         End If
-        'If foWaterfallBMP IsNot Nothing Then
-        '    If panWaterfall IsNot Nothing AndAlso panWaterfall.Handle <> IntPtr.Zero Then
-        '        Using g As Graphics = panWaterfall.CreateGraphics()
-        '            SyncLock foBitmapsLock
-        '                g.DrawImageUnscaled(foWaterfallBMP, 0, 0) ' Direct draw, no Paint flickering
-        '            End SyncLock
-        '        End Using
-        '    End If
-        'End If
     End Sub
 
 
-    Private Function GenerateSignalBitmap(buffer As Byte(), width As Integer, height As Integer) As Bitmap
-        If width > 0 And height > 0 Then
-            Dim bmp As New Bitmap(width, height)
-            Dim centerFreq As Double = 1600000000.0 ' 1.6 GHz
-            Dim sampleRate As Double = 2048000.0 ' 2.048 MHz
-            Dim fftSize As Integer = buffer.Length \ 2
-            Dim binWidth As Double = sampleRate / fftSize ' Base bin width
+    Private Function GenerateSignalBitmap(buffer As Byte(), BitmapWidth As Integer, BitmapHeight As Integer) As Bitmap
+        If BitmapWidth <= 0 Or BitmapHeight <= 0 Then Return foSignalBMP ' Return cached bitmap if invalid
 
-            ' Determine how many FFT bins to display based on zoom factor
-            Dim displayBins As Integer = Math.Max(1, CInt((fftSize \ 2) * pZoomFactor)) 'pZoomFactor is 0.1 to 1.0
+        Dim piFftSize As Integer = buffer.Length \ 2
+        Dim poComplexData(piFftSize - 1) As Complex
+        Dim pdPowerValues(piFftSize - 1) As Double
 
-            displayBins = Math.Min(displayBins, (fftSize \ 2) - 2) ' Ensure range is valid
-
-
-            Dim zoomedBinWidth As Double = sampleRate / displayBins ' Adjust bin width dynamically
-
-            ' Define range parameters
-            Dim adjustedMaxDb As Double = pDbOffset ' This will be from 0 to -150
-            Dim adjustedMinDb As Double = adjustedMaxDb - pDbRange ' pDbRange controls the spread from 10dB to 150dB
-
-            Using g As Graphics = Graphics.FromImage(bmp)
-                g.Clear(Color.Black)
-                g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
-                g.TextRenderingHint = Drawing.Text.TextRenderingHint.ClearTypeGridFit
-
-                Dim font As New Font("Segoe UI", 10, FontStyle.Bold)
-                Dim textBrush As Brush = Brushes.White
-                Dim gridPen As New Pen(Color.Gray, 1) With {.DashStyle = Drawing2D.DashStyle.Dash}
-                Dim centerPen As New Pen(Color.Red, 2)
-                Dim waveformPen As New Pen(Color.White, 2)
-
-                ' Graph bounds
-                Dim graphRect As New Rectangle(55, 10, width - 110, height - 45)
-
-
-                ' Adjust Y-axis ticks dynamically based on pDbRange
-                Dim tickSpacing As Double = Math.Max(10, pDbRange / 10)
-
-                ' Draw Y-axis Grid and Labels
-                Dim rightAlign As New StringFormat() With {.Alignment = StringAlignment.Far, .LineAlignment = StringAlignment.Center}
-                Dim leftAlign As New StringFormat() With {.Alignment = StringAlignment.Near, .LineAlignment = StringAlignment.Center}
-                For dBValue As Double = adjustedMinDb To adjustedMaxDb Step tickSpacing
-                    Dim y As Integer = graphRect.Bottom - CInt((dBValue - adjustedMinDb) / (adjustedMaxDb - adjustedMinDb) * graphRect.Height)
-                    Dim dBText As String = CInt(dBValue).ToString() & " dB"
-                    ' Draw left-hand dB label (right-aligned)
-                    g.DrawString(dBText, font, textBrush, New PointF(graphRect.Left - 5, y), rightAlign)
-                    ' draw right-hand side
-                    g.DrawString(dBText, font, textBrush, New PointF(graphRect.Right + 5, y), leftAlign)
-                    ' draw grid line
-                    g.DrawLine(gridPen, graphRect.Left, y, graphRect.Right, y)
-                Next
-
-                ' Draw X-axis Grid and Labels (Frequencies, ensuring proper spacing)
-                ' Determine the new frequency range after zooming
-                Dim displayFreqSpan As Double = sampleRate * pZoomFactor ' Actual frequency span displayed
-                Dim minFreq As Double = centerFreq - (displayFreqSpan / 2)
-                Dim maxFreq As Double = centerFreq + (displayFreqSpan / 2)
-                ' Define how many frequency labels to display dynamically (adjustable)
-                Dim numLabels As Integer = 8 ' Keep a reasonable number of labels
-                Dim freqStep As Double = displayFreqSpan / numLabels ' Frequency step between labels
-                Dim centerAlign As New StringFormat() With {.Alignment = StringAlignment.Center, .LineAlignment = StringAlignment.Near}
-                ' Draw X-axis Grid and Labels (Frequencies, dynamically spaced)
-                For i As Integer = 0 To numLabels
-                    ' Compute the X-position for this label
-                    Dim x As Integer = graphRect.Left + CInt((i / numLabels) * graphRect.Width)
-                    ' Compute the corresponding frequency for this position
-                    Dim freq As Double = minFreq + (i * freqStep)
-                    ' Draw vertical grid line
-                    g.DrawLine(gridPen, x, graphRect.Top, x, graphRect.Bottom)
-                    ' Format and draw frequency label centered
-                    'g.DrawString((freq / 1000000000.0).ToString("0.000000") & " GHz", font, textBrush, x - 20, graphRect.Bottom + 10)
-                    ' Draw centered frequency label
-                    g.DrawString((freq / 1000000000.0).ToString("0.000000") & " GHz", font, textBrush, New PointF(x, graphRect.Bottom + 15), centerAlign)
-
-                Next
-
-                ' Draw Center Frequency Marker
-                Dim centerX As Integer = graphRect.Left + CInt(graphRect.Width / 2)
-                g.DrawLine(centerPen, centerX, graphRect.Top, centerX, graphRect.Bottom)
-
-
-                ' Convert raw IQ data to complex values
-                Dim complexData(fftSize - 1) As Complex
-                For i As Integer = 0 To buffer.Length - 2 Step 2
-                    Dim pdInPhase As Double = (buffer(i) - 127.5) / 127.5
-                    Dim pdQuad As Double = (buffer(i + 1) - 127.5) / 127.5
-                    complexData(i \ 2) = New Complex(pdInPhase, pdQuad)
-                Next
-
-                ' Perform FFT
-                Fourier.Forward(complexData, FourierOptions.NoScaling)
-
-                ' Convert FFT output to dB power levels
-                Dim powerLevels(displayBins - 1) As Double
-                Dim binRatio As Double = (fftSize \ 2) / displayBins
-
-
-                ' Apply Zoom by Averaging FFT Bins
-                'For i As Integer = 0 To displayBins - 1
-                '    Dim sum As Double = 0
-                '    Dim count As Integer = 0
-                '    For j As Integer = 0 To Math.Max(1, CInt(binRatio)) - 1
-                '        Dim idx As Integer = (i * CInt(binRatio)) + j
-                '        If idx > 0 And idx < fftSize \ 2 - 1 Then
-                '            'sum += 20 * Math.Log10(Math.Max(complexData(idx).Magnitude, 0.0000000001))
-                '            sum += 10 * Math.Log10(Math.Max(complexData(idx).Magnitude ^ 2, 0.0000000001))
-                '            count += 1
-                '        End If
-                '    Next
-                '    If count > 0 Then powerLevels(i) = sum / count
-                '    powerLevels(i) = Math.Max(adjustedMinDb, Math.Min(adjustedMaxDb, powerLevels(i) - 70)) ' Apply dB range limits and normalize the noise floor 
-                'Next
-
-                Dim binsPerDisplay As Double = (fftSize / 2.0) / displayBins
-
-                For i As Integer = 0 To displayBins - 1
-                    Dim firstBin As Integer = Math.Max(1, CInt(i * binsPerDisplay)) ' Avoid bin 0
-                    Dim lastBin As Integer = Math.Min((i + 1) * CInt(binsPerDisplay) - 1, (fftSize \ 2) - 1)
-
-                    ' SIMD Optimized Sum
-                    Dim sumVector As Vector(Of Double) = Vector(Of Double).Zero
-                    Dim j As Integer = firstBin
-
-                    While j <= lastBin - Vector(Of Double).Count
-                        Dim magnitudes As New Vector(Of Double)(
-                                {complexData(j).Magnitude ^ 2, complexData(j + 1).Magnitude ^ 2,
-                                complexData(j + 2).Magnitude ^ 2, complexData(j + 3).Magnitude ^ 2,
-                                complexData(j + 4).Magnitude ^ 2, complexData(j + 5).Magnitude ^ 2,
-                                complexData(j + 6).Magnitude ^ 2, complexData(j + 7).Magnitude ^ 2}
-                                )
-                        sumVector += magnitudes
-                        j += Vector(Of Double).Count
-                    End While
-
-                    ' Reduce SIMD sum to scalar
-                    Dim sum As Double = 0
-                    For k As Integer = 0 To Vector(Of Double).Count - 1
-                        sum += sumVector(k)
-                    Next
-
-                    ' Process remaining bins that didn't fit in SIMD batch
-                    While j <= lastBin
-                        sum += complexData(j).Magnitude ^ 2
-                        j += 1
-                    End While
-
-                    ' Convert to dB scale AFTER summing
-                    If lastBin >= firstBin Then
-                        sum = 10 * Math.Log10(sum / (lastBin - firstBin + 1)) ' Compute log10 after sum
-                    Else
-                        sum = adjustedMinDb ' Avoid divide by zero
-                    End If
-
-                    ' Apply noise floor correction (-70 dB offset)
-                    powerLevels(i) = Math.Max(adjustedMinDb, Math.Min(adjustedMaxDb, sum - 70))
-                Next
-
-
-
-                ' Draw Signal Graph with Gradient Fill
-                Dim path As New Drawing2D.GraphicsPath()
-                Dim points(displayBins - 1) As PointF
-                Dim baseY As Integer = graphRect.Bottom
-
-                For i As Integer = 0 To displayBins - 1
-                    Dim x As Integer = graphRect.Left + CInt(((i + 0.5) / (displayBins - 1.0)) * graphRect.Width)
-                    Dim y As Integer = graphRect.Bottom - CInt((powerLevels(i) - adjustedMinDb) / (adjustedMaxDb - adjustedMinDb) * graphRect.Height)
-                    points(i) = New PointF(x, y)
-                Next
-                Dim gradientBounds As New Rectangle(graphRect.Left, CInt(points.Min(Function(p) p.Y)), Math.Max(1, graphRect.Width), Math.Max(1, graphRect.Bottom - CInt(points.Min(Function(p) p.Y))))
-                Dim gradientBrush As New Drawing2D.LinearGradientBrush(gradientBounds, Color.Blue, Color.Transparent, Drawing2D.LinearGradientMode.Vertical)
-
-                ' Fill with Gradient Below the Curve
-                path.AddLines(points)
-                path.AddLine(points.Last(), New PointF(points.Last().X, baseY))
-                path.AddLine(New PointF(points(0).X, baseY), points(0))
-                g.FillPath(gradientBrush, path)
-
-                ' Draw Waveform Line
-                If points.Count > 1 Then
-                    g.DrawLines(waveformPen, points)
-                End If
-
-                ' update waterfall image
-                ' Call GenerateWaterfallBitmap(powerLevels)
-
-
-
-            End Using
-            Return bmp
-        Else
-            Return foSignalBMP
-        End If
-
-
+        ' Convert raw IQ data to complex values
+        For piIndex As Integer = 0 To buffer.Length - 2 Step 2
+            Dim pdInPhase As Double = (buffer(piIndex) - 127.5) / 127.5
+            Dim pdQuad As Double = (buffer(piIndex + 1) - 127.5) / 127.5
+            poComplexData(piIndex \ 2) = New Complex(pdInPhase, pdQuad)
+        Next
+        ' Perform FFT on the complex data
+        Fourier.Forward(poComplexData, FourierOptions.NoScaling)
+        ' Convert complex to dB values
+        For piIndex = 0 To piFftSize - 1
+            Dim pdRealPart As Double = poComplexData(piIndex).Real
+            Dim pdImagPart As Double = poComplexData(piIndex).Imaginary
+            pdPowerValues(piIndex) = pdRealPart * pdRealPart + pdImagPart * pdImagPart ' Compute power
+            If pdPowerValues(piIndex) = 0 Then
+                pdPowerValues(piIndex) = Double.NegativeInfinity
+            Else
+                pdPowerValues(piIndex) = 10 * Math.Log10(pdPowerValues(piIndex)) - 70
+            End If
+        Next
+        ' Apply gaussian smooth to the levels
+        pdPowerValues = GaussianSmooth(pdPowerValues, 7)
+        ' we now have dB power values for the full buffer now.
+        Return RenderSpectrumBitmap(BitmapWidth, BitmapHeight, pdPowerValues)
     End Function
 
-    'Private Sub GenerateWaterfallBitmap(pdPowerLevels As Double())
-    '    ' Ensure bitmap is initialized, create one if necessary
-    '    Dim poSize As Size = GetWaterfallPanelSize()
-    '    If foWaterfallBMP Is Nothing OrElse foWaterfallBMP.Width <> poSize.Width OrElse foWaterfallBMP.Height <> poSize.Height Then
-    '        If foWaterfallBMP IsNot Nothing Then
-    '            foWaterfallBMP.Dispose()
-    '        End If
-    '        foWaterfallBMP = New Bitmap(poSize.Width, poSize.Height)
-    '    End If
+    Public Function RenderSpectrumBitmap(ByVal BitmapWidth As Integer, ByVal BitmapHeight As Integer, ByVal pdPowerValues() As Double) As Bitmap
+        ' Create graphics objects
+        Dim poBitmap As New Bitmap(BitmapWidth, BitmapHeight)
+        Using poGraphics As Graphics = Graphics.FromImage(poBitmap)
+            ' how to render
+            poGraphics.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+            poGraphics.TextRenderingHint = Drawing.Text.TextRenderingHint.AntiAliasGridFit
+            poGraphics.Clear(Color.Black)
 
-    '    ' Lock bitmap for pixel manipulation
-    '    Dim rect As New Rectangle(0, 0, foWaterfallBMP.Width, foWaterfallBMP.Height)
-    '    Dim bmpData As BitmapData = foWaterfallBMP.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb)
-    '    Dim stride As Integer = bmpData.Stride
-    '    Dim pixels As IntPtr = bmpData.Scan0
-    '    Dim byteArray As Byte() = New Byte(Math.Abs(stride) * foWaterfallBMP.Height - 1) {}
+            ' Define fonts and brushes
+            Dim poLabelFont As New Font("Arial", 10, FontStyle.Regular)
+            Dim poLabelBrush As New SolidBrush(Color.White)
+            Dim poAxisPen As New Pen(Color.White, 2)
+            Dim poGridPen As New Pen(Color.LightGray, 1) With {.DashStyle = Drawing2D.DashStyle.Dot}
+            Dim poCenterFreqPen As New Pen(Color.Red, 1)
+            ' Measure dB label width 
+            Dim piDbLabelWidth As Integer = CInt(poGraphics.MeasureString("-150 dB", poLabelFont).Width)
+            Dim piDbLabelHeight As Integer = CInt(poGraphics.MeasureString("-150 dB", poLabelFont).Height)
+            Dim piWaveformAreaWidth As Integer = (piDbLabelWidth + 5) * 2 ' Both left & right
+            ' Measure Frequency label size 
+            Dim piFreqLabelHeight As Integer = CInt(poGraphics.MeasureString("1.600000 GHz", poLabelFont).Height) + 5 'give text some riser space
+            Dim piFreqLabelWidth As Integer = CInt(poGraphics.MeasureString("1.600000 GHz", poLabelFont).Width)
 
-    '    ' Copy bitmap to array
-    '    Marshal.Copy(pixels, byteArray, 0, byteArray.Length)
 
-    '    ' Shift all existing rows down by one row
-    '    Buffer.BlockCopy(byteArray, 0, byteArray, stride, byteArray.Length - stride)
+            ' Define our workpace, working area with 5px margins left, right, top and 10px bottom.
+            Dim poWorkingRect As New Rectangle(5, 5 + piDbLabelHeight, BitmapWidth - 10, BitmapHeight - 10 - piDbLabelHeight)
+            ' Calculate graph area to allow for labels around it 
+            Dim piGraphWidth As Integer = poWorkingRect.Width - piWaveformAreaWidth
+            Dim piGraphHeight As Integer = poWorkingRect.Height - piFreqLabelHeight
+            Dim poGraphRect As New Rectangle(poWorkingRect.X + (piWaveformAreaWidth \ 2), poWorkingRect.Y, piGraphWidth, piGraphHeight)
+            ' Define string format for centering text
+            Dim poCenterFormat As New StringFormat() With {.Alignment = StringAlignment.Center, .LineAlignment = StringAlignment.Center, .FormatFlags = StringFormatFlags.NoWrap}
 
-    '    ' Insert new FFT row at the top
-    '    For i As Integer = 0 To pdPowerLevels.Length - 1
-    '        Dim power As Double = pdPowerLevels(i)
-    '        Dim color As Color = GetWaterfallColor(power)
 
-    '        Dim offset As Integer = i * 3 ' First row (topmost)
-    '        byteArray(offset) = color.B
-    '        byteArray(offset + 1) = color.G
-    '        byteArray(offset + 2) = color.R
-    '    Next
-    '    ' Copy modified array back to bitmap
-    '    Marshal.Copy(byteArray, 0, pixels, byteArray.Length)
-    '    foWaterfallBMP.UnlockBits(bmpData)
-    'End Sub
+            ' Define the part of the waveform we will be rendering
+            Dim piTotalBins As Integer = Math.Max(3, pdPowerValues.Count * (1 - fdZoomFactor))
+            Dim piCenterBin As Integer = pdPowerValues.Count \ 2 ' Middle of FFT
+            Dim piStartBin As Integer = Math.Max(0, piCenterBin - (piTotalBins \ 2))
+            Dim piEndBin As Integer = Math.Min(pdPowerValues.Count - 1, piCenterBin + (piTotalBins \ 2))
+            Dim pdBinsPerPixel As Double = piTotalBins / poGraphRect.Width
+            Dim pdFreqResolution As Double = foSDR.SampleRate / pdPowerValues.Count
 
-    'Private Function GetWaterfallColor(pdPower As Double) As Color
-    '    Dim minPower As Double = -140 ' dBFS range (adjust as needed)
-    '    Dim maxPower As Double = -40
+            ' Build point array for the waveform
+            Dim poGraphPoints(poGraphRect.Width - 1) As Point
+            Dim poGradientPoints(poGraphRect.Width - 1) As Point
+            Dim piX As Integer = poGraphRect.Left
 
-    '    ' Normalize power and apply contrast scaling
-    '    Dim norm As Double = ((pdPower - minPower) / (maxPower - minPower)) ^ pContrast
-    '    norm = Math.Max(0, Math.Min(1, norm)) ' Clamp between 0 and 1
+            For piPixelIndex As Integer = 0 To poGraphRect.Width - 1
+                ' Determine which FFT bins map to this pixel
+                Dim pdBinStart As Double = piStartBin + (piPixelIndex * pdBinsPerPixel)
+                Dim pdBinEnd As Double = piStartBin + ((piPixelIndex + 1) * pdBinsPerPixel)
 
-    '    ' Map to color gradient
-    '    If norm < 0.3 Then
-    '        Return Color.FromArgb(0, 0, CInt(255 * (norm / 0.3))) ' Blue to Cyan
-    '    ElseIf norm < 0.7 Then
-    '        Return Color.FromArgb(CInt(255 * ((norm - 0.3) / 0.4)), 255, 255) ' Cyan to Yellow
-    '    Else
-    '        Return Color.FromArgb(255, CInt(255 * ((1 - norm) / 0.3)), 0) ' Yellow to Red
-    '    End If
-    'End Function
+                ' Convert to integer bin indices
+                Dim piBinStart As Integer = Math.Max(0, Math.Floor(pdBinStart))
+                Dim piBinEnd As Integer = Math.Min(pdPowerValues.Count - 1, Math.Ceiling(pdBinEnd))
+
+                ' Compute average power level for this pixel
+                Dim pdAvgPower As Double = 0
+                Dim piCount As Integer = 0
+                For piBin As Integer = piBinStart To piBinEnd
+                    If Double.IsNegativeInfinity(pdPowerValues(piBin)) = False Then
+                        pdAvgPower += pdPowerValues(piBin)
+                        piCount += 1
+                    End If
+                Next
+                If piCount > 0 Then
+                    pdAvgPower /= piCount
+                Else
+                    pdAvgPower = fddBOffset - fddBRange ' Assign minimum dB value to prevent overflow
+                End If
+
+                ' Convert dB power to Y coordinate
+                'Dim piY As Integer = poGraphRect.Bottom - CInt((pdAvgPower - fddBOffset) * (poGraphRect.Height / fddBRange))
+                Dim piY As Integer = poGraphRect.Top + CInt((fddBOffset - pdAvgPower) * (poGraphRect.Height / fddBRange))
+
+
+                ' Store the waveform point
+                poGraphPoints(piPixelIndex) = New Point(piX, piY)
+
+                ' Store the gradient bottom point
+                poGradientPoints(piPixelIndex) = New Point(piX, poGraphRect.Bottom)
+
+                ' Move X position
+                piX += 1
+            Next
+
+            ' start rendering graph
+            ' Draw axes
+            poGraphics.DrawLine(poAxisPen, poGraphRect.Left, poGraphRect.Bottom, poGraphRect.Right, poGraphRect.Bottom) ' X-axis
+            poGraphics.DrawLine(poAxisPen, poGraphRect.Left, poGraphRect.Top, poGraphRect.Left, poGraphRect.Bottom) ' Left Y-axis
+            poGraphics.DrawLine(poAxisPen, poGraphRect.Right, poGraphRect.Top, poGraphRect.Right, poGraphRect.Bottom) ' Right Y-axis
+
+            ' Y-axis labels 
+            Dim piTickCountY As Integer = CInt(fddBRange \ 10) ' One tick every 10 dB
+            For piTickIndex As Integer = 0 To piTickCountY
+                ' dB value at this tick
+                Dim pdDbValue As Double = fddBOffset - (piTickIndex * 10)
+
+                ' Convert dB to Y-coordinate
+                Dim piYPos As Integer = poGraphRect.Top + CInt((fddBOffset - pdDbValue) * (poGraphRect.Height / fddBRange))
+
+                ' Draw grid line
+                poGraphics.DrawLine(poGridPen, poGraphRect.Left, piYPos, poGraphRect.Right, piYPos)
+
+                ' Draw dB labels (left & right)
+                Dim psLabel As String = pdDbValue.ToString("0") & " dB"
+                poGraphics.DrawString(psLabel, poLabelFont, poLabelBrush, New RectangleF(poGraphRect.Left - piDbLabelWidth - 7, piYPos - 10, piDbLabelWidth, 20), poCenterFormat)
+                poGraphics.DrawString(psLabel, poLabelFont, poLabelBrush, New RectangleF(poGraphRect.Right + 5, piYPos - 10, piDbLabelWidth, 20), poCenterFormat)
+            Next
+            ' x-axis labels, determine tick spacing based on available width and avoid overlap
+            Dim piTickSpacing As Integer = Math.Max(1, poGraphPoints.Length \ 8) ' Aim for ~8 labels
+            For piIndex As Integer = 0 To poGraphPoints.Length - 1 Step piTickSpacing
+                ' Get the bin number corresponding to this tick mark
+                Dim piBin As Integer = piStartBin + CInt(piIndex * pdBinsPerPixel)
+
+                ' Compute frequency for this bin
+                Dim pdTickFreq As Double = foSDR.CenterFrequency + ((piBin - piCenterBin) * pdFreqResolution)
+
+                ' Get the X position from our point array
+                Dim piXPos As Integer = poGraphPoints(piIndex).X
+
+                ' Draw grid line
+                poGraphics.DrawLine(poGridPen, piXPos, poGraphRect.Top, piXPos, poGraphRect.Bottom)
+
+                ' Draw frequency label
+                Dim psLabel As String = (pdTickFreq / 1000000000.0).ToString("0.000000") & " GHz"
+                poGraphics.DrawString(psLabel, poLabelFont, poLabelBrush, New RectangleF(piXPos - (piFreqLabelWidth / 2), poGraphRect.Bottom + 7, piFreqLabelWidth, 20), poCenterFormat)
+            Next
+
+            ' draw red center frequency line
+            Dim piCenterLine As Integer = poGraphPoints(poGradientPoints.Count \ 2).X
+            poGraphics.DrawLine(poCenterFreqPen, piCenterLine, poGraphRect.Top, piCenterLine, poGraphRect.Bottom)
+
+            ' Draw signal waveform now, start with gradient under waveform
+            ' Combine waveform and bottom points to form the gradient fill area
+            Dim poGradientPath As New Drawing2D.GraphicsPath()
+            poGradientPath.AddLines(poGraphPoints)
+            poGradientPath.AddLines(poGradientPoints.Reverse().ToArray()) ' Close the path
+            ' Define gradient fill (fades from blue to black)
+            Using poGradientBrush As New Drawing2D.LinearGradientBrush(poGraphRect, Color.Blue, Color.Transparent, Drawing2D.LinearGradientMode.Vertical)
+                ' Fill the area under the waveform
+                poGraphics.FillPath(poGradientBrush, poGradientPath)
+            End Using
+
+            ' Draw actual waveform
+            Dim poSmoothPath As New Drawing2D.GraphicsPath()
+            poSmoothPath.AddCurve(poGraphPoints, 0.75F) ' Smooth tension factor
+
+            ' Draw the smoothed waveform
+            Using poWavePen As New Pen(Color.White, 1)
+                poGraphics.DrawPath(poWavePen, poSmoothPath)
+            End Using
+        End Using
+
+        Return poBitmap
+    End Function
+
+    Function GaussianSmooth(ByVal pdData() As Double, ByVal piKernelSize As Integer) As Double()
+        Dim piHalfSize As Integer = piKernelSize \ 2
+        Dim pdKernel(piKernelSize - 1) As Double
+        Dim pdSmoothed(pdData.Length - 1) As Double
+
+        ' Create Gaussian kernel weights
+        Dim pdSigma As Double = piKernelSize / 2.0
+        Dim pdSum As Double = 0
+        For i As Integer = -piHalfSize To piHalfSize
+            pdKernel(i + piHalfSize) = Math.Exp(-(i * i) / (2 * pdSigma * pdSigma))
+            pdSum += pdKernel(i + piHalfSize)
+        Next
+
+        ' Normalize kernel
+        For i As Integer = 0 To piKernelSize - 1
+            pdKernel(i) /= pdSum
+        Next
+
+        ' Apply Gaussian blur
+        For i As Integer = piHalfSize To pdData.Length - piHalfSize - 1
+            Dim pdWeightedSum As Double = 0
+            For j As Integer = -piHalfSize To piHalfSize
+                pdWeightedSum += pdData(i + j) * pdKernel(j + piHalfSize)
+            Next
+            pdSmoothed(i) = pdWeightedSum
+        Next
+
+        ' Copy edges
+        For i As Integer = 0 To piHalfSize - 1
+            pdSmoothed(i) = pdData(i)
+            pdSmoothed(pdData.Length - 1 - i) = pdData(pdData.Length - 1 - i)
+        Next
+
+        Return pdSmoothed
+    End Function
+
 
     Private Function GetSignalPanelSize() As Size
         If panSignal.InvokeRequired Then
@@ -521,20 +439,5 @@ Public Class frmMain
     End Function
 
 
-    'Private Function GetWaterfallPanelSize() As Size
-    '    If panWaterfall.InvokeRequired Then
-    '        ' Invoke on the UI thread if called from a worker thread
-    '        Return CType(panWaterfall.Invoke(Function() GetWaterfallPanelSize()), Size)
-    '    Else
-    '        ' Directly return panel size if already on UI thread
-    '        Return New Size(panWaterfall.Width, panWaterfall.Height)
-    '    End If
-    'End Function
-
-
-
-
-
-    ''
 End Class
 ''

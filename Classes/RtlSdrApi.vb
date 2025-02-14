@@ -51,20 +51,34 @@ Public Class RtlSdrApi
     Public Shared Function rtlsdr_open(ByRef dev As IntPtr, index As Integer) As Integer
     End Function
 
-    ' 1️⃣ Reset buffer (flushes stale data before starting capture)
+    ' Reset buffer (flushes stale data before starting capture)
     <DllImport("rtlsdr.dll", CallingConvention:=CallingConvention.Cdecl)>
     Public Shared Function rtlsdr_reset_buffer(dev As IntPtr) As Integer
     End Function
 
-    ' 2️⃣ Set tuner gain mode (0 = auto, 1 = manual)
+    ' Set tuner gain mode (0 = auto, 1 = manual)
     <DllImport("rtlsdr.dll", CallingConvention:=CallingConvention.Cdecl)>
     Public Shared Function rtlsdr_set_tuner_gain_mode(dev As IntPtr, manualGain As Integer) As Integer
     End Function
 
-    ' 3️⃣ Set tuner gain (valid range: ~0 to 500)
+    ' Set tuner gain (valid range: ~0 to 500)
     <DllImport("rtlsdr.dll", CallingConvention:=CallingConvention.Cdecl)>
     Public Shared Function rtlsdr_set_tuner_gain(dev As IntPtr, gain As Integer) As Integer
     End Function
+
+    <DllImport("rtlsdr.dll", CallingConvention:=CallingConvention.Cdecl)>
+    Public Shared Function rtlsdr_get_sample_rates(ByVal device_index As Integer, ByRef num_rates As Integer, ByVal sample_rates() As Integer) As Integer
+    End Function
+
+    <DllImport("rtlsdr.dll", CallingConvention:=CallingConvention.Cdecl)>
+    Public Shared Function rtlsdr_get_freq_range(ByVal device_index As Integer, ByRef min_freq As Integer, ByRef max_freq As Integer) As Integer
+    End Function
+
+    <DllImport("rtlsdr.dll", CallingConvention:=CallingConvention.Cdecl)>
+    Public Shared Function rtlsdr_get_tuner_gains(ByVal device_index As Integer, ByRef num_gains As Integer, ByVal gains() As Integer) As Integer
+    End Function
+
+
 #End Region
 
 
@@ -134,6 +148,23 @@ Public Class RtlSdrApi
         End Get
     End Property
 
+    ''' <summary>
+    ''' Center for the frequency sample in Mhz
+    ''' </summary>
+    ''' <returns></returns>
+    Public ReadOnly Property CenterFrequency As Double
+        Get
+            Return miCenterFrequency
+        End Get
+    End Property
+
+    Public ReadOnly Property SampleRate As Double
+        Get
+            Return CDbl(miSampleRate)
+        End Get
+    End Property
+
+
     Public Property SignalWindow As Integer
         Get
             Return miSignalWindow
@@ -152,9 +183,10 @@ Public Class RtlSdrApi
 
 
 
-    Public Sub New(centerFrequency As UInteger, deviceIndex As Integer)
+    Public Sub New(deviceIndex As Integer, Optional ByVal centerFrequency As UInteger = 1600000000, Optional ByVal sampleRate As UInteger = 2048000)
         miCenterFrequency = centerFrequency
         miDeviceIndex = deviceIndex
+
         moSyncContext = SynchronizationContext.Current ' Capture UI thread context
         msLogFolder = clsLogger.LogPath
     End Sub

@@ -114,7 +114,7 @@ Partial Class frmMain
         ' lblDiv
         ' 
         lblDiv.BackColor = Color.Silver
-        lblDiv.Location = New Point(4, 147)
+        lblDiv.Location = New Point(1, 149)
         lblDiv.Name = "lblDiv"
         lblDiv.Size = New Size(56, 3)
         lblDiv.TabIndex = 28
@@ -166,7 +166,7 @@ Partial Class frmMain
         sldZoom.KnobColor = Color.DodgerBlue
         sldZoom.Location = New Point(4, 24)
         sldZoom.Maximum = 100
-        sldZoom.Minimum = 10
+        sldZoom.Minimum = 0
         sldZoom.Name = "sldZoom"
         sldZoom.Size = New Size(50, 120)
         sldZoom.TabIndex = 25
@@ -176,7 +176,7 @@ Partial Class frmMain
         ToolTip1.SetToolTip(sldZoom, "Zoom level 100%=full spectrum, 10%=small spectrum")
         sldZoom.TrackColor = Color.Gray
         sldZoom.TrackHighlightColor = Color.LightGray
-        sldZoom.Value = 100
+        sldZoom.Value = 0
         sldZoom.Vertical = True
         ' 
         ' lblOffset
