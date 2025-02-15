@@ -66,4 +66,20 @@ Module modMain
     End Function
 
 
+    Public Function GetClosestIndex(ByVal piValue As Integer, ByVal poList As List(Of Integer)) As Integer
+        Dim iIndex As Integer = poList.BinarySearch(piValue)
+
+        ' If exact match found, return its index
+        If iIndex >= 0 Then Return iIndex
+
+        ' If not found, BinarySearch returns the bitwise complement of the next larger element
+        iIndex = Not iIndex
+
+        ' If index is 0, all elements are larger than piValue (nothing before it)
+        If iIndex = 0 Then Return 0 ' No valid index (nothing <= piValue) just give the first entry
+
+        ' Otherwise, return the closest smaller index
+        Return iIndex - 1
+    End Function
+
 End Module

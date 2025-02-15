@@ -40,14 +40,17 @@ Partial Class frmMain
         picStartStop = New PictureBox()
         picBrowseFolder = New PictureBox()
         ToolTip1 = New ToolTip(components)
+        picConfig = New PictureBox()
         Panel1.SuspendLayout()
         CType(picStartStop, ComponentModel.ISupportInitialize).BeginInit()
         CType(picBrowseFolder, ComponentModel.ISupportInitialize).BeginInit()
+        CType(picConfig, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
         ' cboDeviceList
         ' 
         cboDeviceList.BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        cboDeviceList.DropDownStyle = ComboBoxStyle.DropDownList
         cboDeviceList.ForeColor = Color.White
         cboDeviceList.FormattingEnabled = True
         cboDeviceList.Location = New Point(13, 34)
@@ -232,7 +235,7 @@ Partial Class frmMain
         ' picBrowseFolder
         ' 
         picBrowseFolder.Image = CType(resources.GetObject("picBrowseFolder.Image"), Image)
-        picBrowseFolder.Location = New Point(340, 34)
+        picBrowseFolder.Location = New Point(398, 34)
         picBrowseFolder.Name = "picBrowseFolder"
         picBrowseFolder.Size = New Size(29, 29)
         picBrowseFolder.SizeMode = PictureBoxSizeMode.StretchImage
@@ -240,12 +243,24 @@ Partial Class frmMain
         picBrowseFolder.TabStop = False
         ToolTip1.SetToolTip(picBrowseFolder, "Browse log folder")
         ' 
+        ' picConfig
+        ' 
+        picConfig.Image = My.Resources.Resources.gear_gray
+        picConfig.Location = New Point(308, 35)
+        picConfig.Name = "picConfig"
+        picConfig.Size = New Size(29, 29)
+        picConfig.SizeMode = PictureBoxSizeMode.StretchImage
+        picConfig.TabIndex = 23
+        picConfig.TabStop = False
+        ToolTip1.SetToolTip(picConfig, "Device configuration")
+        ' 
         ' frmMain
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
         ClientSize = New Size(1029, 547)
+        Controls.Add(picConfig)
         Controls.Add(picBrowseFolder)
         Controls.Add(picStartStop)
         Controls.Add(Panel1)
@@ -263,6 +278,7 @@ Partial Class frmMain
         Panel1.PerformLayout()
         CType(picStartStop, ComponentModel.ISupportInitialize).EndInit()
         CType(picBrowseFolder, ComponentModel.ISupportInitialize).EndInit()
+        CType(picConfig, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
         PerformLayout()
     End Sub
@@ -284,5 +300,6 @@ Partial Class frmMain
     Friend WithEvents picStartStop As PictureBox
     Friend WithEvents picBrowseFolder As PictureBox
     Friend WithEvents ToolTip1 As ToolTip
+    Friend WithEvents picConfig As PictureBox
 
 End Class

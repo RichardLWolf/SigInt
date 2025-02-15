@@ -3,11 +3,17 @@ Imports Newtonsoft.Json
 
 Public Class clsAppConfig
     ' Configuration properties (only these get serialized)
+    '    Device parameters
     Public Property CenterFrequency As UInteger = 1600000000UI ' Default: 1.6 GHz
     Public Property SampleRate As Integer = 2048000 ' Default: 2.048 MSPS
-    Public Property ZoomLevel As Integer = 0 ' Default: Full view (0 to 100)
-    Public Property dBOffset As Integer = -20 ' Default: -20 dB  (0 to -100)
-    Public Property dBRange As Integer = 100 ' Default: 100 dB graphed (10-150)
+    Public Property GainMode As Integer = 0     ' 0=auto, 1=manual
+    Public Property GainValue As Integer = 300  ' 30.0dB
+    '   UI Preferences
+    Public Property ZoomLevel As Integer = 0    ' Default: Full view (0 to 100)
+    Public Property dBOffset As Integer = -20   ' Default: -20 dB  (0 to -100)
+    Public Property dBRange As Integer = 100    ' Default: 100 dB graphed (10-150)
+
+
 
     ' Define config file path as a Shared (Static) constant
     Private Shared ReadOnly msConfigFile As String = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments), My.Application.Info.AssemblyName, "config.json")

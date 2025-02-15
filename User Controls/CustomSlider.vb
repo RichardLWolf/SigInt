@@ -108,7 +108,7 @@ Public Class CustomSlider
     <Category("Appearance")>
     <Browsable(True)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)>
-    <DefaultValue(False)>
+    <DefaultValue(True)>
     Public Property DisplayValue As Boolean
         Get
             Return fbShowValue

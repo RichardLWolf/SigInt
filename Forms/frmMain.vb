@@ -5,6 +5,7 @@ Imports System.Drawing
 Imports System.Numerics
 Imports System.Drawing.Imaging
 Imports System.ComponentModel
+Imports System.Configuration
 
 
 
@@ -25,6 +26,15 @@ Public Class frmMain
         MsgBox($"An error occurred monitoring the RTL-SDR:{ControlChars.CrLf}{message}", MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "SDR Error")
     End Sub
 
+    Private Sub foSDR_MonitorEnded(Sender As Object) Handles foSDR.MonitorEnded
+        picStartStop.Image = My.Resources.media_play_green
+        picConfig.Image = My.Resources.gear_gray
+        Me.Enabled = True
+        Me.Cursor = Cursors.Arrow
+        panSignal.Invalidate()
+    End Sub
+
+
     Private Sub foSDR_SignalChange(sender As Object, SignalFound As Boolean) Handles foSDR.SignalChange
         'update signal count
         If foSDR.SignalEventCount = 0 Then
@@ -37,11 +47,30 @@ Public Class frmMain
         End If
     End Sub
 
+    Private Sub foSDR_MonitorStarted(sender As Object, success As Boolean) Handles foSDR.MonitorStarted
+        Me.Cursor = Cursors.Arrow
+        Me.Enabled = True
+        If success Then
+            picStartStop.Image = My.Resources.media_stop_red
+            picConfig.Image = My.Resources.gear
+            Dim worker As New Threading.Thread(AddressOf Worker_GenerateBitmap)
+            worker.IsBackground = True
+            worker.Start()
+        Else
+            picStartStop.Image = My.Resources.media_play_green
+            picConfig.Image = My.Resources.gear_gray
+        End If
+    End Sub
+
 
     Private Sub frmMain_Closing(sender As Object, e As CancelEventArgs) Handles Me.Closing
         If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
             foSDR.StopMonitor()
         End If
+        ' save off current UI config 
+        foConfig.ZoomLevel = sldZoom.Value
+        foConfig.dBOffset = sldOffset.Value
+        foConfig.dBRange = sldRange.Value
         foConfig.Save()
     End Sub
 
@@ -63,9 +92,9 @@ Public Class frmMain
         End If
         cboDeviceList.SelectedIndex = 0
 
-        sldZoom.Value = 0
-        sldOffset.Value = -20
-        sldRange.Value = 100
+        sldZoom.Value = foConfig.ZoomLevel
+        sldOffset.Value = foConfig.dBOffset
+        sldRange.Value = foConfig.dBRange
         sldOffset_ValueChanged(Nothing, Nothing)
         sldRange_ValueChanged(Nothing, Nothing)
         sldZoom_ValueChanged(Nothing, Nothing)
@@ -97,6 +126,12 @@ Public Class frmMain
         End If
     End Sub
 
+    Private Sub panSignal_Resize(sender As Object, e As EventArgs) Handles panSignal.Resize
+        If foSDR IsNot Nothing AndAlso foSDR.IsRunning = False Then
+            panSignal.Invalidate()
+        End If
+    End Sub
+
     Private Sub picBrowseFolder_MouseClick(sender As Object, e As MouseEventArgs) Handles picBrowseFolder.MouseClick
         Try
             Process.Start("explorer.exe", clsLogger.LogPath)
@@ -113,6 +148,49 @@ Public Class frmMain
         picBrowseFolder.Image = My.Resources.folder_green
     End Sub
 
+    Private Sub picConfig_Click(sender As Object, e As EventArgs) Handles picConfig.Click
+        If cboDeviceList.SelectedItem IsNot Nothing Then
+            If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
+                Using poFrm As New frmConfig
+                    Dim poItem As RtlSdrApi.SdrDevice = cboDeviceList.SelectedItem
+                    poFrm.ReadyForm(poItem.DeviceName, foSDR)
+                    If poFrm.ShowDialog(Me) = DialogResult.OK Then
+                        ' stop monitor
+                        foSDR.StopMonitor()
+                        foSDR = New RtlSdrApi(poItem.DeviceIndex, poFrm.CenterFreq, , If(poFrm.GainMode = 0, True, False), poFrm.GainValue)
+                        foSDR.StartMonitor()
+                        foConfig.CenterFrequency = foSDR.CenterFrequency
+                        foConfig.GainMode = poFrm.GainMode
+                        foConfig.GainValue = foSDR.GainValue
+                        ' update config
+                        foConfig.Save()
+                    End If
+                End Using
+            Else
+                MsgBox("Please begin monitoring before adjusting device settings.")
+            End If
+        Else
+            cboDeviceList.Focus()
+            MsgBox("Please select a RTL-SDR device from the list.")
+        End If
+    End Sub
+
+    Private Sub picConfig_MouseEnter(sender As Object, e As EventArgs) Handles picConfig.MouseEnter
+        If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
+            picConfig.Image = My.Resources.gear_blue
+        Else
+            picConfig.Image = My.Resources.gear_gray
+        End If
+    End Sub
+
+    Private Sub picConfig_MouseLeave(sender As Object, e As EventArgs) Handles picConfig.MouseLeave
+        If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
+            picConfig.Image = My.Resources.gear
+        Else
+            picConfig.Image = My.Resources.gear_gray
+        End If
+    End Sub
+
     Private Sub picStartStop_Click(sender As Object, e As EventArgs) Handles picStartStop.MouseClick
         If cboDeviceList.SelectedItem IsNot Nothing Then
             Dim poItem As RtlSdrApi.SdrDevice = cboDeviceList.SelectedItem
@@ -121,20 +199,15 @@ Public Class frmMain
                 cboDeviceList.Focus()
             Else
                 If foSDR Is Nothing Then
-                    foSDR = New RtlSdrApi(poItem.DeviceIndex, CLng(1.6 * 10 ^ 9)) ' 1.6 GHz = 1,600,000,000 Hz 
+                    foSDR = New RtlSdrApi(poItem.DeviceIndex, foConfig.CenterFrequency,, IIf(foConfig.GainMode = 0, True, False), foConfig.GainValue)
                 End If
                 If foSDR.IsRunning Then
                     foSDR.StopMonitor()
-                    picStartStop.Image = My.Resources.media_play_green
                 Else
-                    '                    btnStartStop.Text = "STOP"
                     foSDR.StartMonitor()
-                    picStartStop.Image = My.Resources.media_stop_red
-                    Dim worker As New Threading.Thread(AddressOf Worker_GenerateBitmap)
-                    worker.IsBackground = True
-                    worker.Start()
+                    Me.Cursor = Cursors.WaitCursor
+                    Me.Enabled = False
                 End If
-                panSignal.Invalidate()
             End If
         Else
             MsgBox("Please select a device from the dropdown.", MsgBoxStyle.OkOnly, "No SDR Device Selected")
@@ -254,12 +327,12 @@ Public Class frmMain
             Dim poGridPen As New Pen(Color.LightGray, 1) With {.DashStyle = Drawing2D.DashStyle.Dot}
             Dim poCenterFreqPen As New Pen(Color.Red, 1)
             ' Measure dB label width 
-            Dim piDbLabelWidth As Integer = CInt(poGraphics.MeasureString("-150 dB", poLabelFont).Width)
-            Dim piDbLabelHeight As Integer = CInt(poGraphics.MeasureString("-150 dB", poLabelFont).Height)
+            Dim piDbLabelWidth As Integer = CInt(poGraphics.MeasureString("-888 dB", poLabelFont).Width)
+            Dim piDbLabelHeight As Integer = CInt(poGraphics.MeasureString("-888 dB", poLabelFont).Height)
             Dim piWaveformAreaWidth As Integer = (piDbLabelWidth + 5) * 2 ' Both left & right
             ' Measure Frequency label size 
-            Dim piFreqLabelHeight As Integer = CInt(poGraphics.MeasureString("1.600000 GHz", poLabelFont).Height) + 5 'give text some riser space
-            Dim piFreqLabelWidth As Integer = CInt(poGraphics.MeasureString("1.600000 GHz", poLabelFont).Width)
+            Dim piFreqLabelHeight As Integer = CInt(poGraphics.MeasureString("8.888888 GHz", poLabelFont).Height) + 5 'give text some riser space
+            Dim piFreqLabelWidth As Integer = CInt(poGraphics.MeasureString("8.888888 GHz", poLabelFont).Width)
 
 
             ' Define our workpace, working area with 5px margins left, right, top and 10px bottom.
@@ -363,7 +436,7 @@ Public Class frmMain
                 poGraphics.DrawLine(poGridPen, piXPos, poGraphRect.Top, piXPos, poGraphRect.Bottom)
 
                 ' Draw frequency label
-                Dim psLabel As String = (pdTickFreq / 1000000000.0).ToString("0.000000") & " GHz"
+                Dim psLabel As String = modMain.FormatHertz(pdTickFreq) '(pdTickFreq / 1000000000.0).ToString("0.000000") & " GHz"
                 poGraphics.DrawString(psLabel, poLabelFont, poLabelBrush, New RectangleF(piXPos - (piFreqLabelWidth / 2), poGraphRect.Bottom + 7, piFreqLabelWidth, 20), poCenterFormat)
             Next
 
@@ -381,7 +454,6 @@ Public Class frmMain
                 ' Fill the area under the waveform
                 poGraphics.FillPath(poGradientBrush, poGradientPath)
             End Using
-
             ' Draw actual waveform
             Dim poSmoothPath As New Drawing2D.GraphicsPath()
             poSmoothPath.AddCurve(poGraphPoints, 0.75F) ' Smooth tension factor
@@ -441,7 +513,6 @@ Public Class frmMain
             Return New Size(panSignal.Width, panSignal.Height)
         End If
     End Function
-
 
 End Class
 ''

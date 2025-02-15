@@ -67,15 +67,15 @@ Public Class RtlSdrApi
     End Function
 
     <DllImport("rtlsdr.dll", CallingConvention:=CallingConvention.Cdecl)>
-    Public Shared Function rtlsdr_get_sample_rates(ByVal device_index As Integer, ByRef num_rates As Integer, ByVal sample_rates() As Integer) As Integer
+    Public Shared Function rtlsdr_get_sample_rates(ByVal device_handle As IntPtr, ByRef num_rates As Integer, ByVal sample_rates() As Integer) As Integer
     End Function
 
     <DllImport("rtlsdr.dll", CallingConvention:=CallingConvention.Cdecl)>
-    Public Shared Function rtlsdr_get_freq_range(ByVal device_index As Integer, ByRef min_freq As Integer, ByRef max_freq As Integer) As Integer
+    Public Shared Function rtlsdr_get_tuner_type(ByVal dev As IntPtr) As Integer
     End Function
 
     <DllImport("rtlsdr.dll", CallingConvention:=CallingConvention.Cdecl)>
-    Public Shared Function rtlsdr_get_tuner_gains(ByVal device_index As Integer, ByRef num_gains As Integer, ByVal gains() As Integer) As Integer
+    Public Shared Function rtlsdr_get_tuner_gains(ByVal device_handle As IntPtr, ByVal gains_ptr As IntPtr) As Integer
     End Function
 
 
@@ -99,7 +99,8 @@ Public Class RtlSdrApi
     ' Event for UI-safe error reporting
     Public Event ErrorOccurred(ByVal sender As Object, ByVal message As String)
     Public Event SignalChange(ByVal sender As Object, ByVal SignalFound As Boolean)
-
+    Public Event MonitorStarted(ByVal sender As Object, ByVal success As Boolean)
+    Public Event MonitorEnded(ByVal Sender As Object)
 
     Private miDeviceHandle As IntPtr = IntPtr.Zero
     Private miCenterFrequency As UInteger
@@ -110,6 +111,10 @@ Public Class RtlSdrApi
     Private moSyncContext As SynchronizationContext
     Private miSignalEvents As Integer = 0
     Private miSignalWindow As Integer = 1   ' 1 "bin" about 250Hz on each side of center frequency
+
+    Private miGainMode As Integer = 0 '0=automatic, 1=manual
+    Private miGainValue As Integer = 300
+
 
     ' Circular buffer for pre-trigger storage
     Private mqQueue As New Queue(Of Byte())()
@@ -164,6 +169,21 @@ Public Class RtlSdrApi
         End Get
     End Property
 
+    ''' <summary>
+    ''' 0 = Automatic, 1 = Manual
+    ''' </summary>
+    ''' <returns></returns>
+    Public ReadOnly Property GainMode As Integer
+        Get
+            Return miGainMode
+        End Get
+    End Property
+
+    Public ReadOnly Property GainValue As Integer
+        Get
+            Return miGainValue
+        End Get
+    End Property
 
     Public Property SignalWindow As Integer
         Get
@@ -174,18 +194,18 @@ Public Class RtlSdrApi
         End Set
     End Property
 
-    ' Public method to retrieve the latest buffer (for UI visualization)
-    Public Function GetBuffer() As Byte()
-        SyncLock myIqBuffer
-            Return If(myIqBuffer IsNot Nothing, CType(myIqBuffer.Clone(), Byte()), Nothing)
-        End SyncLock
-    End Function
 
+    Public Sub New(deviceIndex As Integer, Optional ByVal centerFrequency As UInteger = 1600000000 _
+            , Optional ByVal sampleRate As UInteger = 2048000 _
+            , Optional ByVal automaticGain As Boolean = True _
+            , Optional ByVal manualGainValue As Integer = 300)
 
-
-    Public Sub New(deviceIndex As Integer, Optional ByVal centerFrequency As UInteger = 1600000000, Optional ByVal sampleRate As UInteger = 2048000)
-        miCenterFrequency = centerFrequency
         miDeviceIndex = deviceIndex
+        miCenterFrequency = centerFrequency
+        miSampleRate = sampleRate
+        miGainMode = If(automaticGain, 0, 1)
+        miGainValue = manualGainValue
+
 
         moSyncContext = SynchronizationContext.Current ' Capture UI thread context
         msLogFolder = clsLogger.LogPath
@@ -199,7 +219,6 @@ Public Class RtlSdrApi
 
         moMonitorThread = New Thread(AddressOf MonitorThread)
         moMonitorThread.IsBackground = True
-        mbRunning = True
         moMonitorThread.Start()
     End Sub
 
@@ -211,53 +230,271 @@ Public Class RtlSdrApi
         End If
     End Sub
 
+
+    
+    ' Public method to retrieve the latest buffer (for UI visualization)
+    Public Function GetBuffer() As Byte()
+        SyncLock myIqBuffer
+            Return If(myIqBuffer IsNot Nothing, CType(myIqBuffer.Clone(), Byte()), Nothing)
+        End SyncLock
+    End Function
+
+
+    ''' <summary>
+    ''' Returns a list of valid manual gain settings.  RTL-SDR stores these values in tenths of dB, so for display you need to divide these values by 10D before displaying.
+    ''' </summary>
+    ''' <returns></returns>
+    Public Function GetTunerGainsList() As List(Of Integer)
+        Dim piNumGains As Integer = 0
+        Dim poGainList As New List(Of Integer)
+        Dim piResult As Integer
+        If miDeviceHandle <> 0 Then
+            piResult = rtlsdr_get_tuner_gains(miDeviceHandle, IntPtr.Zero)
+            If piResult > 0 Then
+                piNumGains = piResult
+                Dim piGains(piNumGains - 1) As Integer
+                ' Allocate memory and pass pointer
+                Dim hGC As GCHandle = GCHandle.Alloc(piGains, GCHandleType.Pinned)
+                Try
+                    piResult = rtlsdr_get_tuner_gains(miDeviceHandle, hGC.AddrOfPinnedObject())
+
+                    Debug.Print("Second call result: " & piResult)
+
+                    ' Check if successful
+                    If piResult > 0 Then
+                        poGainList.AddRange(piGains)
+
+                        ' Print the gain values for debugging
+                        Debug.Print("Gain Values:")
+                        For Each piGain As Integer In poGainList
+                            Debug.Print(piGain.ToString())
+                        Next
+                    Else
+                        Debug.Print("Second call returned an error.")
+                    End If
+                Finally
+                    hGC.Free()
+                End Try
+            Else
+                Debug.Print("First call returned an error.")
+            End If
+        End If
+        Return poGainList
+    End Function
+
+    ''' <summary>
+    ''' Returns a List(of Integer) with two entries (0) = min (1) = max.
+    ''' </summary>
+    ''' <returns></returns>
+    Public Function GetFrequencyRangeList() As List(Of UInteger)
+        Dim poList As New List(Of UInteger)
+        Dim piMin As UInteger
+        Dim piMax As UInteger
+
+        If miDeviceHandle <> 0 Then
+            Dim tunerType As Integer = rtlsdr_get_tuner_type(miDeviceHandle)
+            Select Case tunerType
+                Case 1 ' RTLSDR_TUNER_E4000
+                    piMin = 52000000   ' 52 MHz
+                    piMax = 2200000000 ' 2.2 GHz
+                Case 2 ' RTLSDR_TUNER_FC0012
+                    piMin = 22000000   ' 22 MHz
+                    piMax = 948600000  ' 948.6 MHz
+                Case 3 ' RTLSDR_TUNER_FC0013
+                    piMin = 22000000   ' 22 MHz
+                    piMax = 1100000000 ' 1.1 GHz
+                Case 4 ' RTLSDR_TUNER_FC2580
+                    piMin = 146000000  ' 146 MHz
+                    piMax = 924000000  ' 924 MHz
+                Case 5 ' RTLSDR_TUNER_R820T
+                    piMin = 24000000   ' 24 MHz
+                    piMax = 1766000000 ' 1.766 GHz
+                Case Else
+                    ' default something
+                    piMin = 24000000   ' 24 MHz
+                    piMax = 1766000000 ' 1.766 GHz
+            End Select
+            poList.Add(piMin)
+            poList.Add(piMax)
+        Else
+            poList.Add(0)
+            poList.Add(0)
+        End If
+        Return poList
+    End Function
+
+    Public Function GetSampleRates() As List(Of Integer)
+        Dim piNumRates As Integer = 0
+        Dim poRatesList As New List(Of Integer)
+        Dim piResult As Integer
+
+        If miDeviceHandle <> 0 Then
+            piResult = rtlsdr_get_sample_rates(miDeviceHandle, piNumRates, Nothing)
+            If piResult = 0 And piNumRates > 0 Then
+                Dim piRates(piNumRates - 1) As Integer
+                piResult = rtlsdr_get_sample_rates(miDeviceHandle, piNumRates, piRates)
+                If piResult = 0 Then
+                    poRatesList.AddRange(piRates)
+                End If
+            End If
+        End If
+        Return poRatesList
+    End Function
+
+
+    Public Function SetSampleRate(ByVal NewSampleRate As UInteger) As Boolean
+        If miDeviceHandle <> 0 Then
+            SyncLock myIqBuffer
+                myIqBuffer = New Byte(miBufferSize - 1) {}
+                rtlsdr_reset_buffer(miDeviceHandle)
+            End SyncLock
+            Dim piResult As Integer = rtlsdr_set_sample_rate(miDeviceHandle, NewSampleRate)
+            If piResult = 0 Then
+                miSampleRate = NewSampleRate
+                Return True
+            End If
+        End If
+        Return False
+    End Function
+
+    Public Function SetCenterFrequency(ByVal NewFrequency As UInteger) As Boolean
+        If miDeviceHandle <> 0 Then
+            SyncLock myIqBuffer
+                myIqBuffer = New Byte(miBufferSize - 1) {}
+                rtlsdr_reset_buffer(miDeviceHandle)
+            End SyncLock
+            Dim piResult As Integer = rtlsdr_set_center_freq(miDeviceHandle, NewFrequency)
+            If piResult = 0 Then
+                miCenterFrequency = NewFrequency
+                Return True
+            End If
+        End If
+        Return False
+    End Function
+
+    Public Function SetGainMode(ByVal AutomaticMode As Boolean) As Boolean
+        If miDeviceHandle <> 0 Then
+            Dim piMode As Integer = CInt(If(AutomaticMode, 0, 1))
+            Dim piResult As Integer = rtlsdr_set_tuner_gain_mode(miDeviceHandle, piMode)
+            If piResult = 0 Then
+                SyncLock myIqBuffer
+                    myIqBuffer = New Byte(miBufferSize - 1) {}
+                    rtlsdr_reset_buffer(miDeviceHandle)
+                End SyncLock
+                miGainMode = piMode
+                Return True
+            End If
+        End If
+        Return False
+    End Function
+
+    ''' <summary>
+    ''' Sets manual gain value, should be in tenths of dB.  So for 30.0dB pass in 300.
+    ''' </summary>
+    ''' <param name="NewGainValue"></param>
+    ''' <returns></returns>
+    Public Function SetGain(ByVal NewGainValue As Integer) As Boolean
+        If miDeviceHandle <> 0 Then
+            Dim piResult As Integer = rtlsdr_set_tuner_gain(miDeviceHandle, NewGainValue)
+            If piResult = 0 Then
+                miGainValue = NewGainValue
+                Return True
+            End If
+        End If
+        Return False
+    End Function
+
+
+    Public Function ResetBuffer() As Boolean
+        Dim piResult As Integer = 0
+        If miDeviceHandle <> 0 Then
+            SyncLock myIqBuffer
+                piResult = rtlsdr_reset_buffer(miDeviceHandle)
+                If piResult = 0 Then
+                    myIqBuffer = New Byte(miBufferSize - 1) {}
+                End If
+            End SyncLock
+        End If
+        Return CBool(piResult = 0)
+    End Function
+
     ' Background thread for monitoring SDR data
     Private Sub MonitorThread()
         Try
             ' Open the RTL-SDR device
-            Dim result As Integer = RtlSdrApi.rtlsdr_open(miDeviceHandle, CUInt(miDeviceIndex))
-            If result <> 0 Then
-                clsLogger.Log("RtlSdrApi.MonitorThread", "Failed to open RTL-SDR device, result code was " & result & ".")
+            Dim piResult As Integer = RtlSdrApi.rtlsdr_open(miDeviceHandle, CUInt(miDeviceIndex))
+            If piResult <> 0 OrElse miDeviceHandle = IntPtr.Zero Then
+                clsLogger.Log("RtlSdrApi.MonitorThread", "Failed to open RTL-SDR device, result code was " & piResult & ".")
                 RaiseError("Failed to open RTL-SDR device.")
+                RaiseStarted(False)
+                Exit Sub
+            End If
+            ' clear buffer and initialize myIQBuffer array
+            Me.ResetBuffer()
+
+            ' Set sample rate (e.g., 2.048 MSPS)
+            piResult = rtlsdr_set_sample_rate(miDeviceHandle, miSampleRate)
+            If piResult <> 0 Then
+                clsLogger.Log("RtlSdrApi.MonitorThread", $"Failed to set RTL-SDR sample rate ({miSampleRate}), result code was {piResult}.")
+                RaiseError("Failed to set RTL-SDR device sample rate.")
+                RaiseStarted(False)
                 Exit Sub
             End If
 
-            ' Reset buffer (important to clear any stale data)
-            result = rtlsdr_reset_buffer(miDeviceHandle)
-
-            ' Set sample rate (e.g., 2.048 MSPS)
-            result = RtlSdrApi.rtlsdr_set_sample_rate(miDeviceHandle, 2048000)
-
             ' Set center frequency (e.g., 1.6 GHz)
-            result = RtlSdrApi.rtlsdr_set_center_freq(miDeviceHandle, 1600000000)
+            piResult = rtlsdr_set_center_freq(miDeviceHandle, miCenterFrequency)
+            If piResult <> 0 Then
+                clsLogger.Log("RtlSdrApi.MonitorThread", $"Failed to set RTL-SDR center freq ({miCenterFrequency}), result code was {piResult}.")
+                RaiseError("Failed to set RTL-SDR device center frequency.")
+                RaiseStarted(False)
+                Exit Sub
+            End If
 
-            ' Enable manual gain mode (1 = manual, 0 = auto)
-            result = RtlSdrApi.rtlsdr_set_tuner_gain_mode(miDeviceHandle, 1)
+            ' Set gain mode (1 = manual, 0 = auto)
+            piResult = rtlsdr_set_tuner_gain_mode(miDeviceHandle, miGainMode)
+            If piResult <> 0 Then
+                clsLogger.Log("RtlSdrApi.MonitorThread", $"Failed to set RTL-SDR gain mode ({miGainMode}), result code was {piResult}.")
+                RaiseError("Failed to set RTL-SDR device gain mode.")
+                RaiseStarted(False)
+                Exit Sub
+            End If
 
-            ' Set gain manually (try values between 100-500)
-            result = RtlSdrApi.rtlsdr_set_tuner_gain(miDeviceHandle, 300)
-
-            ' Set center frequency
-            RtlSdrApi.rtlsdr_set_center_freq(miDeviceHandle, miCenterFrequency)
+            ' see if using manual gain and set gain value if we are
+            If miGainMode = 1 Then
+                ' Set manual gain value in tenths of dB
+                piResult = RtlSdrApi.rtlsdr_set_tuner_gain(miDeviceHandle, miGainValue)
+                If piResult <> 0 Then
+                    clsLogger.Log("RtlSdrApi.MonitorThread", $"Failed to set RTL-SDR gain value ({miGainValue}), result code was {piResult}.")
+                    RaiseError("Failed to set RTL-SDR device gain mode.")
+                    RaiseStarted(False)
+                    Exit Sub
+                End If
+            End If
 
             mtStartMonitor = DateTime.Now
             miSignalEvents = 0
+            mbRunning = True
             clsLogger.Log("RtlSdrApi.MonitorThread", $"Starting monitor IQ data stream {mtStartMonitor:MM/dd/yyyy HH:mm:ss}.")
+            RaiseStarted(True)
 
             ' Start streaming IQ data
             Dim bytesRead As Integer = 0
+            Dim piLostSignalCount As Integer = 0
 
             While mbRunning
                 Dim tempBuffer(miBufferSize - 1) As Byte ' Temp buffer for this read
-                result = RtlSdrApi.rtlsdr_read_sync(miDeviceHandle, tempBuffer, miBufferSize, bytesRead)
-                If result <> 0 Then
+                piResult = RtlSdrApi.rtlsdr_read_sync(miDeviceHandle, tempBuffer, miBufferSize, bytesRead)
+                If piResult <> 0 OrElse bytesRead <> miBufferSize Then
                     RaiseError("Error reading IQ samples.")
-                    clsLogger.Log("RtlSdrApi.MonitorThread", $"Error reading IQ data buffer, result code was {result}, stopping thread.")
+                    clsLogger.Log("RtlSdrApi.MonitorThread", $"Error reading IQ data buffer, result code was {piResult}, bytes read was {bytesRead}/{miBufferSize}.  Stopping thread.")
                     Exit While
                 End If
 
                 ' Store in UI buffer
                 SyncLock myIqBuffer
+                    If myIqBuffer Is Nothing OrElse myIqBuffer.Length <> miBufferSize Then
+                        myIqBuffer = New Byte(miBufferSize - 1) {} ' Resize buffer if needed
+                    End If
                     Array.Copy(tempBuffer, myIqBuffer, miBufferSize)
                 End SyncLock
 
@@ -277,6 +514,7 @@ Public Class RtlSdrApi
                     ' Signal detected (10 dB above noise floor)
                     If Not mbSignalDetected Then
                         mbSignalDetected = True
+                        piLostSignalCount = 0
                         mtRecordingStartTime = Date.Now
                         miSignalEvents = miSignalEvents + 1
                         clsLogger.Log("RtlSdrApi.MonitorThread", $"🔹 Signal Detected! Strength: {dSignalPower}dB, noise floor: {dNoiseFloor}dB.")
@@ -286,6 +524,8 @@ Public Class RtlSdrApi
                             mqQueue.Clear() ' Reset queue
                         End SyncLock
                         RaiseSignalChange(True)
+                    Else
+                        piLostSignalCount = 0
                     End If
                     ' check of max time
                     If (DateTime.Now - mtRecordingStartTime).TotalSeconds > miMaxRecordingTime Then
@@ -299,15 +539,22 @@ Public Class RtlSdrApi
                     End If
                 Else
                     If mbSignalDetected Then
-                        mbSignalDetected = False
-                        clsLogger.Log("RtlSdrApi.MonitorThread", $"🔻 Signal Lost! Strength: {dSignalPower}dB, noise floor: {dNoiseFloor}dB.")
-                        StopRecording()
+                        piLostSignalCount = piLostSignalCount + 1
+                        If piLostSignalCount >= 3 Then
+                            mbSignalDetected = False
+                            clsLogger.Log("RtlSdrApi.MonitorThread", $"🔻 Signal Lost! Strength: {dSignalPower}dB, noise floor: {dNoiseFloor}dB.")
+                            StopRecording()
+                        End If
+                    Else
+                        ' reset lost count if we've got a signal
+                        piLostSignalCount = 0
                     End If
                 End If
             End While
             Dim ptEnd As Date = DateTime.Now
             Dim poElapsed As TimeSpan = ptEnd.Subtract(mtStartMonitor)
-            clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ending at {ptEnd:MM/dd/yyyy HH:mm:ss} with {IIf(miSignalEvents = 0, "no", miSignalEvents)} signal event{IIf(miSignalEvents > 1, "s", "")}, {modMain.FullDisplayElapsed(poElapsed.TotalSeconds)}")
+            Dim psSignalText As String = If(miSignalEvents = 0, "no", miSignalEvents.ToString()) & " signal event" & If(miSignalEvents > 1, "s", "")
+            clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ending at {ptEnd:MM/dd/yyyy HH:mm:ss} with {psSignalText}, {modMain.FullDisplayElapsed(poElapsed.TotalSeconds)}")
 
         Catch ex As Exception
             clsLogger.LogException("rtlSdrApi.MonitorThread", ex)
@@ -322,6 +569,7 @@ Public Class RtlSdrApi
             If mbSignalDetected Then
                 RaiseSignalChange(False)
             End If
+            RaiseEnded()
             mbSignalDetected = False
             clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ended.")
         End Try
@@ -502,7 +750,21 @@ Public Class RtlSdrApi
         End If
     End Sub
 
+    Private Sub RaiseStarted(ByVal Success As Boolean)
+        If moSyncContext IsNot Nothing Then
+            moSyncContext.Post(Sub(state) RaiseEvent MonitorStarted(Me, Success), Nothing)
+        Else
+            RaiseEvent MonitorStarted(Me, Success)
+        End If
+    End Sub
 
+    Private Sub RaiseEnded()
+        If moSyncContext IsNot Nothing Then
+            moSyncContext.Post(Sub(state) RaiseEvent MonitorEnded(Me), Nothing)
+        Else
+            RaiseEvent MonitorEnded(Me)
+        End If
+    End Sub
 
 
 
