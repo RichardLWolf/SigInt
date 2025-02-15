@@ -283,28 +283,8 @@ Public Class frmMain
         If BitmapWidth <= 0 Or BitmapHeight <= 0 Then Return foSignalBMP ' Return cached bitmap if invalid
 
         Dim piFftSize As Integer = buffer.Length \ 2
-        Dim poComplexData(piFftSize - 1) As Complex
-        Dim pdPowerValues(piFftSize - 1) As Double
+        Dim pdPowerValues() As Double = RtlSdrApi.ConvertRawToPowerLevels(buffer)
 
-        ' Convert raw IQ data to complex values
-        For piIndex As Integer = 0 To buffer.Length - 2 Step 2
-            Dim pdInPhase As Double = (buffer(piIndex) - 127.5) / 127.5
-            Dim pdQuad As Double = (buffer(piIndex + 1) - 127.5) / 127.5
-            poComplexData(piIndex \ 2) = New Complex(pdInPhase, pdQuad)
-        Next
-        ' Perform FFT on the complex data
-        Fourier.Forward(poComplexData, FourierOptions.NoScaling)
-        ' Convert complex to dB values
-        For piIndex = 0 To piFftSize - 1
-            Dim pdRealPart As Double = poComplexData(piIndex).Real
-            Dim pdImagPart As Double = poComplexData(piIndex).Imaginary
-            pdPowerValues(piIndex) = pdRealPart * pdRealPart + pdImagPart * pdImagPart ' Compute power
-            If pdPowerValues(piIndex) = 0 Then
-                pdPowerValues(piIndex) = Double.NegativeInfinity
-            Else
-                pdPowerValues(piIndex) = 10 * Math.Log10(pdPowerValues(piIndex)) - 70
-            End If
-        Next
         ' Apply gaussian smooth to the levels
         pdPowerValues = GaussianSmooth(pdPowerValues, 7)
         ' we now have dB power values for the full buffer now.
@@ -355,7 +335,6 @@ Public Class frmMain
 
             ' Build point array for the waveform
             Dim poGraphPoints(poGraphRect.Width - 1) As Point
-            Dim poGradientPoints(poGraphRect.Width - 1) As Point
             Dim piX As Integer = poGraphRect.Left
 
             For piPixelIndex As Integer = 0 To poGraphRect.Width - 1
@@ -389,9 +368,6 @@ Public Class frmMain
 
                 ' Store the waveform point
                 poGraphPoints(piPixelIndex) = New Point(piX, piY)
-
-                ' Store the gradient bottom point
-                poGradientPoints(piPixelIndex) = New Point(piX, poGraphRect.Bottom)
 
                 ' Move X position
                 piX += 1
@@ -441,23 +417,46 @@ Public Class frmMain
             Next
 
             ' draw red center frequency line
-            Dim piCenterLine As Integer = poGraphPoints(poGradientPoints.Count \ 2).X
+            Dim piCenterLine As Integer = poGraphPoints(poGraphPoints.Count \ 2).X
             poGraphics.DrawLine(poCenterFreqPen, piCenterLine, poGraphRect.Top, piCenterLine, poGraphRect.Bottom)
 
+            ' Draw recording text 
+            If foSDR.IsRecording Then
+                poGraphics.DrawString($"* RECORDING * {foSDR.RecordingElapsed.Hours:D2}:{foSDR.RecordingElapsed.Minutes:D2}:{foSDR.RecordingElapsed.Seconds:D2}", New Font(poLabelFont, FontStyle.Bold), New SolidBrush(Color.Red), poGraphRect.Left, 3)
+            End If
+
             ' Draw signal waveform now, start with gradient under waveform
-            ' Combine waveform and bottom points to form the gradient fill area
+            ' Clone the graph points for gradient fill
+            Dim poGradientPoints() As Point = DirectCast(poGraphPoints.Clone(), Point())
+            ' Set all gradient points to graph bottom
+            For i As Integer = 0 To poGradientPoints.Length - 1
+                poGradientPoints(i).Y = poGraphRect.Bottom - 1
+            Next
+
+            ' Find the highest point in the waveform
+            Dim piYMin As Integer = poGraphPoints.Min(Function(p) p.Y) ' Highest peak
+
+            ' Define gradient range from peak signal down to the bottom of the graph
+            Dim poGradientRect As New Rectangle(poGraphRect.Left, piYMin, poGraphRect.Width, Math.Max(1, poGraphRect.Bottom - piYMin))
+
+            ' Build the gradient path (mirroring poGraphPoints)
             Dim poGradientPath As New Drawing2D.GraphicsPath()
             poGradientPath.AddLines(poGraphPoints)
-            poGradientPath.AddLines(poGradientPoints.Reverse().ToArray()) ' Close the path
-            ' Define gradient fill (fades from blue to black)
-            Using poGradientBrush As New Drawing2D.LinearGradientBrush(poGraphRect, Color.Blue, Color.Transparent, Drawing2D.LinearGradientMode.Vertical)
+            poGradientPath.AddLines(poGraphPoints.Select(Function(p) New Point(p.X, poGraphRect.Bottom - 1)).Reverse().ToArray()) ' Close the path
+            poGradientPath.CloseFigure() ' Ensure the path is closed properly
+
+            ' Define gradient fill (fades from blue to transparent, now within signal area)
+            Using poGradientBrush As New Drawing2D.LinearGradientBrush(poGradientRect, Color.Blue, Color.Transparent, Drawing2D.LinearGradientMode.Vertical)
                 ' Fill the area under the waveform
                 poGraphics.FillPath(poGradientBrush, poGradientPath)
             End Using
+
+
+
+
             ' Draw actual waveform
             Dim poSmoothPath As New Drawing2D.GraphicsPath()
             poSmoothPath.AddCurve(poGraphPoints, 0.75F) ' Smooth tension factor
-
             ' Draw the smoothed waveform
             Using poWavePen As New Pen(Color.White, 1)
                 poGraphics.DrawPath(poWavePen, poSmoothPath)
