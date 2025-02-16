@@ -300,7 +300,7 @@ Public Class frmPlayback
 
     Private Sub sldZoom_ValueChanged(sender As Object, e As EventArgs) Handles sldZoom.ValueChanged
         If foRenderer IsNot Nothing Then
-            foRenderer.ZoomFactor = (sldZoom.Value * 0.009D) + 0.1D ' Convert range 0-100 → 0.1-1.0
+            foRenderer.ZoomFactor = sldZoom.Value * 0.009D + 0.1D ' Convert range 0-100 → 0.1-1.0
         End If
     End Sub
 
@@ -525,9 +525,6 @@ Public Class frmPlayback
             lvwArchives.Refresh()
         End If
     End Sub
-
-
-
 
 
 End Class

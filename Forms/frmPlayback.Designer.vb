@@ -34,11 +34,6 @@ Partial Class frmPlayback
         splRight = New SplitContainer()
         hsbSeekPos = New CustomSeekbar()
         panSignalCtrls = New Panel()
-        panSignal = New Panel()
-        Panel1 = New Panel()
-        Label8 = New Label()
-        panWaterfall = New Panel()
-        ToolTip1 = New ToolTip(components)
         panSignalSliders = New Panel()
         Label3 = New Label()
         lblDiv = New Label()
@@ -48,6 +43,12 @@ Partial Class frmPlayback
         lblOffset = New Label()
         Label2 = New Label()
         Label1 = New Label()
+        panSignal = New Panel()
+        Panel1 = New Panel()
+        sldContrast = New CustomSlider()
+        Label8 = New Label()
+        panWaterfall = New Panel()
+        ToolTip1 = New ToolTip(components)
         panLeft.SuspendLayout()
         CType(picPause, ComponentModel.ISupportInitialize).BeginInit()
         CType(picArchiveInfo, ComponentModel.ISupportInitialize).BeginInit()
@@ -58,8 +59,8 @@ Partial Class frmPlayback
         splRight.Panel2.SuspendLayout()
         splRight.SuspendLayout()
         panSignalCtrls.SuspendLayout()
-        Panel1.SuspendLayout()
         panSignalSliders.SuspendLayout()
+        Panel1.SuspendLayout()
         SuspendLayout()
         ' 
         ' panLeft
@@ -73,7 +74,7 @@ Partial Class frmPlayback
         panLeft.Dock = DockStyle.Left
         panLeft.Location = New Point(0, 0)
         panLeft.Name = "panLeft"
-        panLeft.Size = New Size(304, 534)
+        panLeft.Size = New Size(304, 678)
         panLeft.TabIndex = 0
         ' 
         ' picPause
@@ -91,7 +92,7 @@ Partial Class frmPlayback
         ' 
         picArchiveInfo.Location = New Point(12, 268)
         picArchiveInfo.Name = "picArchiveInfo"
-        picArchiveInfo.Size = New Size(286, 254)
+        picArchiveInfo.Size = New Size(275, 263)
         picArchiveInfo.TabIndex = 26
         picArchiveInfo.TabStop = False
         ' 
@@ -154,18 +155,18 @@ Partial Class frmPlayback
         ' 
         splRight.Panel2.Controls.Add(Panel1)
         splRight.Panel2.Controls.Add(panWaterfall)
-        splRight.Size = New Size(725, 534)
-        splRight.SplitterDistance = 237
+        splRight.Size = New Size(962, 678)
+        splRight.SplitterDistance = 300
         splRight.TabIndex = 1
         ' 
         ' hsbSeekPos
         ' 
         hsbSeekPos.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
-        hsbSeekPos.Location = New Point(6, 214)
+        hsbSeekPos.Location = New Point(6, 277)
         hsbSeekPos.Maximum = 100
         hsbSeekPos.Minimum = 0
         hsbSeekPos.Name = "hsbSeekPos"
-        hsbSeekPos.Size = New Size(632, 20)
+        hsbSeekPos.Size = New Size(869, 20)
         hsbSeekPos.TabIndex = 5
         hsbSeekPos.Value = 0
         ' 
@@ -175,50 +176,10 @@ Partial Class frmPlayback
         panSignalCtrls.AutoScroll = True
         panSignalCtrls.AutoSizeMode = AutoSizeMode.GrowAndShrink
         panSignalCtrls.Controls.Add(panSignalSliders)
-        panSignalCtrls.Location = New Point(644, 3)
+        panSignalCtrls.Location = New Point(881, 3)
         panSignalCtrls.Name = "panSignalCtrls"
-        panSignalCtrls.Size = New Size(78, 226)
+        panSignalCtrls.Size = New Size(78, 289)
         panSignalCtrls.TabIndex = 4
-        ' 
-        ' panSignal
-        ' 
-        panSignal.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
-        panSignal.BackColor = Color.Black
-        panSignal.Location = New Point(0, 0)
-        panSignal.Name = "panSignal"
-        panSignal.Size = New Size(642, 209)
-        panSignal.TabIndex = 3
-        ' 
-        ' Panel1
-        ' 
-        Panel1.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Right
-        Panel1.Controls.Add(Label8)
-        Panel1.Location = New Point(650, 3)
-        Panel1.Name = "Panel1"
-        Panel1.Size = New Size(72, 287)
-        Panel1.TabIndex = 5
-        ' 
-        ' Label8
-        ' 
-        Label8.AutoSize = True
-        Label8.BackColor = Color.Transparent
-        Label8.Font = New Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
-        Label8.ForeColor = Color.White
-        Label8.Location = New Point(3, 53)
-        Label8.Name = "Label8"
-        Label8.Size = New Size(69, 21)
-        Label8.TabIndex = 30
-        Label8.Text = "Contrast"
-        Label8.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' panWaterfall
-        ' 
-        panWaterfall.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
-        panWaterfall.BackColor = Color.Black
-        panWaterfall.Location = New Point(0, 0)
-        panWaterfall.Name = "panWaterfall"
-        panWaterfall.Size = New Size(642, 287)
-        panWaterfall.TabIndex = 4
         ' 
         ' panSignalSliders
         ' 
@@ -348,12 +309,72 @@ Partial Class frmPlayback
         Label1.TextAlign = ContentAlignment.MiddleCenter
         ToolTip1.SetToolTip(Label1, "Zoom level 100%=full spectrum, 10%=small spectrum")
         ' 
+        ' panSignal
+        ' 
+        panSignal.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
+        panSignal.BackColor = Color.Black
+        panSignal.Location = New Point(0, 0)
+        panSignal.Name = "panSignal"
+        panSignal.Size = New Size(879, 278)
+        panSignal.TabIndex = 3
+        ' 
+        ' Panel1
+        ' 
+        Panel1.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Right
+        Panel1.Controls.Add(sldContrast)
+        Panel1.Controls.Add(Label8)
+        Panel1.Location = New Point(881, 3)
+        Panel1.Name = "Panel1"
+        Panel1.Size = New Size(78, 368)
+        Panel1.TabIndex = 5
+        ' 
+        ' sldContrast
+        ' 
+        sldContrast.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldContrast.KnobColor = Color.DodgerBlue
+        sldContrast.Location = New Point(9, 45)
+        sldContrast.Maximum = 100
+        sldContrast.Minimum = 0
+        sldContrast.Name = "sldContrast"
+        sldContrast.Size = New Size(60, 219)
+        sldContrast.TabIndex = 31
+        sldContrast.TextColor = Color.White
+        sldContrast.TickColor = Color.LightGray
+        sldContrast.TickSpacing = 10
+        ToolTip1.SetToolTip(sldContrast, "Zoom level 100%=full spectrum, 10%=small spectrum")
+        sldContrast.TrackColor = Color.Gray
+        sldContrast.TrackHighlightColor = Color.LightGray
+        sldContrast.Value = 0
+        sldContrast.Vertical = True
+        ' 
+        ' Label8
+        ' 
+        Label8.AutoSize = True
+        Label8.BackColor = Color.Transparent
+        Label8.Font = New Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        Label8.ForeColor = Color.White
+        Label8.Location = New Point(5, 21)
+        Label8.Name = "Label8"
+        Label8.Size = New Size(69, 21)
+        Label8.TabIndex = 30
+        Label8.Text = "Contrast"
+        Label8.TextAlign = ContentAlignment.MiddleCenter
+        ' 
+        ' panWaterfall
+        ' 
+        panWaterfall.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
+        panWaterfall.BackColor = Color.Black
+        panWaterfall.Location = New Point(0, 0)
+        panWaterfall.Name = "panWaterfall"
+        panWaterfall.Size = New Size(879, 368)
+        panWaterfall.TabIndex = 4
+        ' 
         ' frmPlayback
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        ClientSize = New Size(1029, 534)
+        ClientSize = New Size(1266, 678)
         Controls.Add(splRight)
         Controls.Add(panLeft)
         Font = New Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
@@ -374,10 +395,10 @@ Partial Class frmPlayback
         CType(splRight, ComponentModel.ISupportInitialize).EndInit()
         splRight.ResumeLayout(False)
         panSignalCtrls.ResumeLayout(False)
-        Panel1.ResumeLayout(False)
-        Panel1.PerformLayout()
         panSignalSliders.ResumeLayout(False)
         panSignalSliders.PerformLayout()
+        Panel1.ResumeLayout(False)
+        Panel1.PerformLayout()
         ResumeLayout(False)
     End Sub
 
@@ -388,7 +409,6 @@ Partial Class frmPlayback
     Friend WithEvents picStartStop As PictureBox
     Friend WithEvents lvwArchives As ListView
     Friend WithEvents Panel1 As Panel
-    Friend WithEvents sldContrast As CustomSlider
     Friend WithEvents Label8 As Label
     Friend WithEvents panWaterfall As Panel
     Friend WithEvents picRefresh As PictureBox
@@ -406,4 +426,5 @@ Partial Class frmPlayback
     Friend WithEvents lblOffset As Label
     Friend WithEvents Label2 As Label
     Friend WithEvents Label1 As Label
+    Friend WithEvents sldContrast As CustomSlider
 End Class
