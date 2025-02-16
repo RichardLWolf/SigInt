@@ -1,9 +1,9 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class frmPlayback
     Inherits System.Windows.Forms.Form
 
     'Form overrides dispose to clean up the component list.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -20,7 +20,7 @@ Partial Class frmPlayback
     'NOTE: The following procedure is required by the Windows Form Designer
     'It can be modified using the Windows Form Designer.  
     'Do not modify it using the code editor.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmPlayback))
@@ -32,8 +32,13 @@ Partial Class frmPlayback
         lvwArchives = New ListView()
         picStartStop = New PictureBox()
         splRight = New SplitContainer()
-        hsbSeekPos = New HScrollBar()
+        hsbSeekPos = New CustomSeekbar()
         panSignalCtrls = New Panel()
+        panSignal = New Panel()
+        Panel1 = New Panel()
+        Label8 = New Label()
+        panWaterfall = New Panel()
+        ToolTip1 = New ToolTip(components)
         panSignalSliders = New Panel()
         Label3 = New Label()
         lblDiv = New Label()
@@ -43,12 +48,6 @@ Partial Class frmPlayback
         lblOffset = New Label()
         Label2 = New Label()
         Label1 = New Label()
-        panSignal = New Panel()
-        Panel1 = New Panel()
-        sldContrast = New CustomSlider()
-        Label8 = New Label()
-        panWaterfall = New Panel()
-        ToolTip1 = New ToolTip(components)
         panLeft.SuspendLayout()
         CType(picPause, ComponentModel.ISupportInitialize).BeginInit()
         CType(picArchiveInfo, ComponentModel.ISupportInitialize).BeginInit()
@@ -59,8 +58,8 @@ Partial Class frmPlayback
         splRight.Panel2.SuspendLayout()
         splRight.SuspendLayout()
         panSignalCtrls.SuspendLayout()
-        panSignalSliders.SuspendLayout()
         Panel1.SuspendLayout()
+        panSignalSliders.SuspendLayout()
         SuspendLayout()
         ' 
         ' panLeft
@@ -162,10 +161,13 @@ Partial Class frmPlayback
         ' hsbSeekPos
         ' 
         hsbSeekPos.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
-        hsbSeekPos.Location = New Point(0, 212)
+        hsbSeekPos.Location = New Point(6, 214)
+        hsbSeekPos.Maximum = 100
+        hsbSeekPos.Minimum = 0
         hsbSeekPos.Name = "hsbSeekPos"
-        hsbSeekPos.Size = New Size(642, 17)
-        hsbSeekPos.TabIndex = 23
+        hsbSeekPos.Size = New Size(632, 20)
+        hsbSeekPos.TabIndex = 5
+        hsbSeekPos.Value = 0
         ' 
         ' panSignalCtrls
         ' 
@@ -177,127 +179,6 @@ Partial Class frmPlayback
         panSignalCtrls.Name = "panSignalCtrls"
         panSignalCtrls.Size = New Size(78, 226)
         panSignalCtrls.TabIndex = 4
-        ' 
-        ' panSignalSliders
-        ' 
-        panSignalSliders.Controls.Add(Label3)
-        panSignalSliders.Controls.Add(lblDiv)
-        panSignalSliders.Controls.Add(sldOffset)
-        panSignalSliders.Controls.Add(sldRange)
-        panSignalSliders.Controls.Add(sldZoom)
-        panSignalSliders.Controls.Add(lblOffset)
-        panSignalSliders.Controls.Add(Label2)
-        panSignalSliders.Controls.Add(Label1)
-        panSignalSliders.Location = New Point(3, 0)
-        panSignalSliders.Name = "panSignalSliders"
-        panSignalSliders.Size = New Size(57, 464)
-        panSignalSliders.TabIndex = 0
-        ' 
-        ' Label3
-        ' 
-        Label3.BackColor = Color.Silver
-        Label3.Location = New Point(0, 305)
-        Label3.Name = "Label3"
-        Label3.Size = New Size(56, 3)
-        Label3.TabIndex = 37
-        ' 
-        ' lblDiv
-        ' 
-        lblDiv.BackColor = Color.Silver
-        lblDiv.Location = New Point(0, 149)
-        lblDiv.Name = "lblDiv"
-        lblDiv.Size = New Size(56, 3)
-        lblDiv.TabIndex = 36
-        ' 
-        ' sldOffset
-        ' 
-        sldOffset.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldOffset.KnobColor = Color.DodgerBlue
-        sldOffset.Location = New Point(3, 339)
-        sldOffset.Maximum = 50
-        sldOffset.Minimum = -100
-        sldOffset.Name = "sldOffset"
-        sldOffset.Size = New Size(50, 120)
-        sldOffset.TabIndex = 35
-        sldOffset.TextColor = Color.White
-        sldOffset.TickColor = Color.LightGray
-        sldOffset.TickSpacing = 10
-        sldOffset.TrackColor = Color.Gray
-        sldOffset.TrackHighlightColor = Color.LightGray
-        sldOffset.Value = -20
-        sldOffset.Vertical = True
-        ' 
-        ' sldRange
-        ' 
-        sldRange.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldRange.KnobColor = Color.DodgerBlue
-        sldRange.Location = New Point(3, 179)
-        sldRange.Maximum = 150
-        sldRange.Minimum = 10
-        sldRange.Name = "sldRange"
-        sldRange.Size = New Size(50, 120)
-        sldRange.TabIndex = 34
-        sldRange.TextColor = Color.White
-        sldRange.TickColor = Color.LightGray
-        sldRange.TickSpacing = 10
-        sldRange.TrackColor = Color.Gray
-        sldRange.TrackHighlightColor = Color.LightGray
-        sldRange.Value = 100
-        sldRange.Vertical = True
-        ' 
-        ' sldZoom
-        ' 
-        sldZoom.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldZoom.KnobColor = Color.DodgerBlue
-        sldZoom.Location = New Point(3, 24)
-        sldZoom.Maximum = 100
-        sldZoom.Minimum = 0
-        sldZoom.Name = "sldZoom"
-        sldZoom.Size = New Size(50, 120)
-        sldZoom.TabIndex = 33
-        sldZoom.TextColor = Color.White
-        sldZoom.TickColor = Color.LightGray
-        sldZoom.TickSpacing = 10
-        sldZoom.TrackColor = Color.Gray
-        sldZoom.TrackHighlightColor = Color.LightGray
-        sldZoom.Value = 0
-        sldZoom.Vertical = True
-        ' 
-        ' lblOffset
-        ' 
-        lblOffset.AutoSize = True
-        lblOffset.BackColor = Color.Transparent
-        lblOffset.ForeColor = Color.White
-        lblOffset.Location = New Point(2, 315)
-        lblOffset.Name = "lblOffset"
-        lblOffset.Size = New Size(52, 21)
-        lblOffset.TabIndex = 32
-        lblOffset.Text = "Offset"
-        lblOffset.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' Label2
-        ' 
-        Label2.AutoSize = True
-        Label2.BackColor = Color.Transparent
-        Label2.ForeColor = Color.White
-        Label2.Location = New Point(1, 155)
-        Label2.Name = "Label2"
-        Label2.Size = New Size(54, 21)
-        Label2.TabIndex = 31
-        Label2.Text = "Range"
-        Label2.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' Label1
-        ' 
-        Label1.AutoSize = True
-        Label1.BackColor = Color.Transparent
-        Label1.ForeColor = Color.White
-        Label1.Location = New Point(3, 0)
-        Label1.Name = "Label1"
-        Label1.Size = New Size(51, 21)
-        Label1.TabIndex = 30
-        Label1.Text = "Zoom"
-        Label1.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' panSignal
         ' 
@@ -311,30 +192,11 @@ Partial Class frmPlayback
         ' Panel1
         ' 
         Panel1.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Right
-        Panel1.Controls.Add(sldContrast)
         Panel1.Controls.Add(Label8)
         Panel1.Location = New Point(650, 3)
         Panel1.Name = "Panel1"
         Panel1.Size = New Size(72, 287)
         Panel1.TabIndex = 5
-        ' 
-        ' sldContrast
-        ' 
-        sldContrast.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldContrast.KnobColor = Color.DodgerBlue
-        sldContrast.Location = New Point(3, 77)
-        sldContrast.Maximum = 100
-        sldContrast.Minimum = 0
-        sldContrast.Name = "sldContrast"
-        sldContrast.Size = New Size(66, 120)
-        sldContrast.TabIndex = 33
-        sldContrast.TextColor = Color.White
-        sldContrast.TickColor = Color.LightGray
-        sldContrast.TickSpacing = 10
-        sldContrast.TrackColor = Color.Gray
-        sldContrast.TrackHighlightColor = Color.LightGray
-        sldContrast.Value = 0
-        sldContrast.Vertical = True
         ' 
         ' Label8
         ' 
@@ -357,6 +219,134 @@ Partial Class frmPlayback
         panWaterfall.Name = "panWaterfall"
         panWaterfall.Size = New Size(642, 287)
         panWaterfall.TabIndex = 4
+        ' 
+        ' panSignalSliders
+        ' 
+        panSignalSliders.BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        panSignalSliders.Controls.Add(Label3)
+        panSignalSliders.Controls.Add(lblDiv)
+        panSignalSliders.Controls.Add(sldOffset)
+        panSignalSliders.Controls.Add(sldRange)
+        panSignalSliders.Controls.Add(sldZoom)
+        panSignalSliders.Controls.Add(lblOffset)
+        panSignalSliders.Controls.Add(Label2)
+        panSignalSliders.Controls.Add(Label1)
+        panSignalSliders.Location = New Point(0, 0)
+        panSignalSliders.Name = "panSignalSliders"
+        panSignalSliders.Size = New Size(59, 475)
+        panSignalSliders.TabIndex = 21
+        ' 
+        ' Label3
+        ' 
+        Label3.BackColor = Color.Silver
+        Label3.Location = New Point(1, 305)
+        Label3.Name = "Label3"
+        Label3.Size = New Size(56, 3)
+        Label3.TabIndex = 29
+        ' 
+        ' lblDiv
+        ' 
+        lblDiv.BackColor = Color.Silver
+        lblDiv.Location = New Point(1, 149)
+        lblDiv.Name = "lblDiv"
+        lblDiv.Size = New Size(56, 3)
+        lblDiv.TabIndex = 28
+        ' 
+        ' sldOffset
+        ' 
+        sldOffset.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldOffset.KnobColor = Color.DodgerBlue
+        sldOffset.Location = New Point(4, 339)
+        sldOffset.Maximum = 50
+        sldOffset.Minimum = -100
+        sldOffset.Name = "sldOffset"
+        sldOffset.Size = New Size(50, 120)
+        sldOffset.TabIndex = 27
+        sldOffset.TextColor = Color.White
+        sldOffset.TickColor = Color.LightGray
+        sldOffset.TickSpacing = 10
+        ToolTip1.SetToolTip(sldOffset, "Y-Axis dB sttarting offset")
+        sldOffset.TrackColor = Color.Gray
+        sldOffset.TrackHighlightColor = Color.LightGray
+        sldOffset.Value = -20
+        sldOffset.Vertical = True
+        ' 
+        ' sldRange
+        ' 
+        sldRange.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldRange.KnobColor = Color.DodgerBlue
+        sldRange.Location = New Point(4, 179)
+        sldRange.Maximum = 150
+        sldRange.Minimum = 10
+        sldRange.Name = "sldRange"
+        sldRange.Size = New Size(50, 120)
+        sldRange.TabIndex = 26
+        sldRange.TextColor = Color.White
+        sldRange.TickColor = Color.LightGray
+        sldRange.TickSpacing = 10
+        ToolTip1.SetToolTip(sldRange, "dB range (Y-axis) to display")
+        sldRange.TrackColor = Color.Gray
+        sldRange.TrackHighlightColor = Color.LightGray
+        sldRange.Value = 100
+        sldRange.Vertical = True
+        ' 
+        ' sldZoom
+        ' 
+        sldZoom.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldZoom.KnobColor = Color.DodgerBlue
+        sldZoom.Location = New Point(4, 24)
+        sldZoom.Maximum = 100
+        sldZoom.Minimum = 0
+        sldZoom.Name = "sldZoom"
+        sldZoom.Size = New Size(50, 120)
+        sldZoom.TabIndex = 25
+        sldZoom.TextColor = Color.White
+        sldZoom.TickColor = Color.LightGray
+        sldZoom.TickSpacing = 10
+        ToolTip1.SetToolTip(sldZoom, "Zoom level 100%=full spectrum, 10%=small spectrum")
+        sldZoom.TrackColor = Color.Gray
+        sldZoom.TrackHighlightColor = Color.LightGray
+        sldZoom.Value = 0
+        sldZoom.Vertical = True
+        ' 
+        ' lblOffset
+        ' 
+        lblOffset.AutoSize = True
+        lblOffset.BackColor = Color.Transparent
+        lblOffset.ForeColor = Color.White
+        lblOffset.Location = New Point(3, 315)
+        lblOffset.Name = "lblOffset"
+        lblOffset.Size = New Size(52, 21)
+        lblOffset.TabIndex = 24
+        lblOffset.Text = "Offset"
+        lblOffset.TextAlign = ContentAlignment.MiddleCenter
+        ToolTip1.SetToolTip(lblOffset, "Y-Axis dB sttarting offset")
+        ' 
+        ' Label2
+        ' 
+        Label2.AutoSize = True
+        Label2.BackColor = Color.Transparent
+        Label2.ForeColor = Color.White
+        Label2.Location = New Point(2, 155)
+        Label2.Name = "Label2"
+        Label2.Size = New Size(54, 21)
+        Label2.TabIndex = 22
+        Label2.Text = "Range"
+        Label2.TextAlign = ContentAlignment.MiddleCenter
+        ToolTip1.SetToolTip(Label2, "dB range (Y-axis) to display")
+        ' 
+        ' Label1
+        ' 
+        Label1.AutoSize = True
+        Label1.BackColor = Color.Transparent
+        Label1.ForeColor = Color.White
+        Label1.Location = New Point(4, 0)
+        Label1.Name = "Label1"
+        Label1.Size = New Size(51, 21)
+        Label1.TabIndex = 20
+        Label1.Text = "Zoom"
+        Label1.TextAlign = ContentAlignment.MiddleCenter
+        ToolTip1.SetToolTip(Label1, "Zoom level 100%=full spectrum, 10%=small spectrum")
         ' 
         ' frmPlayback
         ' 
@@ -384,27 +374,17 @@ Partial Class frmPlayback
         CType(splRight, ComponentModel.ISupportInitialize).EndInit()
         splRight.ResumeLayout(False)
         panSignalCtrls.ResumeLayout(False)
-        panSignalSliders.ResumeLayout(False)
-        panSignalSliders.PerformLayout()
         Panel1.ResumeLayout(False)
         Panel1.PerformLayout()
+        panSignalSliders.ResumeLayout(False)
+        panSignalSliders.PerformLayout()
         ResumeLayout(False)
     End Sub
 
     Friend WithEvents panLeft As Panel
     Friend WithEvents splRight As SplitContainer
     Friend WithEvents panSignalCtrls As Panel
-    Friend WithEvents panSignalSliders As Panel
     Friend WithEvents panSignal As Panel
-    Friend WithEvents Label3 As Label
-    Friend WithEvents lblDiv As Label
-    Friend WithEvents sldOffset As CustomSlider
-    Friend WithEvents sldRange As CustomSlider
-    Friend WithEvents sldZoom As CustomSlider
-    Friend WithEvents lblOffset As Label
-    Friend WithEvents Label2 As Label
-    Friend WithEvents Label1 As Label
-    Friend WithEvents hsbSeekPos As HScrollBar
     Friend WithEvents picStartStop As PictureBox
     Friend WithEvents lvwArchives As ListView
     Friend WithEvents Panel1 As Panel
@@ -416,4 +396,14 @@ Partial Class frmPlayback
     Friend WithEvents picArchiveInfo As PictureBox
     Friend WithEvents ToolTip1 As ToolTip
     Friend WithEvents picPause As PictureBox
+    Friend WithEvents hsbSeekPos As CustomSeekbar
+    Friend WithEvents panSignalSliders As Panel
+    Friend WithEvents Label3 As Label
+    Friend WithEvents lblDiv As Label
+    Friend WithEvents sldOffset As CustomSlider
+    Friend WithEvents sldRange As CustomSlider
+    Friend WithEvents sldZoom As CustomSlider
+    Friend WithEvents lblOffset As Label
+    Friend WithEvents Label2 As Label
+    Friend WithEvents Label1 As Label
 End Class

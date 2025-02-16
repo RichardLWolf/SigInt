@@ -28,6 +28,16 @@ Module modMain
         End Select
     End Function
 
+    Public Function FormatBytes(ByVal plBytes As Long) As String
+        Dim psSuffixes() As String = {"B", "KB", "MB", "GB"}
+        Dim pdSize As Double = plBytes
+        Dim piIndex As Integer = 0
+        While pdSize >= 1024 AndAlso piIndex < psSuffixes.Length - 1
+            pdSize /= 1024
+            piIndex += 1
+        End While
+        Return $"{pdSize:0.##} {psSuffixes(piIndex)}"
+    End Function
 
     Public Function FullDisplayElapsed(ByVal TotalSeconds As Long) As String
         Dim piDays As Integer
