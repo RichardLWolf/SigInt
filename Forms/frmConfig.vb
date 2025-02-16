@@ -67,6 +67,8 @@
         cboScale.SelectedIndex = 0
         lblFreqRange.Text = $"({modMain.FormatHertz(fiMinFreq)} – {modMain.FormatHertz(fiMaxFreq)})"
         txtFrequency.Text = String.Format("{0:#########0}", fiCenterFreq)
+        ConvertFrequency()
+
 
         If foGains.Count > 0 Then
             foGains.Sort()

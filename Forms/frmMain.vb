@@ -252,8 +252,7 @@ Public Class frmMain
 
     Private Sub sldZoom_ValueChanged(sender As Object, e As EventArgs) Handles sldZoom.ValueChanged
         If foBmpRend IsNot Nothing Then
-            '     convert to zoom factor
-            foBmpRend.ZoomFactor = (sldZoom.Value * 0.009D) + 0.1D ' Convert range 0-100 → 1.0-0.1
+            foBmpRend.ZoomFactor = (sldZoom.Value * 0.009D) + 0.1D ' Convert range 0-100 → 0.1-1.0
         End If
     End Sub
 

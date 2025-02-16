@@ -203,6 +203,9 @@ Public Class clsRenderWaveform
             ' how to render
             poGraphics.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
             poGraphics.TextRenderingHint = Drawing.Text.TextRenderingHint.AntiAliasGridFit
+            poGraphics.CompositingQuality = Drawing2D.CompositingQuality.HighQuality
+            poGraphics.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBicubic
+
             poGraphics.Clear(Color.Black)
 
             ' Define fonts and brushes

@@ -542,6 +542,7 @@ Public Class RtlSdrApi
             Dim piLostSignalCount As Integer = 0
             Dim ptMonitorStart As Date = DateTime.Now
             Dim ptLastRecording As Date = DateTime.MinValue
+            Dim piDetectCount As Integer = 0
             mbSignalDetected = False
 
             While mbRunning
@@ -574,8 +575,13 @@ Public Class RtlSdrApi
                 Dim dNoiseFloor As Double = CalculateNoiseFloor(pdPowerLevels) ' Get noise level
                 Dim dSignalPower As Double = CalculatePowerAtFrequency(pdPowerLevels) ' Get signal power at center frequency
                 ' Detect signal if power is significantly above noise floor and we've been buffering for at least 3 seconds
-                ' Debug.WriteLine($"Noise floor is {dNoiseFloor}dB and Center signal is {dSignalPower}db.")
-                If dSignalPower > (dNoiseFloor + 10) AndAlso Now.Subtract(ptMonitorStart).TotalSeconds > 3 Then
+                Debug.WriteLine($"Noise floor is {dNoiseFloor}dB and Center signal is {dSignalPower}db.")
+                If dSignalPower > (dNoiseFloor + 15) AndAlso Now.Subtract(ptMonitorStart).TotalSeconds > 3 Then
+                    piDetectCount = piDetectCount + 1
+                Else
+                    piDetectCount = 0
+                End If
+                If piDetectCount > 3 OrElse mbSignalDetected Then
                     Dim ptNow As DateTime = DateTime.Now
                     ' Ensure a minimum delay between recordings (e.g., 10 minutes)
                     If (ptLastRecording = DateTime.MinValue) OrElse (ptNow.Subtract(ptLastRecording).TotalMinutes >= mdMinimumEventWindow) Then
@@ -753,7 +759,7 @@ Public Class RtlSdrApi
         Dim dFreqResolution As Double = miSampleRate / iFftBins
 
         ' Correct bin index for center frequency
-        Dim iCenterBin As Integer = CInt(Math.Round((miCenterFrequency - (miCenterFrequency - (miSampleRate / 2))) / dFreqResolution))
+        Dim iCenterBin As Integer = iFftBins \ 2  'CInt(Math.Round((miCenterFrequency - (miCenterFrequency - (miSampleRate / 2))) / dFreqResolution))
 
         ' Ensure the calculated bin is within valid bounds
         If iCenterBin < 0 OrElse iCenterBin >= iFftBins Then
@@ -776,9 +782,20 @@ Public Class RtlSdrApi
         ' Prevent division by zero
         If iBinsUsed = 0 Then Return Double.NegativeInfinity
 
-        ' Convert back to dB scale
-        Dim dAvgPower As Double = 10 * Math.Log10(dPowerSum / iBinsUsed)
+        Dim dSelectedBins As Double() = dPowerLevels.Skip(iCenterBin - miSignalWindow).Take(2 * miSignalWindow + 1).ToArray()
+        Dim dAvgPower As Double = Median(dSelectedBins)
+
         Return dAvgPower
+    End Function
+
+    Private Function Median(dValues As Double()) As Double
+        Array.Sort(dValues)
+        Dim iMid As Integer = dValues.Length \ 2
+        If dValues.Length Mod 2 = 0 Then
+            Return (dValues(iMid - 1) + dValues(iMid)) / 2
+        Else
+            Return dValues(iMid)
+        End If
     End Function
 
 
