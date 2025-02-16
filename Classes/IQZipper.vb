@@ -5,6 +5,7 @@ Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
 
 Public Class IQZipper
+    Implements IDisposable
 
     Public Structure IQArchiveMetadata
         Public FileName As String
@@ -31,6 +32,7 @@ Public Class IQZipper
     Private miDurationSeconds As Double
     Private msAppVer As String
     Private myIQData As List(Of Byte())
+    Private disposedValue As Boolean
 
 #Region "  Public Properties "
     Public Property ArchiveFile As String
@@ -125,7 +127,7 @@ Public Class IQZipper
             Dim poFileList As New List(Of String)
             For Each psFile As String In Directory.GetFiles(sArchiveFolder, "IQ_Record_*.zip")
                 If IsValidRecordingFile(psFile) Then
-                    poFileList.Add(Path.GetFileName(psFile))
+                    poFileList.Add(psFile)
                 End If
             Next
             ' read the metadata from each file
@@ -317,4 +319,27 @@ Public Class IQZipper
         Return -1 ' File not found
     End Function
 
+    Protected Overridable Sub Dispose(disposing As Boolean)
+        If Not disposedValue Then
+            If disposing Then
+                ' TODO: dispose managed state (managed objects)
+            End If
+
+            myIQData.Clear()
+            disposedValue = True
+        End If
+    End Sub
+
+    ' ' TODO: override finalizer only if 'Dispose(disposing As Boolean)' has code to free unmanaged resources
+    ' Protected Overrides Sub Finalize()
+    '     ' Do not change this code. Put cleanup code in 'Dispose(disposing As Boolean)' method
+    '     Dispose(disposing:=False)
+    '     MyBase.Finalize()
+    ' End Sub
+
+    Public Sub Dispose() Implements IDisposable.Dispose
+        ' Do not change this code. Put cleanup code in 'Dispose(disposing As Boolean)' method
+        Dispose(disposing:=True)
+        GC.SuppressFinalize(Me)
+    End Sub
 End Class

@@ -198,6 +198,23 @@ Public Class frmMain
         End If
     End Sub
 
+    Private Sub picPlayback_Click(sender As Object, e As EventArgs) Handles picPlayback.Click
+        Using poFrm As New frmPlayback
+            poFrm.ReadyForm()
+            poFrm.ShowDialog(Me)
+        End Using
+    End Sub
+
+    Private Sub picPlayback_MouseEnter(sender As Object, e As EventArgs) Handles picPlayback.MouseEnter
+        picPlayback.Image = My.Resources.microphone2_blue
+    End Sub
+
+    Private Sub picPlayback_MouseLeave(sender As Object, e As EventArgs) Handles picPlayback.MouseLeave
+        picPlayback.Image = My.Resources.microphone2
+    End Sub
+
+
+
     Private Sub picStartStop_Click(sender As Object, e As EventArgs) Handles picStartStop.MouseClick
         If cboDeviceList.SelectedItem IsNot Nothing Then
             Dim poItem As RtlSdrApi.SdrDevice = cboDeviceList.SelectedItem

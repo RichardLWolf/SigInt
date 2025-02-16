@@ -41,10 +41,12 @@ Partial Class frmMain
         picBrowseFolder = New PictureBox()
         ToolTip1 = New ToolTip(components)
         picConfig = New PictureBox()
+        picPlayback = New PictureBox()
         Panel1.SuspendLayout()
         CType(picStartStop, ComponentModel.ISupportInitialize).BeginInit()
         CType(picBrowseFolder, ComponentModel.ISupportInitialize).BeginInit()
         CType(picConfig, ComponentModel.ISupportInitialize).BeginInit()
+        CType(picPlayback, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
         ' cboDeviceList
@@ -125,7 +127,6 @@ Partial Class frmMain
         ' sldOffset
         ' 
         sldOffset.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldOffset.DisplayValue = True
         sldOffset.KnobColor = Color.DodgerBlue
         sldOffset.Location = New Point(4, 339)
         sldOffset.Maximum = 50
@@ -145,7 +146,6 @@ Partial Class frmMain
         ' sldRange
         ' 
         sldRange.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldRange.DisplayValue = True
         sldRange.KnobColor = Color.DodgerBlue
         sldRange.Location = New Point(4, 179)
         sldRange.Maximum = 150
@@ -165,7 +165,6 @@ Partial Class frmMain
         ' sldZoom
         ' 
         sldZoom.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldZoom.DisplayValue = True
         sldZoom.KnobColor = Color.DodgerBlue
         sldZoom.Location = New Point(4, 24)
         sldZoom.Maximum = 100
@@ -254,12 +253,24 @@ Partial Class frmMain
         picConfig.TabStop = False
         ToolTip1.SetToolTip(picConfig, "Device configuration")
         ' 
+        ' picPlayback
+        ' 
+        picPlayback.Image = My.Resources.Resources.microphone2
+        picPlayback.Location = New Point(447, 35)
+        picPlayback.Name = "picPlayback"
+        picPlayback.Size = New Size(29, 29)
+        picPlayback.SizeMode = PictureBoxSizeMode.StretchImage
+        picPlayback.TabIndex = 24
+        picPlayback.TabStop = False
+        ToolTip1.SetToolTip(picPlayback, "Playback recorded archives")
+        ' 
         ' frmMain
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
         ClientSize = New Size(1029, 547)
+        Controls.Add(picPlayback)
         Controls.Add(picConfig)
         Controls.Add(picBrowseFolder)
         Controls.Add(picStartStop)
@@ -279,6 +290,7 @@ Partial Class frmMain
         CType(picStartStop, ComponentModel.ISupportInitialize).EndInit()
         CType(picBrowseFolder, ComponentModel.ISupportInitialize).EndInit()
         CType(picConfig, ComponentModel.ISupportInitialize).EndInit()
+        CType(picPlayback, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
         PerformLayout()
     End Sub
@@ -301,5 +313,6 @@ Partial Class frmMain
     Friend WithEvents picBrowseFolder As PictureBox
     Friend WithEvents ToolTip1 As ToolTip
     Friend WithEvents picConfig As PictureBox
+    Friend WithEvents picPlayback As PictureBox
 
 End Class

@@ -673,7 +673,7 @@ Public Class RtlSdrApi
             Dim ptEnd As Date = DateTime.Now
             Dim poElapsed As TimeSpan = ptEnd.Subtract(mtStartMonitor)
             Dim psSignalText As String = If(miSignalEvents = 0, "no", miSignalEvents.ToString()) & " signal event" & If(miSignalEvents > 1, "s", "")
-            clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ending at {ptEnd:MM/dd/yyyy HH:mm:ss} with {psSignalText}, {modMain.FullDisplayElapsed(poElapsed.TotalSeconds)}")
+            clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ending at {ptEnd:MM/dd/yyyy HH:mm:ss} with {psSignalText}, {modMain.FullDisplayElapsed(poElapsed.TotalSeconds)}.")
 
         Catch ex As Exception
             clsLogger.LogException("rtlSdrApi.MonitorThread", ex)
@@ -690,7 +690,7 @@ Public Class RtlSdrApi
             End If
             RaiseEnded()
             mbSignalDetected = False
-            clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ended.")
+            clsLogger.Log("RtlSdrApi.MonitorThread", $"Exiting monitor thread.")
         End Try
     End Sub
 
@@ -709,7 +709,7 @@ Public Class RtlSdrApi
         ' Start the write thread if it's not already running
         If moWriteThread Is Nothing OrElse Not moWriteThread.IsAlive Then
             Dim ptStart As Date = mtRecordingStartTime
-            Dim ptEnd As Date = mtRecordingStartTime
+            Dim ptEnd As Date = mtRecordingEndTime
             moWriteThread = New Thread(Sub() ProcessRecordingQueue(ptStart, ptEnd))
             moWriteThread.IsBackground = True
             moWriteThread.Start()
@@ -748,7 +748,7 @@ Public Class RtlSdrApi
                         .SampleRate = miSampleRate
                         .BufferSizeBytes = miBufferSize
                         .TotalIQBytes = recordedData.Sum(Function(b) b.Length)
-                        .DurationSeconds = tRecordingEndTime.Subtract(tRecordingEndTime).TotalSeconds
+                        .DurationSeconds = tRecordingEndTime.Subtract(tRecordingStartTime).TotalSeconds
                         .IQBuffer = recordedData
                     End With
                     If poZipper.SaveArchive Then
