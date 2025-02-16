@@ -296,7 +296,9 @@ Public Class frmMain
 
         Dim piFftSize As Integer = buffer.Length \ 2
         Dim pdPowerValues() As Double = RtlSdrApi.ConvertRawToPowerLevels(buffer)
-        Return foBmpRend.RenderGraph(BitmapWidth, BitmapHeight, pdPowerValues, foSDR.SampleRate, foSDR.CenterFrequency, foSDR.IsRecording, foSDR.RecordingElapsed)
+        Return foBmpRend.RenderGraph(BitmapWidth, BitmapHeight, pdPowerValues, foSDR.SampleRate, foSDR.CenterFrequency _
+                                     , foSDR.IsRecording, foSDR.RecordingElapsed _
+                                     , foSDR.DeviceName, foSDR.MonitorElapsed)
 
         ' Apply gaussian smooth to the levels
         'pdPowerValues = GaussianSmooth(pdPowerValues, 7)

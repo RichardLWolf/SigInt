@@ -20,12 +20,18 @@ Public Class clsRenderWaveform
 
     Private moLabelFont As New Font("Arial", 10, FontStyle.Regular)
     Private moRecordFont As New Font("Arial", 12, FontStyle.Bold)
+    Private moInfoFont As New Font("Segoe UI", 10, FontStyle.Regular)
     Private moLabelBrush As New SolidBrush(Color.White)
+    Private moInfoBrush As New SolidBrush(Color.LightBlue)
     Private moRecordBrush As New SolidBrush(Color.Red)
     Private moAxisPen As New Pen(Color.White, 2)
     Private moGridPen As New Pen(Color.LightGray, 1) With {.DashStyle = Drawing2D.DashStyle.Dot}
     Private moCenterFreqPen As New Pen(Color.Red, 1)
     Private moWavePen As New Pen(Color.White, 1)
+    Private moStrFmtCenter As New StringFormat() With {.Alignment = StringAlignment.Center, .LineAlignment = StringAlignment.Center, .FormatFlags = StringFormatFlags.NoWrap}
+    Private moStrFmtRight As New StringFormat() With {.Alignment = StringAlignment.Far, .LineAlignment = StringAlignment.Center, .FormatFlags = StringFormatFlags.NoWrap}
+    Private moStrFmtLeft As New StringFormat() With {.Alignment = StringAlignment.Near, .LineAlignment = StringAlignment.Center, .FormatFlags = StringFormatFlags.NoWrap}
+
 
 
     ''' <summary>
@@ -176,12 +182,13 @@ Public Class clsRenderWaveform
     End Sub
 
     ''' <summary>
-    ''' Renders the signal graph, resizing the bitmap if needed.
+    ''' Renders the signal graph, resizing the bitmap if needed.  Pass Nothing for elapsed values (oRecordingElapsed, oElapsed) to supress their rendering.
     ''' </summary>
     ''' <returns>Updated Bitmap</returns>
     Public Function RenderGraph(ByVal iWidth As Integer, ByVal iHeight As Integer _
                                 , ByVal ddBPowerValues() As Double, dSampleRate As Double, iCenterFrequency As UInteger _
-                                , Optional ByVal bIsRecording As Boolean = False, Optional ByVal oRecordingElapsed As TimeSpan = Nothing) As Bitmap
+                                , Optional ByVal bIsRecording As Boolean = False, Optional ByVal oRecordingElapsed As TimeSpan = Nothing _
+                                , Optional ByVal sDeviceName As String = "", Optional ByVal oElapsed As TimeSpan = Nothing) As Bitmap
 
         ' Bail if invalid size (window may be minimized)
         If iWidth < 10 OrElse iHeight < 10 Then
@@ -224,9 +231,6 @@ Public Class clsRenderWaveform
             Dim piGraphWidth As Integer = poWorkingRect.Width - piWaveformAreaWidth
             Dim piGraphHeight As Integer = poWorkingRect.Height - piFreqLabelHeight
             Dim poGraphRect As New Rectangle(poWorkingRect.X + (piWaveformAreaWidth \ 2), poWorkingRect.Y, piGraphWidth, piGraphHeight)
-            ' Define string format for centering text
-            Dim poCenterFormat As New StringFormat() With {.Alignment = StringAlignment.Center, .LineAlignment = StringAlignment.Center, .FormatFlags = StringFormatFlags.NoWrap}
-
 
             ' Define the part of the waveform we will be rendering
             Dim piTotalBins As Integer = Math.Max(3, ddBPowerValues.Count * (1 - mdZoomFactor))
@@ -294,8 +298,8 @@ Public Class clsRenderWaveform
 
                 ' Draw dB labels (left & right)
                 Dim psLabel As String = pdDbValue.ToString("0") & " dB"
-                poGraphics.DrawString(psLabel, moLabelFont, moLabelBrush, New RectangleF(poGraphRect.Left - piDbLabelWidth - 7, piYPos - 10, piDbLabelWidth, 20), poCenterFormat)
-                poGraphics.DrawString(psLabel, moLabelFont, moLabelBrush, New RectangleF(poGraphRect.Right + 5, piYPos - 10, piDbLabelWidth, 20), poCenterFormat)
+                poGraphics.DrawString(psLabel, moLabelFont, moLabelBrush, New RectangleF(poGraphRect.Left - piDbLabelWidth - 7, piYPos - 10, piDbLabelWidth, 20), moStrFmtCenter)
+                poGraphics.DrawString(psLabel, moLabelFont, moLabelBrush, New RectangleF(poGraphRect.Right + 5, piYPos - 10, piDbLabelWidth, 20), moStrFmtCenter)
             Next
             ' x-axis labels, determine tick spacing based on available width and avoid overlap
             Dim piTickSpacing As Integer = Math.Max(1, poGraphPoints.Length \ 8) ' Aim for ~8 labels
@@ -314,7 +318,7 @@ Public Class clsRenderWaveform
 
                 ' Draw frequency label
                 Dim psLabel As String = modMain.FormatHertz(pdTickFreq) '(pdTickFreq / 1000000000.0).ToString("0.000000") & " GHz"
-                poGraphics.DrawString(psLabel, moLabelFont, moLabelBrush, New RectangleF(piXPos - (piFreqLabelWidth / 2), poGraphRect.Bottom + 7, piFreqLabelWidth, 20), poCenterFormat)
+                poGraphics.DrawString(psLabel, moLabelFont, moLabelBrush, New RectangleF(piXPos - (piFreqLabelWidth / 2), poGraphRect.Bottom + 7, piFreqLabelWidth, 20), moStrFmtCenter)
             Next
 
             ' draw red center frequency line
@@ -322,9 +326,21 @@ Public Class clsRenderWaveform
             poGraphics.DrawLine(moCenterFreqPen, piCenterLine, poGraphRect.Top, piCenterLine, poGraphRect.Bottom)
 
             ' Draw recording text 
-            If bIsRecording Then
-                poGraphics.DrawString($"* RECORDING * {oRecordingElapsed.Minutes:D2}:{oRecordingElapsed.Seconds:D2}", moRecordFont, moRecordBrush, poGraphRect.Left, 3)
+            If bIsRecording AndAlso oRecordingElapsed <> Nothing Then
+                poGraphics.DrawString($"* RECORDING * {oRecordingElapsed.Minutes:D2}:{oRecordingElapsed.Seconds:D2}", moRecordFont, moRecordBrush, poGraphRect.Left, 3, moStrFmtLeft)
             End If
+
+            ' draw device name and elased
+            If oElapsed <> Nothing Then
+                Dim psDev As String = ""
+                If sDeviceName.Trim <> "" Then
+                    psDev = sDeviceName & " - "
+                End If
+                Dim psInfo As String = String.Format("{0}{1:#0}:{2:D2}:{3:D2}:{4:D2}", psDev, oElapsed.Days, oElapsed.Hours, oElapsed.Minutes, oElapsed.Seconds)
+                Dim piYVal As Integer = CInt(poGraphics.MeasureString(psInfo, moInfoFont).Height) - 5
+                poGraphics.DrawString(psInfo, moInfoFont, moInfoBrush, poGraphRect.Right, piYVal, moStrFmtRight)
+            End If
+
 
             ' Draw signal waveform now, start with gradient under waveform
             ' Clone the graph points for gradient fill
@@ -346,7 +362,7 @@ Public Class clsRenderWaveform
                 poGradientPath.AddLines(poGraphPoints.Select(Function(p) New Point(p.X, poGraphRect.Bottom - 1)).Reverse().ToArray()) ' Close the path
                 poGradientPath.CloseFigure() ' Ensure the path is closed properly
                 ' Define gradient fill (fades from blue to transparent, now within signal area)
-                Using poGradientBrush As New Drawing2D.LinearGradientBrush(poGradientRect, Color.Blue, Color.Transparent, Drawing2D.LinearGradientMode.Vertical)
+                Using poGradientBrush As New Drawing2D.LinearGradientBrush(poGradientRect, Color.FromArgb(180, 0, 0, 255), Color.Transparent, Drawing2D.LinearGradientMode.Vertical)
                     ' Fill the area under the waveform
                     poGraphics.FillPath(poGradientBrush, poGradientPath)
                 End Using
@@ -437,8 +453,10 @@ Public Class clsRenderWaveform
         ' Dispose of fonts, brushes, and pens
         moLabelFont.Dispose()
         moRecordFont.Dispose()
+        moInfoFont.Dispose()
         moLabelBrush.Dispose()
         moRecordBrush.Dispose()
+        moInfoBrush.Dispose()
         moAxisPen.Dispose()
         moGridPen.Dispose()
         moCenterFreqPen.Dispose()

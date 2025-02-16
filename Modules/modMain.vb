@@ -3,11 +3,28 @@
 Module modMain
 
     Function FormatHertz(ByVal piFrequencyHz As UInteger) As String
+        'Select Case piFrequencyHz
+        '    Case Is >= 1_000_000_000UI : Return (piFrequencyHz \ 1_000_000_000UI).ToString("0") & "." & ((piFrequencyHz Mod 1_000_000_000UI) \ 1_000_000UI).ToString("00000") & " GHz"
+        '    Case Is >= 1_000_000UI : Return (piFrequencyHz \ 1_000_000UI).ToString("0") & "." & ((piFrequencyHz Mod 1_000_000UI) \ 1_000UI).ToString("000") & " MHz"
+        '    Case Is >= 1_000UI : Return (piFrequencyHz \ 1_000UI).ToString("0") & "." & (piFrequencyHz Mod 1_000UI).ToString("000") & " kHz"
+        '    Case Else : Return piFrequencyHz.ToString("0") & " Hz"
+        'End Select
+
         Select Case piFrequencyHz
-            Case Is >= 1_000_000_000UI : Return (piFrequencyHz \ 1_000_000_000UI).ToString("0") & "." & ((piFrequencyHz Mod 1_000_000_000UI) \ 1_000_000UI).ToString("000") & " GHz"
-            Case Is >= 1_000_000UI : Return (piFrequencyHz \ 1_000_000UI).ToString("0") & "." & ((piFrequencyHz Mod 1_000_000UI) \ 1_000UI).ToString("000") & " MHz"
-            Case Is >= 1_000UI : Return (piFrequencyHz \ 1_000UI).ToString("0") & "." & (piFrequencyHz Mod 1_000UI).ToString("000") & " kHz"
-            Case Else : Return piFrequencyHz.ToString("0") & " Hz"
+            Case Is >= 1_000_000_000UI
+                Dim pdFreq As Double = piFrequencyHz / 1000000000UI
+                Return String.Format("{0:0.000000} GHz", pdFreq)
+
+            Case Is >= 1_000_000UI
+                Dim pdFreq As Double = piFrequencyHz / 1000000UI
+                Return String.Format("{0:0.000000} MHz", pdFreq)
+
+            Case Is >= 1_000UI
+                Dim pdFreq As Double = piFrequencyHz / 1000UI
+                Return String.Format("{0:0.000} kHz", pdFreq)
+
+            Case Else
+                Return piFrequencyHz.ToString("0") & " Hz"
         End Select
     End Function
 

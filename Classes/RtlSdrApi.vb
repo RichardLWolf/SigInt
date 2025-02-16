@@ -103,6 +103,7 @@ Public Class RtlSdrApi
     Public Event MonitorEnded(ByVal Sender As Object)
 
     Private miDeviceHandle As IntPtr = IntPtr.Zero
+    Private msDeviceName As String = ""
     Private miCenterFrequency As UInteger
     Private miDeviceIndex As Integer
     Private msLogFolder As String = "C:\"
@@ -112,6 +113,7 @@ Public Class RtlSdrApi
     Private miSignalEvents As Integer = 0
     Private miSignalWindow As Integer = 1   ' 1 "bin" about 250Hz on each side of center frequency
     Private mdMinimumEventWindow As Double = 10D ' minimum number of minutes between recording events
+    Private mbShowDeviceInfo As Boolean = True
 
     Private miGainMode As Integer = 0 '0=automatic, 1=manual
     Private miGainValue As Integer = 300
@@ -123,6 +125,7 @@ Public Class RtlSdrApi
     Private mbSignalDetected As Boolean = False
     ' Recording limit
     Private mtRecordingStartTime As Date
+    Private mtRecordingEndTime As Date
     Private miMaxRecordingTime As Integer = 60 ' Max seconds to record per event
     ' File writing and recording state
     Private myRecordingBuffer As New List(Of Byte()) ' Holds IQ data during an event
@@ -140,7 +143,7 @@ Public Class RtlSdrApi
     Private miBufferSize As Integer = 16384 ' Standard RTL-SDR buffer size
 
 
-
+#Region "  Read ONLY Properties "
     Public ReadOnly Property IsRunning As Boolean
         Get
             Return mbRunning
@@ -201,6 +204,26 @@ Public Class RtlSdrApi
         End Get
     End Property
 
+    Public ReadOnly Property DeviceName As String
+        Get
+            Return msDeviceName
+        End Get
+    End Property
+
+    Public ReadOnly Property MonitorElapsed As TimeSpan
+        Get
+            If Me.IsRunning Then
+                Return DateTime.Now.Subtract(mtStartMonitor)
+            Else
+                Return TimeSpan.FromSeconds(0)
+            End If
+        End Get
+    End Property
+
+#End Region
+
+
+#Region "  Read/Write Properties "
     Public Property SignalWindow As Integer
         Get
             Return miSignalWindow
@@ -209,6 +232,19 @@ Public Class RtlSdrApi
             miSignalWindow = value
         End Set
     End Property
+
+    Public Property ShowDeviceInfo As Boolean
+        Get
+            Return mbShowDeviceInfo
+        End Get
+        Set(value As Boolean)
+            mbShowDeviceInfo = value
+        End Set
+    End Property
+
+
+#End Region
+
 
 
     Public Sub New(deviceIndex As Integer, Optional ByVal centerFrequency As UInteger = 1600000000 _
@@ -222,8 +258,13 @@ Public Class RtlSdrApi
         miGainMode = If(automaticGain, 0, 1)
         miGainValue = manualGainValue
 
-
-        moSyncContext = SynchronizationContext.Current ' Capture UI thread context
+        ' get the name of the device, function returns pointer to string var
+        Dim oDeviceNamePtr As IntPtr = rtlsdr_get_device_name(deviceIndex)
+        ' Convert the IntPtr to a string
+        msDeviceName = Marshal.PtrToStringAnsi(oDeviceNamePtr)
+        ' Capture UI thread context
+        moSyncContext = SynchronizationContext.Current
+        ' grab log foder path from the logger class so recordings go in the same folder.
         msLogFolder = clsLogger.LogPath
     End Sub
 
@@ -489,6 +530,7 @@ Public Class RtlSdrApi
                 RaiseStarted(False)
                 Exit Sub
             End If
+
             ' clear buffer and initialize myIQBuffer array
             Me.ResetBuffer()
 
@@ -654,6 +696,7 @@ Public Class RtlSdrApi
 
     Private Sub StopRecording()
         mbSignalDetected = False
+        mtRecordingEndTime = DateTime.Now
 
         ' Lock and queue the recorded buffer for background processing
         SyncLock mqRecordingQueue
@@ -665,7 +708,9 @@ Public Class RtlSdrApi
 
         ' Start the write thread if it's not already running
         If moWriteThread Is Nothing OrElse Not moWriteThread.IsAlive Then
-            moWriteThread = New Thread(AddressOf ProcessRecordingQueue)
+            Dim ptStart As Date = mtRecordingStartTime
+            Dim ptEnd As Date = mtRecordingStartTime
+            moWriteThread = New Thread(Sub() ProcessRecordingQueue(ptStart, ptEnd))
             moWriteThread.IsBackground = True
             moWriteThread.Start()
         End If
@@ -674,7 +719,7 @@ Public Class RtlSdrApi
     End Sub
 
     ' background thread for writing recorded data out to disk
-    Private Sub ProcessRecordingQueue()
+    Private Sub ProcessRecordingQueue(ByVal tRecordingStartTime As Date, ByVal tRecordingEndTime As Date)
         mbWritingToDisk = True
         Try
             While True
@@ -690,7 +735,27 @@ Public Class RtlSdrApi
                 End SyncLock
 
                 If recordedData IsNot Nothing AndAlso recordedData.Count > 0 Then
-                    SaveIqDataToZip(recordedData)
+                    Dim poZipper As New IQZipper(msLogFolder)
+                    ' Calculate pre-buffer time in seconds
+                    Dim samplesPerBuffer As Integer = miBufferSize \ 2 ' IQ samples per buffer
+                    Dim timePerBuffer As Double = samplesPerBuffer / miSampleRate
+                    Dim preBufferTime As Double = timePerBuffer * miQueueMaxSize
+                    ' Adjust the timestamp for accurate event timing
+                    Dim adjustedStartTime As DateTime = tRecordingStartTime.AddSeconds(-preBufferTime).ToUniversalTime()
+                    With poZipper
+                        .RecordedOnUTC = adjustedStartTime
+                        .CenterFrequency = miCenterFrequency
+                        .SampleRate = miSampleRate
+                        .BufferSizeBytes = miBufferSize
+                        .TotalIQBytes = recordedData.Sum(Function(b) b.Length)
+                        .DurationSeconds = tRecordingEndTime.Subtract(tRecordingEndTime).TotalSeconds
+                        .IQBuffer = recordedData
+                    End With
+                    If poZipper.SaveArchive Then
+                        clsLogger.Log("RtlSdrApi.ProcessRecordingQueue", $"✅ Saved to {poZipper.ArchiveFile} (Start: {adjustedStartTime}, length: {poZipper.TotalIQBytes}, duration: {poZipper.DurationSeconds} seconds.)")
+                    Else
+                        RaiseError($"Error saving IQ data archive {poZipper.ArchiveFile} to folder.")
+                    End If
                 End If
             End While
         Catch ex As Exception
@@ -700,53 +765,53 @@ Public Class RtlSdrApi
         End Try
     End Sub
 
-    Private Sub SaveIqDataToZip(recordedData As List(Of Byte()))
-        Try
-            ' Calculate pre-buffer time in seconds
-            Dim samplesPerBuffer As Integer = miBufferSize \ 2 ' IQ samples per buffer
-            Dim timePerBuffer As Double = samplesPerBuffer / miSampleRate
-            Dim preBufferTime As Double = timePerBuffer * miQueueMaxSize
+    '    Private Sub SaveIqDataToZip(recordedData As List(Of Byte()))
+    '        Try
+    '            ' Calculate pre-buffer time in seconds
+    '            Dim samplesPerBuffer As Integer = miBufferSize \ 2 ' IQ samples per buffer
+    '            Dim timePerBuffer As Double = samplesPerBuffer / miSampleRate
+    '            Dim preBufferTime As Double = timePerBuffer * miQueueMaxSize
 
-            ' Adjust the timestamp for accurate event timing
-            Dim adjustedStartTime As DateTime = mtRecordingStartTime.AddSeconds(-preBufferTime).ToUniversalTime()
-            Dim timestamp As String = adjustedStartTime.ToString("yyyyMMdd_HHmmss.fff") & "Z"
-            Dim outputFile As String = System.IO.Path.Combine(msLogFolder, $"IQ_Record_{timestamp}.zip")
+    '            ' Adjust the timestamp for accurate event timing
+    '            Dim adjustedStartTime As DateTime = mtRecordingStartTime.AddSeconds(-preBufferTime).ToUniversalTime()
+    '            Dim timestamp As String = adjustedStartTime.ToString("yyyyMMdd_HHmmss.fff") & "Z"
+    '            Dim outputFile As String = System.IO.Path.Combine(msLogFolder, $"IQ_Record_{timestamp}.zip")
 
-            Using fs As New FileStream(outputFile, FileMode.Create)
-                Using zip As New ZipArchive(fs, ZipArchiveMode.Create)
-                    ' Create IQ data entry
-                    Dim iqEntry As ZipArchiveEntry = zip.CreateEntry("signal.iq", CompressionLevel.Optimal)
-                    Using entryStream As Stream = iqEntry.Open()
-                        For Each chunk In recordedData
-                            entryStream.Write(chunk, 0, chunk.Length)
-                        Next
-                    End Using
+    '            Using fs As New FileStream(outputFile, FileMode.Create)
+    '                Using zip As New ZipArchive(fs, ZipArchiveMode.Create)
+    '                    ' Create IQ data entry
+    '                    Dim iqEntry As ZipArchiveEntry = zip.CreateEntry("signal.iq", CompressionLevel.Optimal)
+    '                    Using entryStream As Stream = iqEntry.Open()
+    '                        For Each chunk In recordedData
+    '                            entryStream.Write(chunk, 0, chunk.Length)
+    '                        Next
+    '                    End Using
 
-                    ' Create metadata entry
-                    Dim metadataEntry As ZipArchiveEntry = zip.CreateEntry("metadata.json", CompressionLevel.Optimal)
-                    Using metadataStream As Stream = metadataEntry.Open()
-                        Using writer As New StreamWriter(metadataStream)
-                            Dim appVersion As String = $"{My.Application.Info.Version.Major}.{My.Application.Info.Version.Minor}"
-                            Dim metadata As String = $"
-{{
-    ""UTC_Start_Time"": ""{adjustedStartTime:yyyy-MM-ddTHH:mm:ss.fffZ}"",
-    ""Center_Frequency_Hz"": {miCenterFrequency},
-    ""Sample_Rate_Hz"": {miSampleRate},
-    ""Total_IQ_Bytes"": {recordedData.Sum(Function(b) b.Length)},
-    ""Recording_Duration_S"": {(DateTime.Now - mtRecordingStartTime).TotalSeconds:F2},
-    ""Software_Version"": ""{appVersion}""
-}}"
-                            writer.Write(metadata)
-                        End Using
-                    End Using
-                End Using
-            End Using
-            clsLogger.Log("RtlSdrApi.SaveIqDataToZip", $"✅ Saved to {outputFile} (Start: {adjustedStartTime})")
-        Catch ex As Exception
-            clsLogger.LogException("RtlSdrAPI.SaveIqDataToZip", ex)
-            RaiseError("Error saving IQ data: " & ex.Message)
-        End Try
-    End Sub
+    '                    ' Create metadata entry
+    '                    Dim metadataEntry As ZipArchiveEntry = zip.CreateEntry("metadata.json", CompressionLevel.Optimal)
+    '                    Using metadataStream As Stream = metadataEntry.Open()
+    '                        Using writer As New StreamWriter(metadataStream)
+    '                            Dim appVersion As String = $"{My.Application.Info.Version.Major}.{My.Application.Info.Version.Minor}"
+    '                            Dim metadata As String = $"
+    '{{
+    '    ""UTC_Start_Time"": ""{adjustedStartTime:yyyy-MM-ddTHH:mm:ss.fffZ}"",
+    '    ""Center_Frequency_Hz"": {miCenterFrequency},
+    '    ""Sample_Rate_Hz"": {miSampleRate},
+    '    ""Total_IQ_Bytes"": {recordedData.Sum(Function(b) b.Length)},
+    '    ""Recording_Duration_S"": {(DateTime.Now - mtRecordingStartTime).TotalSeconds:F2},
+    '    ""Software_Version"": ""{appVersion}""
+    '}}"
+    '                            writer.Write(metadata)
+    '                        End Using
+    '                    End Using
+    '                End Using
+    '            End Using
+    '            clsLogger.Log("RtlSdrApi.SaveIqDataToZip", $"✅ Saved to {outputFile} (Start: {adjustedStartTime})")
+    '        Catch ex As Exception
+    '            clsLogger.LogException("RtlSdrAPI.SaveIqDataToZip", ex)
+    '            RaiseError("Error saving IQ data: " & ex.Message)
+    '        End Try
+    '    End Sub
 
 
     Private Function CalculatePowerAtFrequency(dPowerLevels As Double()) As Double
