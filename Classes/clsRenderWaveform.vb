@@ -327,7 +327,9 @@ Public Class clsRenderWaveform
 
             ' Draw recording text 
             If bIsRecording AndAlso oRecordingElapsed <> Nothing Then
-                poGraphics.DrawString($"* RECORDING * {oRecordingElapsed.Minutes:D2}:{oRecordingElapsed.Seconds:D2}", moRecordFont, moRecordBrush, poGraphRect.Left, 3, moStrFmtLeft)
+                Dim psRec As String = $"* RECORDING * {oRecordingElapsed.Minutes:D2}:{oRecordingElapsed.Seconds:D2}"
+                Dim piYVal As Integer = CInt(poGraphics.MeasureString(psRec, moRecordFont).Height) - 10
+                poGraphics.DrawString(psRec, moRecordFont, moRecordBrush, poGraphRect.Left, piYVal, moStrFmtLeft)
             End If
 
             ' draw device name and elased

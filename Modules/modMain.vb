@@ -13,15 +13,15 @@ Module modMain
         Select Case piFrequencyHz
             Case Is >= 1_000_000_000UI
                 Dim pdFreq As Double = piFrequencyHz / 1000000000UI
-                Return String.Format("{0:0.000000} GHz", pdFreq)
+                Return String.Format("{0:G6} GHz", pdFreq)
 
             Case Is >= 1_000_000UI
                 Dim pdFreq As Double = piFrequencyHz / 1000000UI
-                Return String.Format("{0:0.000000} MHz", pdFreq)
+                Return String.Format("{0:G6} MHz", pdFreq)
 
             Case Is >= 1_000UI
                 Dim pdFreq As Double = piFrequencyHz / 1000UI
-                Return String.Format("{0:0.000} kHz", pdFreq)
+                Return String.Format("{0:G6} kHz", pdFreq)
 
             Case Else
                 Return piFrequencyHz.ToString("0") & " Hz"

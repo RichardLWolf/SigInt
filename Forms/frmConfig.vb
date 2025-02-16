@@ -67,7 +67,7 @@
         cboScale.SelectedIndex = 0
         lblFreqRange.Text = $"({modMain.FormatHertz(fiMinFreq)} – {modMain.FormatHertz(fiMaxFreq)})"
         txtFrequency.Text = String.Format("{0:#########0}", fiCenterFreq)
-        ConvertFrequency()
+
 
 
         If foGains.Count > 0 Then
@@ -127,7 +127,7 @@
         Dim psText As String = txtFrequency.Text.Trim()
         Dim pbError As Boolean = False
 
-        If psText = String.Empty OrElse cboScale.SelectedItem Is Nothing Then
+        If psText = String.Empty OrElse cboScale.SelectedIndex < 0 Then
             Exit Sub
         End If
 
@@ -136,7 +136,7 @@
             pbError = True
         Else
             ' Get selected unit
-            Dim fsUnit As String = cboScale.SelectedItem.ToString()
+            Dim fsUnit As String = cboScale.Items(cboScale.SelectedIndex).ToString()
 
             ' Convert to Hz based on the selected unit
             Try

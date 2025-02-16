@@ -87,7 +87,6 @@ Partial Class frmConfig
         lblFrequency.Name = "lblFrequency"
         lblFrequency.Size = New Size(146, 29)
         lblFrequency.TabIndex = 3
-        lblFrequency.Text = "1,600,000,000 Hz"
         lblFrequency.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' txtFrequency
@@ -98,7 +97,6 @@ Partial Class frmConfig
         txtFrequency.Name = "txtFrequency"
         txtFrequency.Size = New Size(132, 29)
         txtFrequency.TabIndex = 4
-        txtFrequency.Text = "1600000000"
         txtFrequency.TextAlign = HorizontalAlignment.Right
         ' 
         ' cboScale
@@ -144,7 +142,7 @@ Partial Class frmConfig
         lblFreqRange.Name = "lblFreqRange"
         lblFreqRange.Size = New Size(255, 21)
         lblFreqRange.TabIndex = 31
-        lblFreqRange.Text = "(24 Hz to 1.7 Ghz)"
+        lblFreqRange.Text = "(--- range ---)"
         lblFreqRange.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' chkAutomatic
