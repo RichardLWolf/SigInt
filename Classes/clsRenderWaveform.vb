@@ -38,7 +38,8 @@ Public Class clsRenderWaveform
     Private moStrFmtRight As New StringFormat() With {.Alignment = StringAlignment.Far, .LineAlignment = StringAlignment.Center, .FormatFlags = StringFormatFlags.NoWrap}
     Private moStrFmtLeft As New StringFormat() With {.Alignment = StringAlignment.Near, .LineAlignment = StringAlignment.Center, .FormatFlags = StringFormatFlags.NoWrap}
     Private mbRenderWaterfall As Boolean = False
-
+    ' Precomputed SDRSharp-style Gradient Palette
+    Private moColorPalette(255) As Color
 
     ''' <summary>
     '''  1.0 = full zoom out, 0.10 = full zoom in
@@ -201,7 +202,9 @@ Public Class clsRenderWaveform
         miSigWidth = iSignalBmpWidth
         miSigHeight = iSignalBmpHeight
         mSignalBitmap = New Bitmap(miSigWidth, miSigHeight)
+
         ' optional waterfall bitmap rendering
+        Call InitializeGradientPalette()
         If iWaterfallBmpHeight > 0 And iWaterfallBmpWidth > 0 Then
             ResizeWaterfallBitmap(iWaterfallBmpWidth, iWaterfallBmpHeight)
         End If
@@ -232,6 +235,8 @@ Public Class clsRenderWaveform
                 ResizeWaterfallBitmap(iWaterfallBmpWidth, iWaterfallBmpHeight)
             End If
         End If
+
+
 
         ' Apply gaussian smooth to the levels
         Dim pdSmoothedPowerValues() As Double
@@ -456,7 +461,6 @@ Public Class clsRenderWaveform
         If mWaterBitmap Is Nothing OrElse miWaterHeight = 0 OrElse miWaterWidth = 0 Then Exit Sub
 
         SyncLock mWaterBitmap
-            ' Lock bitmap data for direct pixel manipulation
             Dim poBitmapData As BitmapData = mWaterBitmap.LockBits(New Rectangle(0, 0, miWaterWidth, miWaterHeight),
                                                                    ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb)
             Try
@@ -467,17 +471,16 @@ Public Class clsRenderWaveform
                 ' Read bitmap into memory
                 System.Runtime.InteropServices.Marshal.Copy(poBitmapData.Scan0, poPixelData, 0, piBytes)
 
-                ' Shift image **DOWN** by one row (Fixes the "water fountain" effect)
+                ' Shift image **DOWN** by one row
                 Buffer.BlockCopy(poPixelData, 0, poPixelData, piStride, piBytes - piStride)
 
                 ' Precompute min/max power levels
-                Dim pdMinPower As Double = ddBPowerValues.Min()
-                Dim pdMaxPower As Double = ddBPowerValues.Max()
-                Dim pdPowerRange As Double = Math.Max(1, pdMaxPower - pdMinPower) ' Avoid division by zero
-                Dim pdContrastFactor As Double = Math.Max(0.5, miContrast / 25.0)
+                Dim pdMinPower As Double = mddBOffset - mddBRange
+                Dim pdMaxPower As Double = mddBOffset
+                Dim pdPowerRange As Double = Math.Max(1, pdMaxPower - pdMinPower)
 
-                ' Debug Logging (remove after testing)
-                Debug.Print($"Power Range: Min={pdMinPower}, Max={pdMaxPower}, Range={pdPowerRange}")
+                ' 🔹 Apply logarithmic contrast scaling
+                Dim pdContrastFactor As Double = 1.0 + (Math.Log10(1 + miContrast / 20.0) * 1.5)
 
                 ' Scale power values and map to colors
                 Dim pdBinsPerPixel As Double = ddBPowerValues.Length / miWaterWidth
@@ -488,25 +491,23 @@ Public Class clsRenderWaveform
                     Dim piBin As Integer = Math.Max(0, Math.Min(ddBPowerValues.Length - 1, CInt(x * pdBinsPerPixel)))
                     Dim pdAvgPower As Double = ddBPowerValues(piBin)
 
-                    ' Normalize power range (Log scale for better contrast)
+                    ' Normalize power range (Smooth log scaling for visibility)
                     Dim pdNormalizedPower As Double = (pdAvgPower - pdMinPower) / pdPowerRange
-                    pdNormalizedPower = Math.Pow(pdNormalizedPower, 0.5) * pdContrastFactor
-                    pdNormalizedPower = Math.Max(0.0, Math.Min(1.0, pdNormalizedPower)) ' Clamp
+                    ' Clamp to prevent negative values causing NaN in Pow()
+                    pdNormalizedPower = Math.Max(0.0, pdNormalizedPower)
+                    pdNormalizedPower = Math.Pow(pdNormalizedPower, 0.85) * pdContrastFactor
+                    ' Final clamp to prevent overflow
+                    pdNormalizedPower = Math.Max(0.0, Math.Min(1.0, pdNormalizedPower))
 
-                    ' Convert to 0-255 intensity
+                    ' 🔹 Convert to 0-255 intensity and get the LUT color
                     Dim piIntensity As Integer = CInt(pdNormalizedPower * 255)
-
-                    ' Map intensity to color scale (blue → yellow → red)
+                    piIntensity = Math.Max(0, Math.Min(255, piIntensity))
+                    Dim oColor As Color = moColorPalette(piIntensity)
+                    ' Set pixel data
                     Dim piOffset As Integer = piTopRowOffset + (x * 4)
-                    If piIntensity < 128 Then
-                        poPixelData(piOffset) = CByte(255 - (piIntensity * 2)) ' Blue
-                        poPixelData(piOffset + 1) = CByte(piIntensity * 2)     ' Green
-                        poPixelData(piOffset + 2) = 0                          ' Red
-                    Else
-                        poPixelData(piOffset) = 0
-                        poPixelData(piOffset + 1) = CByte(255 - ((piIntensity - 128) * 2)) ' Green
-                        poPixelData(piOffset + 2) = CByte((piIntensity - 128) * 2)         ' Red
-                    End If
+                    poPixelData(piOffset) = oColor.B
+                    poPixelData(piOffset + 1) = oColor.G
+                    poPixelData(piOffset + 2) = oColor.R
                     poPixelData(piOffset + 3) = 255 ' Alpha
                 Next
 
@@ -516,9 +517,38 @@ Public Class clsRenderWaveform
                 mWaterBitmap.UnlockBits(poBitmapData)
             End Try
         End SyncLock
+
+
     End Sub
 
+    Private Sub InitializeGradientPalette()
+        For i As Integer = 0 To 255
+            Dim piR As Integer = 0, piG As Integer = 0, piB As Integer = 0
 
+            If i < 64 Then
+                ' **Very Weak Signals → Dark Blue to Blue**
+                piB = 255
+                piR = i * 2
+            ElseIf i < 128 Then
+                ' **Weak to Moderate → Blue to Cyan**
+                piB = 255
+                piG = (i - 64) * 4
+            ElseIf i < 192 Then
+                ' **Moderate to Strong → Cyan to Yellow**
+                piR = (i - 128) * 4
+                piG = 255
+                piB = 255 - (i - 128) * 4
+            Else
+                ' **Strongest → Yellow to Red to White**
+                piR = 255
+                piG = 255 - (i - 192) * 4
+                piB = (i - 192) * 2
+            End If
+
+            ' Store in the lookup table
+            moColorPalette(i) = Color.FromArgb(255, piR, piG, piB)
+        Next
+    End Sub
 
     Private Function GaussianSmooth(ByVal pdData() As Double) As Double()
         Dim piHalfSize As Integer = miKernelSize \ 2
