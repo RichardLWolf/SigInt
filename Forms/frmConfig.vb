@@ -5,6 +5,7 @@
     Private fiGainValue As Integer
     Private fiCenterFreq As UInteger
     Private fiSampleRate As Integer
+    Private fdMinEventWindow As Double
 
     Private foGains As New List(Of Integer)
     Private fiMinFreq As UInteger
@@ -34,7 +35,11 @@
         End Get
     End Property
 
-
+    Public ReadOnly Property MinEventWindow As Double
+        Get
+            Return fdMinEventWindow
+        End Get
+    End Property
 
     Public Property SelectedDeviceName As String
         Get
@@ -58,6 +63,7 @@
         fiMaxFreq = poFreqs(1)
         fiCenterFreq = oSDR.CenterFrequency
         fiSampleRate = oSDR.SampleRate
+        fdMinEventWindow = oSDR.MinimumEventWindow
 
         cboScale.Items.Clear()
         cboScale.Items.Add("Hz")
@@ -65,10 +71,35 @@
         cboScale.Items.Add("MHz")
         cboScale.Items.Add("GHz")
         cboScale.SelectedIndex = 0
+
         lblFreqRange.Text = $"({modMain.FormatHertz(fiMinFreq)} – {modMain.FormatHertz(fiMaxFreq)})"
+
+        txtFrequency.TextPadding = New Padding(0, 0, 25, 0)
+        txtFrequency.TextAlign = HorizontalAlignment.Right
         txtFrequency.Text = String.Format("{0:#########0}", fiCenterFreq)
 
-
+        cboMinEventWindow.Items.Clear()
+        With cboMinEventWindow
+            .Items.Add(New KeyValuePair(Of String, Double)("30 sec", 0.5D))
+            .Items.Add(New KeyValuePair(Of String, Double)("1 min", 1D))
+            .Items.Add(New KeyValuePair(Of String, Double)("2 min", 2D))
+            .Items.Add(New KeyValuePair(Of String, Double)("5 min", 5D))
+            .Items.Add(New KeyValuePair(Of String, Double)("10 min (Default)", 10D))
+            .Items.Add(New KeyValuePair(Of String, Double)("15 min", 15D))
+            .Items.Add(New KeyValuePair(Of String, Double)("20 min", 20D))
+            .Items.Add(New KeyValuePair(Of String, Double)("30 min", 30D))
+            .Items.Add(New KeyValuePair(Of String, Double)("45 min", 45D))
+            .Items.Add(New KeyValuePair(Of String, Double)("60 min (1 hour)", 60D))
+            .DisplayMember = "Key"
+            .ValueMember = "Value"
+        End With
+        For i As Integer = 0 To cboMinEventWindow.Items.Count - 1
+            Dim kvp As KeyValuePair(Of String, Double) = DirectCast(cboMinEventWindow.Items(i), KeyValuePair(Of String, Double))
+            If kvp.Value = fdMinEventWindow Then
+                cboMinEventWindow.SelectedIndex = i
+                Exit For
+            End If
+        Next
 
         If foGains.Count > 0 Then
             foGains.Sort()
@@ -85,6 +116,10 @@
     Private Sub btnClearFreq_Click(sender As Object, e As EventArgs) Handles btnClearFreq.Click
         txtFrequency.Text = ""
         txtFrequency.Focus()
+    End Sub
+
+    Private Sub cboMinEventWindow_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboMinEventWindow.SelectedIndexChanged
+        fdMinEventWindow = DirectCast(cboMinEventWindow.SelectedItem, KeyValuePair(Of String, Double)).Value
     End Sub
 
     Private Sub cboScale_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboScale.SelectedIndexChanged
@@ -109,8 +144,8 @@
     End Sub
 
     Private Sub txtFrequency_KeyDown(sender As Object, e As KeyEventArgs) Handles txtFrequency.KeyDown
-        If Not ((e.KeyCode >= Keys.D0 AndAlso e.KeyCode <= Keys.D9) OrElse
-            (e.KeyCode >= Keys.NumPad0 AndAlso e.KeyCode <= Keys.NumPad9) OrElse
+        If Not (e.KeyCode >= Keys.D0 AndAlso e.KeyCode <= Keys.D9 OrElse
+            e.KeyCode >= Keys.NumPad0 AndAlso e.KeyCode <= Keys.NumPad9 OrElse
             e.KeyCode = Keys.Back OrElse e.KeyCode = Keys.Delete OrElse
             e.KeyCode = Keys.Decimal OrElse e.KeyCode = Keys.OemPeriod OrElse
             e.KeyCode = Keys.Left OrElse e.KeyCode = Keys.Right) Then
@@ -119,7 +154,7 @@
     End Sub
 
     Private Sub txtFrequency_TextChanged(sender As Object, e As EventArgs) Handles txtFrequency.TextChanged
-        Call ConvertFrequency()
+        ConvertFrequency()
     End Sub
 
     Private Sub ConvertFrequency()
@@ -180,4 +215,6 @@
             Me.DialogResult = DialogResult.OK
         End If
     End Sub
+
+
 End Class

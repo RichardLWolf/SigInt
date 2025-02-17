@@ -1,6 +1,6 @@
 [Setup]
 AppName=SigInt
-AppVersion=1.0
+AppVersion=1.0.0.1
 DefaultDirName={autopf}\SigInt
 DefaultGroupName=SigInt
 OutputDir="N:\Repository\SigInt\bin\Installer"

@@ -13,6 +13,7 @@ Public Class IQZipper
         Public CenterFrequency As UInteger
         Public SampleRateHz As Integer
         Public BufferSizeBytes As Integer
+        Public GainMode As String
         Public TotalIQBytes As Long
         Public RecordingDurationSec As Double
         Public AppSoftwareVer As String
@@ -28,6 +29,7 @@ Public Class IQZipper
     Private miCenterFrequency As UInteger
     Private miSampleRate As Integer
     Private miBufferSizeBytes As Integer
+    Private msGainMode As String            ' should be "auto" or the manual gain value, e.g. "16.6dB"
     Private miTotalIQBytes As Integer
     Private miDurationSeconds As Double
     Private msAppVer As String
@@ -77,6 +79,15 @@ Public Class IQZipper
         End Get
         Set(value As Integer)
             miBufferSizeBytes = value
+        End Set
+    End Property
+
+    Public Property GainMode As String
+        Get
+            Return msGainMode
+        End Get
+        Set(value As String)
+            msGainMode = value
         End Set
     End Property
 
@@ -163,6 +174,7 @@ Public Class IQZipper
             miCenterFrequency = poData.CenterFrequency
             miSampleRate = poData.SampleRateHz
             miBufferSizeBytes = poData.BufferSizeBytes
+            msGainMode = poData.GainMode
             miTotalIQBytes = poData.TotalIQBytes
             miDurationSeconds = poData.RecordingDurationSec
             msAppVer = poData.AppSoftwareVer
@@ -237,6 +249,7 @@ Public Class IQZipper
                                     ""Center_Frequency_Hz"": {miCenterFrequency},
                                     ""Sample_Rate_Hz"": {miSampleRate},
                                     ""Buffer_Size_Bytes"": {miBufferSizeBytes},
+                                    ""Gain_Mode"": ""{msGainMode}"",
                                     ""Total_IQ_Bytes"": {myIQData.Sum(Function(b) b.Length)},
                                     ""Recording_Duration_S"": {miDurationSeconds:F2},
                                     ""Software_Version"": ""{psAppVersion}""
@@ -344,6 +357,7 @@ Public Class IQZipper
             poIQ.CenterFrequency = oJson.Value(Of Double)("Center_Frequency_Hz")
             poIQ.SampleRateHz = oJson.Value(Of Double)("Sample_Rate_Hz")
             poIQ.BufferSizeBytes = oJson.Value(Of Integer)("Buffer_Size_Bytes")
+            poIQ.GainMode = oJson.Value(Of String)("Gain_Mode")
             poIQ.TotalIQBytes = oJson.Value(Of Long)("Total_IQ_Bytes")
             poIQ.RecordingDurationSec = oJson.Value(Of Double)("Recording_Duration_S")
             poIQ.AppSoftwareVer = oJson.Value(Of String)("Software_Version")

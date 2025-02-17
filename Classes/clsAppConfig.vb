@@ -8,6 +8,7 @@ Public Class clsAppConfig
     Public Property SampleRate As Integer = 2048000 ' Default: 2.048 MSPS
     Public Property GainMode As Integer = 0     ' 0=auto, 1=manual
     Public Property GainValue As Integer = 300  ' 30.0dB
+    Public Property MinEventWindow As Double = 10D  ' 10 mins between signals
     '   UI Preferences
     Public Property ZoomLevel As Integer = 0    ' Default: Full view (0 to 100)
     Public Property dBOffset As Integer = -20   ' Default: -20 dB  (0 to -100)
@@ -49,6 +50,9 @@ Public Class clsAppConfig
         Dim poDefaultConfig As New clsAppConfig()
         Me.CenterFrequency = poDefaultConfig.CenterFrequency
         Me.SampleRate = poDefaultConfig.SampleRate
+        Me.GainMode = poDefaultConfig.GainMode
+        Me.GainValue = poDefaultConfig.GainValue
+        Me.MinEventWindow = poDefaultConfig.MinEventWindow
         Me.ZoomLevel = poDefaultConfig.ZoomLevel
         Me.dBOffset = poDefaultConfig.dBOffset
         Me.dBRange = poDefaultConfig.dBRange

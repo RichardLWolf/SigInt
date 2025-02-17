@@ -165,10 +165,12 @@ Public Class frmMain
                         ' stop monitor
                         foSDR.StopMonitor()
                         foSDR = New RtlSdrApi(poItem.DeviceIndex, poFrm.CenterFreq, , If(poFrm.GainMode = 0, True, False), poFrm.GainValue)
+                        foSDR.MinimumEventWindow = poFrm.MinEventWindow
                         foSDR.StartMonitor()
                         foConfig.CenterFrequency = foSDR.CenterFrequency
                         foConfig.GainMode = poFrm.GainMode
                         foConfig.GainValue = foSDR.GainValue
+                        foConfig.MinEventWindow = foSDR.MinimumEventWindow
                         ' update config
                         foConfig.Save()
                     End If

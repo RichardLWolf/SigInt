@@ -152,6 +152,10 @@ Public Class frmPlayback
         DrawMetadataLine(poG, "Sample Rate:", (foArchive.SampleRate / 1_000_000).ToString("0.0###") & " MSPS", poLabelFont, poDataFont, poLabelBrush, poDataBrush, piXOffset, piYOffset)
         piYOffset += piSpacing
 
+        DrawMetadataLine(poG, "Gain Mode:", foArchive.GainMode, poLabelFont, poDataFont, poLabelBrush, poDataBrush, piXOffset, piYOffset)
+        piYOffset += piSpacing
+
+
         DrawMetadataLine(poG, "Buffer Size:", FormatBytes(foArchive.BufferSizeBytes), poLabelFont, poDataFont, poLabelBrush, poDataBrush, piXOffset, piYOffset)
         piYOffset += piSpacing
 

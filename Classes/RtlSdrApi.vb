@@ -116,7 +116,7 @@ Public Class RtlSdrApi
     Private mbShowDeviceInfo As Boolean = True
 
     Private miGainMode As Integer = 0 '0=automatic, 1=manual
-    Private miGainValue As Integer = 300
+    Private miGainValue As Integer = 300    'tenths of dB
 
 
     ' Circular buffer for pre-trigger storage
@@ -242,6 +242,18 @@ Public Class RtlSdrApi
         End Set
     End Property
 
+    ''' <summary>
+    ''' The minimum time (in minutes) to wait between recordings (0.5 to 60).
+    ''' </summary>
+    ''' <returns></returns>
+    Public Property MinimumEventWindow As Decimal
+        Get
+            Return mdMinimumEventWindow
+        End Get
+        Set(value As Decimal)
+            mdMinimumEventWindow = Math.Max(0.5D, Math.Min(60D, value))
+        End Set
+    End Property
 
 #End Region
 
@@ -747,6 +759,7 @@ Public Class RtlSdrApi
                         .CenterFrequency = miCenterFrequency
                         .SampleRate = miSampleRate
                         .BufferSizeBytes = miBufferSize
+                        .GainMode = If(miGainMode = 0, "auto", String.Format("{0:#0.0} dB", miGainValue / 10))
                         .TotalIQBytes = recordedData.Sum(Function(b) b.Length)
                         .DurationSeconds = tRecordingEndTime.Subtract(tRecordingStartTime).TotalSeconds
                         .IQBuffer = recordedData
