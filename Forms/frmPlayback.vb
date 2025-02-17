@@ -72,11 +72,14 @@ Public Class frmPlayback
         ' Update playback position
         SyncLock foBitmapsLock
             Dim panelSize As Size = GetSignalPanelSize()
+            Dim poWaterSize As Size = GetWaterfallPanelSize()
             Dim pdPowerValues() As Double = RtlSdrApi.ConvertRawToPowerLevels(poChunk)
             ' otherwise update the bitmap
             foSignalBmp = foRenderer.RenderGraph(panelSize.Width, panelSize.Height, pdPowerValues _
                                                         , foArchive.SampleRate, foArchive.CenterFrequency _
-                                                        , False, Nothing, "", Nothing)
+                                                        , False, Nothing, "", Nothing _
+                                                        , poWaterSize.Width, poWaterSize.Height)
+            foWaterfallBmp = foRenderer.WaterfallBitmap
         End SyncLock
         UpdateSpectrum()
         flCurrentChunk = plNewChunk
@@ -231,6 +234,11 @@ Public Class frmPlayback
                 picArchiveInfo.Invalidate() 'cause the "info" label to fill in wiht the foArchive data.
                 ' ready bitmap rendering
                 foRenderer = New clsRenderWaveform(picStartStop.Width, picStartStop.Height)
+                ' sync sliders to match renderer
+                sldContrast.Value = foRenderer.WaterfallContrast
+                sldZoom.Value = foRenderer.ZoomFactor
+                sldOffset.Value = foRenderer.dBOffset
+                sldRange.Value = foRenderer.dBRange
                 ' reset form flags 
                 fbPaused = False
                 fbPlaying = True
@@ -252,11 +260,13 @@ Public Class frmPlayback
             fbPaused = False
             ' wait for render thread to exit
             If foPlaybackThread IsNot Nothing AndAlso foPlaybackThread.IsAlive Then
-                foPlaybackThread.Join() ' Blocks until thread exits
+                foPlaybackThread.Join(1000) ' Blocks until thread exits
             End If
-            ' reset buttons
+            foPlaybackThread = Nothing
+            ' reset ui controls 
             picStartStop.Image = My.Resources.media_play
             picPause.Image = My.Resources.media_pause
+            hsbSeekPos.Value = 0
             ' clear archive (will claer IQBuffer)
             foArchive.Dispose()
             foArchive = Nothing
@@ -304,6 +314,12 @@ Public Class frmPlayback
         End If
     End Sub
 
+    Private Sub sldContrast_ValueChanged(sender As Object, e As EventArgs) Handles sldContrast.ValueChanged
+        If foRenderer IsNot Nothing Then
+            foRenderer.WaterfallContrast = sldContrast.Value
+        End If
+    End Sub
+
 
 
 
@@ -336,6 +352,7 @@ Public Class frmPlayback
             ' Send data to renderer
             If Not fbPlaying Then Exit While
             Dim panelSize As Size = GetSignalPanelSize()
+            Dim poWaterSize As Size = GetWaterfallPanelSize()
             If Not fbPlaying Then Exit While
             If panelSize.Width > 0 AndAlso panelSize.Height > 0 Then
                 SyncLock foBitmapsLock
@@ -344,7 +361,9 @@ Public Class frmPlayback
                     ' otherwise update the bitmap
                     foSignalBmp = foRenderer.RenderGraph(panelSize.Width, panelSize.Height, pdPowerValues _
                                                         , foArchive.SampleRate, foArchive.CenterFrequency _
-                                                        , False, Nothing, "", Nothing)
+                                                        , False, Nothing, "", Nothing _
+                                                        , poWaterSize.Width, poWaterSize.Height)
+                    foWaterfallBmp = foRenderer.WaterfallBitmap
                 End SyncLock
             End If
             If Not fbPlaying Then Exit While
@@ -490,6 +509,38 @@ Public Class frmPlayback
             Return New Size(panSignal.Width, panSignal.Height)
         End If
     End Function
+
+
+    Private Function GetWaterfallPanelSize() As Size
+        If panWaterfall Is Nothing OrElse panWaterfall.IsDisposed Then
+            Return New Size(0, 0)
+        End If
+        If panWaterfall.InvokeRequired Then
+            Try
+                ' Ensure the control is still valid before invoking
+                If panWaterfall Is Nothing OrElse panWaterfall.IsDisposed Then
+                    Return New Size(0, 0)
+                End If
+
+                ' Use Invoke, but catch any disposal-related exceptions
+                Return CType(panWaterfall.Invoke(Function() GetWaterfallPanelSize()), Size)
+            Catch ex As ObjectDisposedException
+                ' The control was disposed before the invoke completed
+                Return New Size(0, 0)
+            Catch ex As InvalidOperationException
+                ' The form is closing, and Invoke is no longer allowed
+                Return New Size(0, 0)
+            End Try
+        Else
+            ' Ensure the control is still valid
+            If panWaterfall Is Nothing OrElse panWaterfall.Handle = IntPtr.Zero Then
+                Return New Size(0, 0)
+            End If
+
+            Return New Size(panWaterfall.Width, panWaterfall.Height)
+        End If
+    End Function
+
 
     Private Sub LoadListview()
         Dim poFiles As List(Of IQZipper.IQArchiveMetadata) = IQZipper.GetArchiveFileList(fsArchivePath)

@@ -7,16 +7,22 @@ Public Class clsRenderWaveform
 
     Implements IDisposable
 
-    Private mBitmap As Bitmap
-    Private miWidth As Integer
-    Private miHeight As Integer
+    Private mSignalBitmap As Bitmap
+    Private miSigWidth As Integer
+    Private miSigHeight As Integer
+
+    Private mWaterBitmap As Bitmap
+    Private miWaterWidth As Integer
+    Private miWaterHeight As Integer
 
     Private mdZoomFactor As Double = 0 ' no zoom, show full graph, to 1.0 (show double resolution).
     Private mddBOffset As Double = -20 ' Adjusts the dB scaling this value is added to the Y-axis start (0 to -100) 
     Private mddBRange As Double = 100   ' dB range to display on Y-axis (100dB range, 10dB minimum to 150dB maximum)
     Private miKernelSize As Integer = 7 ' guassian smoothing kernel size
     Private mfSmoothingTension As Single = 0.75F
+    Private miContrast As Integer = 25  ' Contrast for waterfall bitmap; values 0 to 100
 
+    Private miDebugToggle As Integer = 0
 
     Private moLabelFont As New Font("Arial", 10, FontStyle.Regular)
     Private moRecordFont As New Font("Arial", 12, FontStyle.Bold)
@@ -31,7 +37,7 @@ Public Class clsRenderWaveform
     Private moStrFmtCenter As New StringFormat() With {.Alignment = StringAlignment.Center, .LineAlignment = StringAlignment.Center, .FormatFlags = StringFormatFlags.NoWrap}
     Private moStrFmtRight As New StringFormat() With {.Alignment = StringAlignment.Far, .LineAlignment = StringAlignment.Center, .FormatFlags = StringFormatFlags.NoWrap}
     Private moStrFmtLeft As New StringFormat() With {.Alignment = StringAlignment.Near, .LineAlignment = StringAlignment.Center, .FormatFlags = StringFormatFlags.NoWrap}
-
+    Private mbRenderWaterfall As Boolean = False
 
 
     ''' <summary>
@@ -71,6 +77,23 @@ Public Class clsRenderWaveform
         Set(value As Double)
             mddBRange = Math.Min(150, Math.Max(10, value))
         End Set
+    End Property
+
+    Public Property WaterfallContrast As Integer
+        Get
+            Return miContrast
+        End Get
+        Set(value As Integer)
+            miContrast = Math.Min(100, Math.Max(0, value))
+        End Set
+    End Property
+
+    Public ReadOnly Property WaterfallBitmap As Bitmap
+        Get
+            SyncLock mWaterBitmap
+                Return mWaterBitmap
+            End SyncLock
+        End Get
     End Property
 
     ''' <summary>
@@ -174,11 +197,14 @@ Public Class clsRenderWaveform
 
 
 
-
-    Public Sub New(ByVal iWidth As Integer, ByVal iHeight As Integer)
-        miWidth = iWidth
-        miHeight = iHeight
-        mBitmap = New Bitmap(miWidth, miHeight)
+    Public Sub New(ByVal iSignalBmpWidth As Integer, ByVal iSignalBmpHeight As Integer, Optional ByVal iWaterfallBmpWidth As Integer = 0, Optional iWaterfallBmpHeight As Integer = 0)
+        miSigWidth = iSignalBmpWidth
+        miSigHeight = iSignalBmpHeight
+        mSignalBitmap = New Bitmap(miSigWidth, miSigHeight)
+        ' optional waterfall bitmap rendering
+        If iWaterfallBmpHeight > 0 And iWaterfallBmpWidth > 0 Then
+            ResizeWaterfallBitmap(iWaterfallBmpWidth, iWaterfallBmpHeight)
+        End If
     End Sub
 
     ''' <summary>
@@ -188,7 +214,8 @@ Public Class clsRenderWaveform
     Public Function RenderGraph(ByVal iWidth As Integer, ByVal iHeight As Integer _
                                 , ByVal ddBPowerValues() As Double, dSampleRate As Double, iCenterFrequency As UInteger _
                                 , Optional ByVal bIsRecording As Boolean = False, Optional ByVal oRecordingElapsed As TimeSpan = Nothing _
-                                , Optional ByVal sDeviceName As String = "", Optional ByVal oElapsed As TimeSpan = Nothing) As Bitmap
+                                , Optional ByVal sDeviceName As String = "", Optional ByVal oElapsed As TimeSpan = Nothing _
+                                , Optional ByVal iWaterfallBmpWidth As Integer = 0, Optional ByVal iWaterfallBmpHeight As Integer = 0) As Bitmap
 
         ' Bail if invalid size (window may be minimized)
         If iWidth < 10 OrElse iHeight < 10 Then
@@ -196,17 +223,26 @@ Public Class clsRenderWaveform
         End If
 
         ' Resize bitmap only if dimensions changed
-        If iWidth <> miWidth OrElse iHeight <> miHeight Then
+        If iWidth <> miSigWidth OrElse iHeight <> miSigHeight Then
             ResizeBitmap(iWidth, iHeight)
         End If
 
+        If iWaterfallBmpHeight > 0 And iWaterfallBmpWidth > 0 Then
+            If iWaterfallBmpHeight <> miWaterHeight OrElse iWaterfallBmpWidth <> miWaterWidth Then
+                ResizeWaterfallBitmap(iWaterfallBmpWidth, iWaterfallBmpHeight)
+            End If
+        End If
+
         ' Apply gaussian smooth to the levels
+        Dim pdSmoothedPowerValues() As Double
         If miKernelSize > 0 Then
-            ddBPowerValues = GaussianSmooth(ddBPowerValues)
+            pdSmoothedPowerValues = GaussianSmooth(ddBPowerValues)
+        Else
+            pdSmoothedPowerValues = ddBPowerValues
         End If
 
         ' we now have dB power values for the full buffer now, draw the bitmap.
-        Using poGraphics As Graphics = Graphics.FromImage(mBitmap)
+        Using poGraphics As Graphics = Graphics.FromImage(mSignalBitmap)
             ' how to render
             poGraphics.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
             poGraphics.TextRenderingHint = Drawing.Text.TextRenderingHint.AntiAliasGridFit
@@ -233,12 +269,12 @@ Public Class clsRenderWaveform
             Dim poGraphRect As New Rectangle(poWorkingRect.X + (piWaveformAreaWidth \ 2), poWorkingRect.Y, piGraphWidth, piGraphHeight)
 
             ' Define the part of the waveform we will be rendering
-            Dim piTotalBins As Integer = Math.Max(3, ddBPowerValues.Count * (1 - mdZoomFactor))
-            Dim piCenterBin As Integer = ddBPowerValues.Count \ 2 ' Middle of FFT
+            Dim piTotalBins As Integer = Math.Max(3, pdSmoothedPowerValues.Count * (1 - mdZoomFactor))
+            Dim piCenterBin As Integer = pdSmoothedPowerValues.Count \ 2 ' Middle of FFT
             Dim piStartBin As Integer = Math.Max(0, piCenterBin - (piTotalBins \ 2))
-            Dim piEndBin As Integer = Math.Min(ddBPowerValues.Count - 1, piCenterBin + (piTotalBins \ 2))
+            Dim piEndBin As Integer = Math.Min(pdSmoothedPowerValues.Count - 1, piCenterBin + (piTotalBins \ 2))
             Dim pdBinsPerPixel As Double = piTotalBins / poGraphRect.Width
-            Dim pdFreqResolution As Double = dSampleRate / ddBPowerValues.Count
+            Dim pdFreqResolution As Double = dSampleRate / pdSmoothedPowerValues.Count
 
             ' Build point array for the waveform
             Dim poGraphPoints(poGraphRect.Width - 1) As Point
@@ -251,14 +287,14 @@ Public Class clsRenderWaveform
 
                 ' Convert to integer bin indices
                 Dim piBinStart As Integer = Math.Max(0, Math.Floor(pdBinStart))
-                Dim piBinEnd As Integer = Math.Min(ddBPowerValues.Count - 1, Math.Ceiling(pdBinEnd))
+                Dim piBinEnd As Integer = Math.Min(pdSmoothedPowerValues.Count - 1, Math.Ceiling(pdBinEnd))
 
                 ' Compute average power level for this pixel
                 Dim pdAvgPower As Double = 0
                 Dim piCount As Integer = 0
                 For piBin As Integer = piBinStart To piBinEnd
-                    If Double.IsNegativeInfinity(ddBPowerValues(piBin)) = False Then
-                        pdAvgPower += ddBPowerValues(piBin)
+                    If Double.IsNegativeInfinity(pdSmoothedPowerValues(piBin)) = False Then
+                        pdAvgPower += pdSmoothedPowerValues(piBin)
                         piCount += 1
                     End If
                 Next
@@ -383,12 +419,108 @@ Public Class clsRenderWaveform
             End If
         End Using
 
-        Return mBitmap
+        If mWaterBitmap IsNot Nothing AndAlso miWaterHeight > 0 AndAlso miWaterWidth > 0 Then
+            GenerateWaterfallBitmap(ddBPowerValues)
+            'DebugWaterfall()
+        End If
+
+
+
+        Return mSignalBitmap
     End Function
 
+    Private Sub DebugWaterfall()
+        If mWaterBitmap Is Nothing OrElse miWaterHeight = 0 OrElse miWaterWidth = 0 Then Exit Sub
+
+        SyncLock mWaterBitmap
+            ' First, shift the existing bitmap down by 1 row
+            Using poGraphics As Graphics = Graphics.FromImage(mWaterBitmap)
+                poGraphics.CompositingMode = Drawing2D.CompositingMode.SourceCopy ' Ensures overwrite
+                poGraphics.InterpolationMode = Drawing2D.InterpolationMode.NearestNeighbor ' Prevents blurring
+                poGraphics.PixelOffsetMode = Drawing2D.PixelOffsetMode.None ' Precise pixel shifts
+
+                ' Shift entire bitmap down by 1 row
+                poGraphics.DrawImage(mWaterBitmap, New Rectangle(0, 1, miWaterWidth, miWaterHeight - 1),
+                                 New Rectangle(0, 0, miWaterWidth, miWaterHeight - 1), GraphicsUnit.Pixel)
+
+                ' now draw alternating color line on the top
+
+                poGraphics.DrawLine(New Pen(If(miDebugToggle Mod 2 = 0, Color.Red, Color.Blue)), 0, 0, mWaterBitmap.Width - 1, 0)
+                miDebugToggle += 1
+            End Using
+        End SyncLock
+
+    End Sub
+
+    Private Sub GenerateWaterfallBitmap(ByVal ddBPowerValues() As Double)
+        If mWaterBitmap Is Nothing OrElse miWaterHeight = 0 OrElse miWaterWidth = 0 Then Exit Sub
+
+        SyncLock mWaterBitmap
+            ' Lock bitmap data for direct pixel manipulation
+            Dim poBitmapData As BitmapData = mWaterBitmap.LockBits(New Rectangle(0, 0, miWaterWidth, miWaterHeight),
+                                                                   ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb)
+            Try
+                Dim piStride As Integer = poBitmapData.Stride
+                Dim piBytes As Integer = piStride * miWaterHeight
+                Dim poPixelData(piBytes - 1) As Byte
+
+                ' Read bitmap into memory
+                System.Runtime.InteropServices.Marshal.Copy(poBitmapData.Scan0, poPixelData, 0, piBytes)
+
+                ' Shift image **DOWN** by one row (Fixes the "water fountain" effect)
+                Buffer.BlockCopy(poPixelData, 0, poPixelData, piStride, piBytes - piStride)
+
+                ' Precompute min/max power levels
+                Dim pdMinPower As Double = ddBPowerValues.Min()
+                Dim pdMaxPower As Double = ddBPowerValues.Max()
+                Dim pdPowerRange As Double = Math.Max(1, pdMaxPower - pdMinPower) ' Avoid division by zero
+                Dim pdContrastFactor As Double = Math.Max(0.5, miContrast / 25.0)
+
+                ' Debug Logging (remove after testing)
+                Debug.Print($"Power Range: Min={pdMinPower}, Max={pdMaxPower}, Range={pdPowerRange}")
+
+                ' Scale power values and map to colors
+                Dim pdBinsPerPixel As Double = ddBPowerValues.Length / miWaterWidth
+                Dim piTopRowOffset As Integer = 0 ' New row goes at the **top**
+
+                For x As Integer = 0 To miWaterWidth - 1
+                    ' Select a single representative bin instead of averaging (Performance Boost)
+                    Dim piBin As Integer = Math.Max(0, Math.Min(ddBPowerValues.Length - 1, CInt(x * pdBinsPerPixel)))
+                    Dim pdAvgPower As Double = ddBPowerValues(piBin)
+
+                    ' Normalize power range (Log scale for better contrast)
+                    Dim pdNormalizedPower As Double = (pdAvgPower - pdMinPower) / pdPowerRange
+                    pdNormalizedPower = Math.Pow(pdNormalizedPower, 0.5) * pdContrastFactor
+                    pdNormalizedPower = Math.Max(0.0, Math.Min(1.0, pdNormalizedPower)) ' Clamp
+
+                    ' Convert to 0-255 intensity
+                    Dim piIntensity As Integer = CInt(pdNormalizedPower * 255)
+
+                    ' Map intensity to color scale (blue → yellow → red)
+                    Dim piOffset As Integer = piTopRowOffset + (x * 4)
+                    If piIntensity < 128 Then
+                        poPixelData(piOffset) = CByte(255 - (piIntensity * 2)) ' Blue
+                        poPixelData(piOffset + 1) = CByte(piIntensity * 2)     ' Green
+                        poPixelData(piOffset + 2) = 0                          ' Red
+                    Else
+                        poPixelData(piOffset) = 0
+                        poPixelData(piOffset + 1) = CByte(255 - ((piIntensity - 128) * 2)) ' Green
+                        poPixelData(piOffset + 2) = CByte((piIntensity - 128) * 2)         ' Red
+                    End If
+                    poPixelData(piOffset + 3) = 255 ' Alpha
+                Next
+
+                ' Copy modified data back to bitmap
+                System.Runtime.InteropServices.Marshal.Copy(poPixelData, 0, poBitmapData.Scan0, piBytes)
+            Finally
+                mWaterBitmap.UnlockBits(poBitmapData)
+            End Try
+        End SyncLock
+    End Sub
 
 
-    Function GaussianSmooth(ByVal pdData() As Double) As Double()
+
+    Private Function GaussianSmooth(ByVal pdData() As Double) As Double()
         Dim piHalfSize As Integer = miKernelSize \ 2
         Dim pdKernel(miKernelSize - 1) As Double
         Dim pdSmoothed(pdData.Length - 1) As Double
@@ -432,15 +564,33 @@ Public Class clsRenderWaveform
     ''' <param name="iHeight">New height</param>
     Private Sub ResizeBitmap(ByVal iWidth As Integer, ByVal iHeight As Integer)
         Try
-            If mBitmap IsNot Nothing Then
-                mBitmap.Dispose()
-                mBitmap = Nothing
+            If mSignalBitmap IsNot Nothing Then
+                mSignalBitmap.Dispose()
+                mSignalBitmap = Nothing
             End If
-            miWidth = iWidth
-            miHeight = iHeight
-            mBitmap = New Bitmap(miWidth, miHeight)
+            miSigWidth = iWidth
+            miSigHeight = iHeight
+            mSignalBitmap = New Bitmap(miSigWidth, miSigHeight)
         Catch ex As Exception
             clsLogger.LogException("clsRenderWaveform.ResizeBitmap", ex)
+        End Try
+    End Sub
+
+    Private Sub ResizeWaterfallBitmap(ByVal iWidth As Integer, ByVal iHeight As Integer)
+        Try
+            If mWaterBitmap IsNot Nothing Then
+                mWaterBitmap.Dispose()
+                mWaterBitmap = Nothing
+            End If
+            miWaterWidth = iWidth
+            miWaterHeight = iHeight
+            mWaterBitmap = New Bitmap(miWaterWidth, miWaterHeight)
+            Using g As Graphics = Graphics.FromImage(mWaterBitmap)
+                g.Clear(Color.DarkGray)
+            End Using
+
+        Catch ex As Exception
+            clsLogger.LogException("clsRenderWaveform.ResizeWaterfallBitmap", ex)
         End Try
     End Sub
 
@@ -448,9 +598,13 @@ Public Class clsRenderWaveform
     ''' Cleans up the bitmap resources.
     ''' </summary>
     Public Sub Dispose() Implements IDisposable.Dispose
-        If mBitmap IsNot Nothing Then
-            mBitmap.Dispose()
-            mBitmap = Nothing
+        If mSignalBitmap IsNot Nothing Then
+            mSignalBitmap.Dispose()
+            mSignalBitmap = Nothing
+        End If
+        If mWaterBitmap IsNot Nothing Then
+            mWaterBitmap.Dispose()
+            mWaterBitmap = Nothing
         End If
         ' Dispose of fonts, brushes, and pens
         moLabelFont.Dispose()
