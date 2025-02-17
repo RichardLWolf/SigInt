@@ -254,7 +254,56 @@ Public Class IQZipper
         Return False
     End Function
 
+    Public Function ExportToWavFile(ByVal sFileName As String) As Boolean
+        If myIQData Is Nothing OrElse myIQData.Count = 0 Then
+            clsLogger.Log("IQZipper.ExportToWavFile - Cannot export to WAV format, no IQ data.")
+            Return False
+        End If
 
+        Try
+            ' Define WAV file parameters
+            Dim iChannels As Integer = 2  ' I and Q channels (stereo)
+            Dim iBitsPerSample As Integer = 16
+            Dim iByteRate As Integer = (miSampleRate * iChannels * (iBitsPerSample / 8))
+            Dim iBlockAlign As Integer = (iChannels * (iBitsPerSample / 8))
+            Dim iDataSize As Integer = myIQData.Sum(Function(x) x.Length)
+
+            Dim iFileSize As Integer = 36 + iDataSize
+
+            Using oFileStream As New FileStream(sFileName, FileMode.Create)
+                Using oBinaryWriter As New BinaryWriter(oFileStream)
+                    ' Write WAV Header
+                    oBinaryWriter.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"))
+                    oBinaryWriter.Write(iFileSize) ' File size - 8
+                    oBinaryWriter.Write(System.Text.Encoding.ASCII.GetBytes("WAVE"))
+
+                    ' Format chunk
+                    oBinaryWriter.Write(System.Text.Encoding.ASCII.GetBytes("fmt "))
+                    oBinaryWriter.Write(16) ' Subchunk1Size
+                    oBinaryWriter.Write(CShort(1)) ' Audio format (PCM)
+                    oBinaryWriter.Write(CShort(iChannels)) ' Channels (2 for I/Q)
+                    oBinaryWriter.Write(miSampleRate) ' Sample rate
+                    oBinaryWriter.Write(iByteRate) ' Byte rate
+                    oBinaryWriter.Write(CShort(iBlockAlign)) ' Block align
+                    oBinaryWriter.Write(CShort(iBitsPerSample)) ' Bits per sample
+
+                    ' Data chunk
+                    oBinaryWriter.Write(System.Text.Encoding.ASCII.GetBytes("data"))
+                    oBinaryWriter.Write(iDataSize) ' Data size
+                    ' Flatten List(Of Byte()) into a single Byte() array and write it
+                    Dim abFlattened() As Byte = IQBuffer.SelectMany(Function(x) x).ToArray()
+                    oBinaryWriter.Write(abFlattened) ' Raw IQ data
+
+                End Using
+            End Using
+            Return True
+
+        Catch ex As Exception
+            clsLogger.LogException("IQZipper.ExportToWavFile", ex)
+        End Try
+
+        Return False
+    End Function
 
 
     Private Shared Function IsValidRecordingFile(sFilePath As String) As Boolean

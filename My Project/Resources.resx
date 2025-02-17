@@ -163,6 +163,11 @@
   <data name="media_pause" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>N:\Repository\SigInt\My Project\Resources\media_pause.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-
+  <data name="wav_file" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>N:\Repository\SigInt\My Project\Resources\wav_file.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="wav_file_blue" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>N:\Repository\SigInt\My Project\Resources\wav_file_blue.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 
 </root>

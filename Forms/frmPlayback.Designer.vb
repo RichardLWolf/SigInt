@@ -25,6 +25,8 @@ Partial Class frmPlayback
         components = New ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmPlayback))
         panLeft = New Panel()
+        picExport = New PictureBox()
+        picBrowseFolder = New PictureBox()
         picPause = New PictureBox()
         picArchiveInfo = New PictureBox()
         picRefresh = New PictureBox()
@@ -50,6 +52,8 @@ Partial Class frmPlayback
         panWaterfall = New Panel()
         ToolTip1 = New ToolTip(components)
         panLeft.SuspendLayout()
+        CType(picExport, ComponentModel.ISupportInitialize).BeginInit()
+        CType(picBrowseFolder, ComponentModel.ISupportInitialize).BeginInit()
         CType(picPause, ComponentModel.ISupportInitialize).BeginInit()
         CType(picArchiveInfo, ComponentModel.ISupportInitialize).BeginInit()
         CType(picRefresh, ComponentModel.ISupportInitialize).BeginInit()
@@ -65,6 +69,8 @@ Partial Class frmPlayback
         ' 
         ' panLeft
         ' 
+        panLeft.Controls.Add(picExport)
+        panLeft.Controls.Add(picBrowseFolder)
         panLeft.Controls.Add(picPause)
         panLeft.Controls.Add(picArchiveInfo)
         panLeft.Controls.Add(picRefresh)
@@ -76,6 +82,28 @@ Partial Class frmPlayback
         panLeft.Name = "panLeft"
         panLeft.Size = New Size(304, 678)
         panLeft.TabIndex = 0
+        ' 
+        ' picExport
+        ' 
+        picExport.Image = My.Resources.Resources.wav_file
+        picExport.Location = New Point(136, 224)
+        picExport.Name = "picExport"
+        picExport.Size = New Size(29, 29)
+        picExport.SizeMode = PictureBoxSizeMode.StretchImage
+        picExport.TabIndex = 29
+        picExport.TabStop = False
+        ToolTip1.SetToolTip(picExport, "Export to WAV file")
+        ' 
+        ' picBrowseFolder
+        ' 
+        picBrowseFolder.Image = CType(resources.GetObject("picBrowseFolder.Image"), Image)
+        picBrowseFolder.Location = New Point(221, 1)
+        picBrowseFolder.Name = "picBrowseFolder"
+        picBrowseFolder.Size = New Size(29, 29)
+        picBrowseFolder.SizeMode = PictureBoxSizeMode.StretchImage
+        picBrowseFolder.TabIndex = 28
+        picBrowseFolder.TabStop = False
+        ToolTip1.SetToolTip(picBrowseFolder, "Select Archive Folder")
         ' 
         ' picPause
         ' 
@@ -386,6 +414,8 @@ Partial Class frmPlayback
         Text = "Signal Playback"
         panLeft.ResumeLayout(False)
         panLeft.PerformLayout()
+        CType(picExport, ComponentModel.ISupportInitialize).EndInit()
+        CType(picBrowseFolder, ComponentModel.ISupportInitialize).EndInit()
         CType(picPause, ComponentModel.ISupportInitialize).EndInit()
         CType(picArchiveInfo, ComponentModel.ISupportInitialize).EndInit()
         CType(picRefresh, ComponentModel.ISupportInitialize).EndInit()
@@ -427,4 +457,6 @@ Partial Class frmPlayback
     Friend WithEvents Label2 As Label
     Friend WithEvents Label1 As Label
     Friend WithEvents sldContrast As CustomSlider
+    Friend WithEvents picBrowseFolder As PictureBox
+    Friend WithEvents picExport As PictureBox
 End Class

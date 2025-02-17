@@ -422,47 +422,21 @@ Public Class clsRenderWaveform
                 ' No smoothing - draw direct lines
                 poGraphics.DrawLines(moWavePen, poGraphPoints)
             End If
+
+            If mWaterBitmap IsNot Nothing AndAlso miWaterHeight > 0 AndAlso miWaterWidth > 0 Then
+                GenerateWaterfallBitmap(ddBPowerValues, piStartBin, piEndBin, pdBinsPerPixel)
+            End If
         End Using
-
-        If mWaterBitmap IsNot Nothing AndAlso miWaterHeight > 0 AndAlso miWaterWidth > 0 Then
-            GenerateWaterfallBitmap(ddBPowerValues)
-            'DebugWaterfall()
-        End If
-
-
 
         Return mSignalBitmap
     End Function
 
-    Private Sub DebugWaterfall()
-        If mWaterBitmap Is Nothing OrElse miWaterHeight = 0 OrElse miWaterWidth = 0 Then Exit Sub
-
-        SyncLock mWaterBitmap
-            ' First, shift the existing bitmap down by 1 row
-            Using poGraphics As Graphics = Graphics.FromImage(mWaterBitmap)
-                poGraphics.CompositingMode = Drawing2D.CompositingMode.SourceCopy ' Ensures overwrite
-                poGraphics.InterpolationMode = Drawing2D.InterpolationMode.NearestNeighbor ' Prevents blurring
-                poGraphics.PixelOffsetMode = Drawing2D.PixelOffsetMode.None ' Precise pixel shifts
-
-                ' Shift entire bitmap down by 1 row
-                poGraphics.DrawImage(mWaterBitmap, New Rectangle(0, 1, miWaterWidth, miWaterHeight - 1),
-                                 New Rectangle(0, 0, miWaterWidth, miWaterHeight - 1), GraphicsUnit.Pixel)
-
-                ' now draw alternating color line on the top
-
-                poGraphics.DrawLine(New Pen(If(miDebugToggle Mod 2 = 0, Color.Red, Color.Blue)), 0, 0, mWaterBitmap.Width - 1, 0)
-                miDebugToggle += 1
-            End Using
-        End SyncLock
-
-    End Sub
-
-    Private Sub GenerateWaterfallBitmap(ByVal ddBPowerValues() As Double)
+    Private Sub GenerateWaterfallBitmap(ByVal ddBPowerValues() As Double, ByVal piStartBin As Integer, ByVal piEndBin As Integer, ByVal pdBinsPerPixel As Double)
         If mWaterBitmap Is Nothing OrElse miWaterHeight = 0 OrElse miWaterWidth = 0 Then Exit Sub
 
         SyncLock mWaterBitmap
             Dim poBitmapData As BitmapData = mWaterBitmap.LockBits(New Rectangle(0, 0, miWaterWidth, miWaterHeight),
-                                                                   ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb)
+                                                               ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb)
             Try
                 Dim piStride As Integer = poBitmapData.Stride
                 Dim piBytes As Integer = piStride * miWaterHeight
@@ -474,35 +448,54 @@ Public Class clsRenderWaveform
                 ' Shift image **DOWN** by one row
                 Buffer.BlockCopy(poPixelData, 0, poPixelData, piStride, piBytes - piStride)
 
-                ' Precompute min/max power levels
+                ' Compute min/max power levels for scaling
                 Dim pdMinPower As Double = mddBOffset - mddBRange
                 Dim pdMaxPower As Double = mddBOffset
                 Dim pdPowerRange As Double = Math.Max(1, pdMaxPower - pdMinPower)
 
-                ' 🔹 Apply logarithmic contrast scaling
+                ' Apply logarithmic contrast scaling
                 Dim pdContrastFactor As Double = 1.0 + (Math.Log10(1 + miContrast / 20.0) * 1.5)
 
+                ' Compute the **actual visible bins** for the waterfall
+                Dim piBinRange As Integer = Math.Max(1, piEndBin - piStartBin)
+
                 ' Scale power values and map to colors
-                Dim pdBinsPerPixel As Double = ddBPowerValues.Length / miWaterWidth
                 Dim piTopRowOffset As Integer = 0 ' New row goes at the **top**
 
                 For x As Integer = 0 To miWaterWidth - 1
-                    ' Select a single representative bin instead of averaging (Performance Boost)
-                    Dim piBin As Integer = Math.Max(0, Math.Min(ddBPowerValues.Length - 1, CInt(x * pdBinsPerPixel)))
-                    Dim pdAvgPower As Double = ddBPowerValues(piBin)
+                    '  Map pixel to **zoomed bins**
+                    Dim pdBinStart As Double = piStartBin + (x / miWaterWidth) * piBinRange
+                    Dim pdBinEnd As Double = piStartBin + ((x + 1) / miWaterWidth) * piBinRange
+                    Dim piBinStart As Integer = Math.Max(piStartBin, Math.Floor(pdBinStart))
+                    Dim piBinEnd As Integer = Math.Min(piEndBin, Math.Ceiling(pdBinEnd))
 
-                    ' Normalize power range (Smooth log scaling for visibility)
+                    ' Compute average power across mapped bins
+                    Dim pdAvgPower As Double = 0
+                    Dim piCount As Integer = 0
+                    For piBin As Integer = piBinStart To piBinEnd
+                        If Not Double.IsNegativeInfinity(ddBPowerValues(piBin)) Then
+                            pdAvgPower += ddBPowerValues(piBin)
+                            piCount += 1
+                        End If
+                    Next
+
+                    If piCount > 0 Then
+                        pdAvgPower /= piCount
+                    Else
+                        pdAvgPower = pdMinPower ' Default to lowest power
+                    End If
+
+                    ' Normalize power range (Logarithmic contrast scaling)
                     Dim pdNormalizedPower As Double = (pdAvgPower - pdMinPower) / pdPowerRange
-                    ' Clamp to prevent negative values causing NaN in Pow()
                     pdNormalizedPower = Math.Max(0.0, pdNormalizedPower)
                     pdNormalizedPower = Math.Pow(pdNormalizedPower, 0.85) * pdContrastFactor
-                    ' Final clamp to prevent overflow
-                    pdNormalizedPower = Math.Max(0.0, Math.Min(1.0, pdNormalizedPower))
+                    pdNormalizedPower = Math.Max(0.0, Math.Min(1.0, pdNormalizedPower)) ' Clamp
 
-                    ' 🔹 Convert to 0-255 intensity and get the LUT color
+                    ' Convert to 0-255 intensity and get the LUT color
                     Dim piIntensity As Integer = CInt(pdNormalizedPower * 255)
                     piIntensity = Math.Max(0, Math.Min(255, piIntensity))
                     Dim oColor As Color = moColorPalette(piIntensity)
+
                     ' Set pixel data
                     Dim piOffset As Integer = piTopRowOffset + (x * 4)
                     poPixelData(piOffset) = oColor.B
@@ -517,9 +510,77 @@ Public Class clsRenderWaveform
                 mWaterBitmap.UnlockBits(poBitmapData)
             End Try
         End SyncLock
-
-
     End Sub
+
+
+
+    'Private Sub GenerateWaterfallBitmap(ByVal ddBPowerValues() As Double, ByVal piStartBin As Integer, ByVal piEndBin As Integer, ByVal pdBinsPerPixel As Double)
+    '    If mWaterBitmap Is Nothing OrElse miWaterHeight = 0 OrElse miWaterWidth = 0 Then Exit Sub
+
+    '    SyncLock mWaterBitmap
+    '        Dim poBitmapData As BitmapData = mWaterBitmap.LockBits(New Rectangle(0, 0, miWaterWidth, miWaterHeight),
+    '                                                               ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb)
+    '        Try
+    '            Dim piStride As Integer = poBitmapData.Stride
+    '            Dim piBytes As Integer = piStride * miWaterHeight
+    '            Dim poPixelData(piBytes - 1) As Byte
+
+    '            ' Read bitmap into memory
+    '            System.Runtime.InteropServices.Marshal.Copy(poBitmapData.Scan0, poPixelData, 0, piBytes)
+
+    '            ' Shift image **DOWN** by one row
+    '            Buffer.BlockCopy(poPixelData, 0, poPixelData, piStride, piBytes - piStride)
+
+    '            ' Precompute min/max power levels
+    '            Dim pdMinPower As Double = mddBOffset - mddBRange
+    '            Dim pdMaxPower As Double = mddBOffset
+    '            Dim pdPowerRange As Double = Math.Max(1, pdMaxPower - pdMinPower)
+
+    '            ' 🔹 Apply logarithmic contrast scaling
+    '            Dim pdContrastFactor As Double = 1.0 + (Math.Log10(1 + miContrast / 20.0) * 1.5)
+
+    '            ' Scale power values and map to colors
+    '            Dim piTopRowOffset As Integer = 0 ' New row goes at the **top**
+
+    '            For x As Integer = 0 To miWaterWidth - 1
+    '                Dim pdBinStart As Double = piStartBin + x * pdBinsPerPixel
+    '                Dim pdBinEnd As Double = piStartBin + (x + 1) * pdBinsPerPixel
+    '                Dim piBinStart As Integer = Math.Max(piStartBin, Math.Floor(pdBinStart))
+    '                Dim piBinEnd As Integer = Math.Min(piEndBin, Math.Ceiling(pdBinEnd))
+
+    '                ' Select a single representative bin instead of averaging (Performance Boost)
+    '                Dim piBin As Integer = Math.Max(0, Math.Min(ddBPowerValues.Length - 1, CInt(x * pdBinsPerPixel)))
+    '                Dim pdAvgPower As Double = ddBPowerValues(piBin)
+
+    '                ' Normalize power range (Smooth log scaling for visibility)
+    '                Dim pdNormalizedPower As Double = (pdAvgPower - pdMinPower) / pdPowerRange
+    '                ' Clamp to prevent negative values causing NaN in Pow()
+    '                pdNormalizedPower = Math.Max(0.0, pdNormalizedPower)
+    '                pdNormalizedPower = Math.Pow(pdNormalizedPower, 0.85) * pdContrastFactor
+    '                ' Final clamp to prevent overflow
+    '                pdNormalizedPower = Math.Max(0.0, Math.Min(1.0, pdNormalizedPower))
+
+    '                ' 🔹 Convert to 0-255 intensity and get the LUT color
+    '                Dim piIntensity As Integer = CInt(pdNormalizedPower * 255)
+    '                piIntensity = Math.Max(0, Math.Min(255, piIntensity))
+    '                Dim oColor As Color = moColorPalette(piIntensity)
+    '                ' Set pixel data
+    '                Dim piOffset As Integer = piTopRowOffset + (x * 4)
+    '                poPixelData(piOffset) = oColor.B
+    '                poPixelData(piOffset + 1) = oColor.G
+    '                poPixelData(piOffset + 2) = oColor.R
+    '                poPixelData(piOffset + 3) = 255 ' Alpha
+    '            Next
+
+    '            ' Copy modified data back to bitmap
+    '            System.Runtime.InteropServices.Marshal.Copy(poPixelData, 0, poBitmapData.Scan0, piBytes)
+    '        Finally
+    '            mWaterBitmap.UnlockBits(poBitmapData)
+    '        End Try
+    '    End SyncLock
+
+
+    'End Sub
 
     Private Sub InitializeGradientPalette()
         For i As Integer = 0 To 255

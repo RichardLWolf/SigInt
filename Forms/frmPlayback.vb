@@ -171,6 +171,59 @@ Public Class frmPlayback
         poDataBrush.Dispose()
     End Sub
 
+
+    Private Sub picBrowseFolder_MouseClick(sender As Object, e As MouseEventArgs) Handles picBrowseFolder.MouseClick
+        Using poDlg As New FolderBrowserDialog
+            poDlg.InitialDirectory = fsArchivePath
+            poDlg.Description = "Select folder where zip archives may be found."
+            poDlg.ShowNewFolderButton = False
+            If poDlg.ShowDialog(Me) = DialogResult.OK Then
+                fsArchivePath = poDlg.SelectedPath
+                ReloadListview()
+            End If
+        End Using
+    End Sub
+
+    Private Sub picBrowseFolder_MouseEnter(sender As Object, e As EventArgs) Handles picBrowseFolder.MouseEnter
+        picBrowseFolder.Image = My.Resources.folder_blue
+    End Sub
+
+    Private Sub picBrowseFolder_MouseLeave(sender As Object, e As EventArgs) Handles picBrowseFolder.MouseLeave
+        picBrowseFolder.Image = My.Resources.folder_green
+    End Sub
+
+
+
+    Private Sub picExport_Click(sender As Object, e As EventArgs) Handles picExport.Click
+        If Not fbPlaying Or foArchive Is Nothing Then Exit Sub
+        Using poDlg As New FolderBrowserDialog
+            poDlg.InitialDirectory = fsArchivePath
+            poDlg.Description = "Select folder save the WAV file."
+            poDlg.ShowNewFolderButton = True
+            If poDlg.ShowDialog(Me) = DialogResult.OK Then
+                Dim psPath As String = poDlg.SelectedPath
+                ' build a filename
+                Dim psFile As String = System.IO.Path.Combine(psPath, $"IQ_{foArchive.RecordedOnUTC:yyyyMMdd-HHmmss}Z_{foArchive.CenterFrequency}Hz.wav")
+                If foArchive.ExportToWavFile(psFile) = True Then
+                    MsgBox("Recording exported to WAV file!", MsgBoxStyle.OkOnly + MsgBoxStyle.Information, "FIle Exported")
+                Else
+                    MsgBox("Failed to export recording to WAV file.", MsgBoxStyle.OkOnly + MsgBoxStyle.Exclamation, "Exported Failed")
+                End If
+            End If
+        End Using
+    End Sub
+
+    Private Sub picExport_MouseEnter(sender As Object, e As EventArgs) Handles picExport.MouseEnter
+        If Not fbPlaying Then Exit Sub
+        picExport.Image = My.Resources.wav_file_blue
+    End Sub
+
+    Private Sub picExport_MouseLeave(sender As Object, e As EventArgs) Handles picExport.MouseLeave
+        If Not fbPlaying Then Exit Sub
+        picExport.Image = My.Resources.wav_file
+    End Sub
+
+
     Private Sub picPause_Click(sender As Object, e As EventArgs) Handles picPause.Click
         If Not fbPlaying Then Exit Sub
         If fbPaused Then
@@ -473,7 +526,7 @@ Public Class frmPlayback
         If fbLoading Then Exit Sub
         fbLoading = True
         lvwArchives.Items.Clear()
-        lvwArchives.Items.Add("Loading...")
+        lvwArchives.Items.Add("Loading...").ForeColor = Color.DarkBlue
         lvwArchives.Refresh()
         Dim poLoadThread As New System.Threading.Thread(AddressOf LoadListview)
         poLoadThread.IsBackground = True
@@ -550,9 +603,10 @@ Public Class frmPlayback
             Dim poItem As New ListViewItem
             poItem.Tag = poArc
             poItem.Text = String.Format("{0:MMM-dd-yyyy HH:mm:ss}", poArc.RecordingTimeUTC.ToLocalTime)
-            poItem.SubItems.Add(modMain.FormatHertz(poArc.CenterFrequency))
+            poItem.ForeColor = Color.Black
+            poItem.SubItems.Add(modMain.FormatHertz(poArc.CenterFrequency)).ForeColor = Color.Black
             Dim poTS As TimeSpan = TimeSpan.FromSeconds(poArc.RecordingDurationSec)
-            poItem.SubItems.Add($"{poTS.Minutes:D2}:{poTS.Seconds:D2}")
+            poItem.SubItems.Add($"{poTS.Minutes:D2}:{poTS.Seconds:D2}").ForeColor = Color.Black
             poList.Add(poItem)
         Next
         AddBulkToListview(poList)
@@ -571,11 +625,15 @@ Public Class frmPlayback
             If oItems.Count > 0 Then
                 lvwArchives.Items.AddRange(oItems.ToArray())
             Else
-                lvwArchives.Items.Add("No signal archives found")
+                lvwArchives.Items.Add("No signal archives found").ForeColor = Color.DarkRed
             End If
             lvwArchives.Refresh()
         End If
     End Sub
+
+
+
+
 
 
 End Class
