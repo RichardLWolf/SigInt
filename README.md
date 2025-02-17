@@ -23,7 +23,7 @@ Ideal for **radio enthusiasts, spectrum monitoring, and signal intelligence (SIG
 ## Screenshots
 ![SigInt Main Window](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/main_screen.png)
 
-![Playback Window](https://raw.githubusercontent.com/RichardLWolf/SigInt/Master/playback.png)
+![Playback Window](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/playback.png)
 
 ## 📥 Download
 🚀 **[Latest Release & Download EXE](https://github.com/RichardLWolf/SigInt/releases/latest)**
