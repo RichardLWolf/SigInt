@@ -1,6 +1,7 @@
+#define MyAppVersion GetFileVersion("N:\Repository\SigInt\bin\Release\net8.0-windows\publish\SigInt.exe")
 [Setup]
 AppName=SigInt
-AppVersion=1.0.0.2
+AppVersion={#MyAppVersion}
 DefaultDirName={autopf}\SigInt
 DefaultGroupName=SigInt
 OutputDir="N:\Repository\SigInt\bin\Installer"
