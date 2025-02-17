@@ -21,9 +21,9 @@ The **Playback Viewer** allows users to:
 Ideal for **radio enthusiasts, spectrum monitoring, and signal intelligence (SIGINT) applications**, this tool enables efficient detection, recording, and review of intermittent RF signals.
 
 ## Screenshots
-![SigInt Main Window](https://raw.githubusercontent.com/RichardLWolf/SigInt/main/main_screen.png)
+![SigInt Main Window](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/main_screen.png)
 
-![Playback Window](https://raw.githubusercontent.com/RichardLWolf/SigInt/main/playback.png)
+![Playback Window](https://raw.githubusercontent.com/RichardLWolf/SigInt/Master/playback.png)
 
 ## 📥 Download
 🚀 **[Latest Release & Download EXE](https://github.com/RichardLWolf/SigInt/releases/latest)**
