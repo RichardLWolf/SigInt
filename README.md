@@ -20,4 +20,7 @@ The **Playback Viewer** allows users to:
 ## Use Case
 Ideal for **radio enthusiasts, spectrum monitoring, and signal intelligence (SIGINT) applications**, this tool enables efficient detection, recording, and review of intermittent RF signals.
 
+## 📥 Download
+🚀 **[Latest Release & Download EXE](https://github.com/RichardLWolf/SigInt/releases/latest)**
+
 ---
