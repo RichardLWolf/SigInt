@@ -35,7 +35,7 @@ Don't have an RTL-SDR and want to get started? This guide will walk you through 
 
 ## 1. Get an RTL-SDR Device  
 You'll need a **USB RTL-SDR receiver**. The [**RTL-SDR Blog V3**](https://www.google.com/search?q=V3+R860+RTL2832U+1PPM+TCXO+HF+Bias+Tee+SMA+Software+Defined+Radio+with+Dipole+Antenna+Kit)
- is recommended and widely supported. Other RTL-SDR dongles may also work but have not been tested with SigInt.
+ is recommended and widely supported. Other RTL-SDR dongles may also work but have not been tested with SigInt.  Be aware that the RTL-SDR Blog V3 is a large module, so if you have little space around your USB ports you may wish to purchase a USB extender cable along with the unit.
 
 ### **Connect an Antenna**  
 After plugging in your RTL-SDR, attach an **antenna** for best reception.  
@@ -75,8 +75,8 @@ Once your RTL-SDR is working, download and install **SigInt** from the repositor
 
 1. **Plug in your RTL-SDR device** before launching SigInt.  
 2. Select the correct SDR device from the dropdown.  
-3. Press the **green play button** (![Play Button](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/My%20%Project/Resources/media_play.png)) to begin monitoring.  
-4. The app defaults to **1.6 GHz**. If you need a different frequency, click the **gear button** (![Gear Button](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/My%20%Project/Resources/gear.png)) to adjust it.  
+3. Press the **green play button** (![Play Button](https://raw.githubusercontent.com/RichardLWolf/SigInt/refs/heads/master/My%20Project/Resources/media_play_green.png)) to begin monitoring.  
+4. The app defaults to **1.6 GHz**. If you need a different frequency, click the **gear button** (![Gear Button](https://raw.githubusercontent.com/RichardLWolf/SigInt/refs/heads/master/My%20Project/Resources/gear.png)) to adjust it.  
 
 ### **How SigInt Works**
 - The signal spectrum will be displayed, and monitoring will begin.  
