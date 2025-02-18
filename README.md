@@ -35,6 +35,18 @@ Don't have an RTL-SDR and want to get started? This guide will walk you through 
 
 ## 1. Get an RTL-SDR Device  
 You'll need a **USB RTL-SDR receiver**. The **RTL-SDR Blog V3** is recommended and widely supported. Other RTL-SDR dongles may also work, but have not been tested with SigInt.
+### **Connect an Antenna**
+After plugging in your RTL-SDR, attach an **antenna** for best reception.  
+For example, for signals near **1.6 GHz**, the ideal antenna length depends on the type:
+
+- **Half-wave dipole:** **3.5-inch elements per side** (best for standalone dipole use).  
+- **Quarter-wave monopole:** **1.75-1.8-inch elements** (requires a ground plane).  
+
+A common, inexpensive and effective choice is a **dipole antenna with 3.5-inch arms**, as shown below:  
+
+![Dipole Antenna](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/antenna.png)  
+
+(Adjustable dipole kits work well if you need to experiment with different lengths.)
 
 ## 2. Install RTL-SDR Drivers  
 Before using your device, follow the official **RTL-SDR Blog’s Getting Started Guide**:  
