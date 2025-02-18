@@ -34,15 +34,17 @@ Ideal for **radio enthusiasts, spectrum monitoring, and signal intelligence (SIG
 Don't have an RTL-SDR and want to get started? This guide will walk you through setting up an **RTL-SDR** device and configuring **SigInt** to begin capturing signals.
 
 ## 1. Get an RTL-SDR Device  
-You'll need a **USB RTL-SDR receiver**. The **RTL-SDR Blog V3** is recommended and widely supported. Other RTL-SDR dongles may also work, but have not been tested with SigInt.
-### **Connect an Antenna**
+You'll need a **USB RTL-SDR receiver**. The [**RTL-SDR Blog V3**](https://www.google.com/search?q=V3+R860+RTL2832U+1PPM+TCXO+HF+Bias+Tee+SMA+Software+Defined+Radio+with+Dipole+Antenna+Kit)
+ is recommended and widely supported. Other RTL-SDR dongles may also work but have not been tested with SigInt.
+
+### **Connect an Antenna**  
 After plugging in your RTL-SDR, attach an **antenna** for best reception.  
 For example, for signals near **1.6 GHz**, the ideal antenna length depends on the type:
 
 - **Half-wave dipole:** **3.5-inch elements per side** (best for standalone dipole use).  
 - **Quarter-wave monopole:** **1.75-1.8-inch elements** (requires a ground plane).  
 
-A common, inexpensive and effective choice is a **dipole antenna with 3.5-inch arms**, as shown below:  
+A common, inexpensive, and effective choice is a **dipole antenna with 3.5-inch arms**, as shown below:  
 
 ![Dipole Antenna](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/antenna.png)  
 
@@ -57,27 +59,28 @@ This will walk you through:
 - Verifying that the device is detected properly.
 
 ## 3. Install SDR# (SDRSharp)  
-To confirm your RTL-SDR is working, install **SDR#** (pronounced "S-D-R Sharp," a basic software-defined radio tool and is free for personal and non-commercial use):  
+To confirm your RTL-SDR is working, install **SDR#** (pronounced "S-D-R Sharp"). It is a **free** software-defined radio tool for personal and non-commercial use:  
 👉 [Download SDR#](https://airspy.com/download/)  
 
-1. Chosoe the **"Software Defined Radio Package"** package link on the right side.  
+1. Choose the **"Software Defined Radio Package"** link on the right side.  
 2. Run the **install-rtlsdr.bat** script inside the folder.  
 3. Open **SDRSharp.exe**, select **RTL-SDR (USB)** as the source, and press **Start**.  
-4. Tune to a known local FM station (~88-108 MHz) via the big numbers at the top of the window to confirm reception.  
+4. Tune to a known local FM station (~88-108 MHz) using the **big numbers at the top of the window** to confirm reception.  
 
 If you hear audio and see a signal, your RTL-SDR is working.
 
 ## 4. Install and Configure SigInt  
-Once your RTL-SDR is working, download and install **SigInt** from the repository: (https://github.com/RichardLWolf/SigInt/releases/latest).
+Once your RTL-SDR is working, download and install **SigInt** from the repository:  
+👉 [Latest SigInt Release](https://github.com/RichardLWolf/SigInt/releases/latest)
 
 1. **Plug in your RTL-SDR device** before launching SigInt.  
-2. **Set your desired frequency** (e.g., **1.6 GHz**).  
-3. Press **Start** to begin signal monitoring.  
+2. Select the correct SDR device from the dropdown.  
+3. Press the **green play button** (![Play Button](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/My%20%Project/Resources/media_play.png)) to begin monitoring.  
+4. The app defaults to **1.6 GHz**. If you need a different frequency, click the **gear button** (![Gear Button](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/My%20%Project/Resources/gear.png)) to adjust it.  
 
-SigInt will:
-- Display the signal spectrum and begin monitoring.  
-- Minimize it and let it run.  SigInt will detect and log signal events automatically.  
-
-For more details, always check the included documentation.
-
+### **How SigInt Works**
+- The signal spectrum will be displayed, and monitoring will begin.  
+- **Minimize SigInt** and let it run. It will automatically detect and log signal events.  
+- To view the log, click the **green folder icon** to open the log folder, then double-click the `"Application_Log.txt"` file in File Explorer. 
+- To view recorded events, click the **microphone icon** to open the playback window.  Select the desired archive from the list at top-left then click the play button to begin playback.
 ---
