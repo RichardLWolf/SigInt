@@ -75,8 +75,8 @@ Once your RTL-SDR is working, download and install **SigInt** from the repositor
 
 1. **Plug in your RTL-SDR device** before launching SigInt.  
 2. Select the correct SDR device from the dropdown.  
-3. Press the **green play button** ( <img src="https://raw.githubusercontent.com/RichardLWolf/SigInt/master/MyProject/Resources/media_play.png" width="20" height="20" /> ) to begin monitoring.  
-4. The app defaults to **1.6 GHz**. If you need a different frequency, click the **gear button** ( <img src="https://raw.githubusercontent.com/RichardLWolf/SigInt/master/MyProject/Resources/gear.png" width="20" height="20" /> ) to adjust it.  
+3. Press the **green play button** ( <img src="https://raw.githubusercontent.com/RichardLWolf/SigInt/refs/heads/master/My%20Project/Resources/media_play_green.png" width="20" height="20" /> ) to begin monitoring.  
+4. The app defaults to **1.6 GHz**. If you need a different frequency, click the **gear button** ( <img src="https://raw.githubusercontent.com/RichardLWolf/SigInt/refs/heads/master/My%20Project/Resources/gear.png" width="20" height="20" /> ) to adjust it.  
 
 ### **How SigInt Works**
 - The signal spectrum will be displayed, and monitoring will begin.  
