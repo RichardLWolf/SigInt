@@ -96,6 +96,35 @@ Public Class RtlSdrApi
         End Function
     End Structure
 
+    Public Structure SDRConfiguration
+        Public iDeviceIndex As Integer
+        Public iCenterFrequency As UInteger
+        Public iSampleRate As UInteger
+        Public bAutomaticGain As Boolean
+        Public iManualGainValue As Integer
+        Public iDetectionThreshold As Integer
+        Public iDetectionWindow As Integer
+        Public dMinEventWindow As Double
+        Public sDiscordWebhook As String
+        Public sDiscordMention As String
+
+        ' Constructor - must have the driver device index
+        Public Sub New(iDeviceIdx As Integer)
+            iDeviceIndex = iDeviceIdx
+            iCenterFrequency = 1600000000
+            iSampleRate = 2048000
+            iDetectionThreshold = 15
+            iDetectionWindow = 1
+            bAutomaticGain = False
+            iManualGainValue = 166
+            dMinEventWindow = 10
+            sDiscordWebhook = ""
+            sDiscordMention = ""
+        End Sub
+    End Structure
+
+
+
     ' Event for UI-safe error reporting
     Public Event ErrorOccurred(ByVal sender As Object, ByVal message As String)
     Public Event SignalChange(ByVal sender As Object, ByVal SignalFound As Boolean)
@@ -113,7 +142,8 @@ Public Class RtlSdrApi
     Private mbRunning As Boolean = False
     Private moSyncContext As SynchronizationContext
     Private miSignalEvents As Integer = 0
-    Private miSignalWindow As Integer = 1   ' 1 "bin" about 250Hz on each side of center frequency
+    Private miSignalDetectionWindow As Integer = 1   ' 1 "3 bins" about 250Hz on each side of center frequency
+    Private miDetectionThreshold As Integer = 15 ' dB above noise floor to detect signal
     Private mdMinimumEventWindow As Double = 10D ' minimum number of minutes between recording events
     Private mbShowDeviceInfo As Boolean = True
 
@@ -131,7 +161,7 @@ Public Class RtlSdrApi
     Private miMaxRecordingTime As Integer = 60 ' Max seconds to record per event
     ' File writing and recording state
     Private myRecordingBuffer As New List(Of Byte()) ' Holds IQ data during an event
-    Private miSampleRate As Integer = 2048000 ' SDR sample rate (2.048 MSPS)
+    Private miSampleRate As UInteger = 2048000 ' SDR sample rate (2.048 MSPS)
 
     Private mtStartMonitor As Date = DateTime.Now
 
@@ -184,9 +214,9 @@ Public Class RtlSdrApi
         End Get
     End Property
 
-    Public ReadOnly Property SampleRate As Double
+    Public ReadOnly Property SampleRate As UInteger
         Get
-            Return CDbl(miSampleRate)
+            Return miSampleRate
         End Get
     End Property
 
@@ -226,15 +256,6 @@ Public Class RtlSdrApi
 
 
 #Region "  Read/Write Properties "
-    Public Property SignalWindow As Integer
-        Get
-            Return miSignalWindow
-        End Get
-        Set(value As Integer)
-            miSignalWindow = value
-        End Set
-    End Property
-
     Public Property ShowDeviceInfo As Boolean
         Get
             Return mbShowDeviceInfo
@@ -257,26 +278,55 @@ Public Class RtlSdrApi
         End Set
     End Property
 
+    ''' <summary>
+    ''' The number of FFT bins to average for signal detection (1 to 7).  1 = 3 bins, 7 = 15 bins.
+    ''' </summary>
+    ''' <returns></returns>
+    ''' </summary>
+    ''' <returns></returns>
+    ''' The maximum time (in seconds) to record per event (10 to 600).
+    ''' </summary>
+    ''' <returns></returns>
+    Public Property DetectionWindow As Integer
+        Get
+            Return miSignalDetectionWindow
+        End Get
+        Set(value As Integer)
+            miSignalDetectionWindow = Math.Min(7, Math.Max(1, value))
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Number of dB above noise floor required to trigger a signal detection (5 to 25).
+    ''' </summary>
+    ''' <returns></returns>
+    Public Property DetectionThreshold As Integer
+        Get
+            Return miDetectionThreshold
+        End Get
+        Set(value As Integer)
+            miDetectionThreshold = Math.Min(25, Math.Max(5, value))
+        End Set
+    End Property
 #End Region
 
 
 
-    Public Sub New(iDeviceIndex As Integer, Optional ByVal iCenterFrequency As UInteger = 1600000000 _
-            , Optional ByVal iSampleRate As UInteger = 2048000 _
-            , Optional ByVal bAutomaticGain As Boolean = True _
-            , Optional ByVal iManualGainValue As Integer = 300 _
-            , Optional ByVal sDiscordWebhook As String = "", Optional ByVal sDiscordMention As String = "")
-
-        miDeviceIndex = iDeviceIndex
-        miCenterFrequency = iCenterFrequency
-        miSampleRate = iSampleRate
-        miGainMode = If(bAutomaticGain, 0, 1)
-        miGainValue = iManualGainValue
-        msDiscordWebhook = sDiscordWebhook
-        msDiscordMention = sDiscordMention
+    Public Sub New(ByVal oSdrConfig As SDRConfiguration)
+        ' copy configuration to class 
+        miDeviceIndex = oSdrConfig.iDeviceIndex
+        miCenterFrequency = oSdrConfig.iCenterFrequency
+        miSampleRate = oSdrConfig.iSampleRate
+        miDetectionThreshold = oSdrConfig.iDetectionThreshold
+        miSignalDetectionWindow = oSdrConfig.iDetectionWindow
+        miGainMode = If(oSdrConfig.bAutomaticGain, 0, 1)
+        miGainValue = oSdrConfig.iManualGainValue
+        mdMinimumEventWindow = oSdrConfig.dMinEventWindow
+        msDiscordWebhook = oSdrConfig.sDiscordWebhook
+        msDiscordMention = oSdrConfig.sDiscordMention
 
         ' get the name of the device, function returns pointer to string var
-        Dim oDeviceNamePtr As IntPtr = rtlsdr_get_device_name(iDeviceIndex)
+        Dim oDeviceNamePtr As IntPtr = rtlsdr_get_device_name(miDeviceIndex)
         ' Convert the IntPtr to a string
         msDeviceName = Marshal.PtrToStringAnsi(oDeviceNamePtr)
         ' Capture UI thread context
@@ -593,7 +643,7 @@ Public Class RtlSdrApi
             mtStartMonitor = DateTime.Now
             miSignalEvents = 0
             mbRunning = True
-            clsLogger.Log("RtlSdrApi.MonitorThread", $"Starting monitor IQ data stream {mtStartMonitor:MM/dd/yyyy HH:mm:ss}.")
+            clsLogger.Log("RtlSdrApi.MonitorThread", $"Starting monitor IQ data stream {mtStartMonitor:MM/dd/yyyy HH:mm:ss} - {modMain.FormatHertz(miCenterFrequency)}, {modMain.FormatMSPS(miSampleRate)}, {modMain.FormatBytes(miBufferSize)} buffer.")
             RaiseStarted(True)
 
             ' Start streaming IQ data
@@ -634,12 +684,13 @@ Public Class RtlSdrApi
                 Dim dNoiseFloor As Double = CalculateNoiseFloor(pdPowerLevels) ' Get noise level
                 Dim dSignalPower As Double = CalculatePowerAtFrequency(pdPowerLevels) ' Get signal power at center frequency
                 ' Detect signal if power is significantly above noise floor and we've been buffering for at least 3 seconds
-                Debug.WriteLine($"Noise floor is {dNoiseFloor}dB and Center signal is {dSignalPower}db.")
-                If dSignalPower > (dNoiseFloor + 15) AndAlso Now.Subtract(ptMonitorStart).TotalSeconds > 3 Then
-                    piDetectCount = piDetectCount + 1
+                ' Debug.WriteLine($"Noise floor is {dNoiseFloor}dB and Center signal is {dSignalPower}db.")
+                If dSignalPower > (dNoiseFloor + miDetectionThreshold) AndAlso Now.Subtract(ptMonitorStart).TotalSeconds > 3 Then
+                    piDetectCount = piDetectCount + 1   ' need to see it 3 times in a row
                 Else
                     piDetectCount = 0
                 End If
+                ' tell me 3 times
                 If piDetectCount > 3 OrElse mbSignalDetected Then
                     Dim ptNow As DateTime = DateTime.Now
                     ' Ensure a minimum delay between recordings (e.g., 10 minutes)
@@ -689,8 +740,8 @@ Public Class RtlSdrApi
             ' Log end of monitoring session
             Dim ptEnd As Date = DateTime.Now
             Dim poElapsed As TimeSpan = ptEnd.Subtract(mtStartMonitor)
-            Dim psSignalText As String = If(miSignalEvents = 0, "no", miSignalEvents.ToString()) & " signal event" & If(miSignalEvents > 1, "s", "")
-            clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ending at {ptEnd:MM/dd/yyyy HH:mm:ss} with {psSignalText}, {modMain.FullDisplayElapsed(poElapsed.TotalSeconds)}.")
+            Dim psSignalText As String = If(miSignalEvents = 0, "no", miSignalEvents.ToString()) & " signal event" & If(miSignalEvents <> 1, "s", "")
+            clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ending at {ptEnd:MM/dd/yyyy HH:mm:ss} with {psSignalText}, {modMain.FullDisplayElapsed(poElapsed.TotalSeconds)} elapsed.")
 
         Catch ex As Exception
             clsLogger.LogException("rtlSdrApi.MonitorThread", ex)
@@ -808,7 +859,7 @@ Public Class RtlSdrApi
         Dim dPowerSum As Double = 0
         Dim iBinsUsed As Integer = 0
 
-        For iOffset As Integer = -miSignalWindow To miSignalWindow
+        For iOffset As Integer = -miSignalDetectionWindow To miSignalDetectionWindow
             Dim iBin As Integer = iCenterBin + iOffset
             If iBin >= 0 AndAlso iBin < iFftBins Then
                 ' Convert dB power values back to linear scale for summation
@@ -820,7 +871,7 @@ Public Class RtlSdrApi
         ' Prevent division by zero
         If iBinsUsed = 0 Then Return Double.NegativeInfinity
 
-        Dim dSelectedBins As Double() = dPowerLevels.Skip(iCenterBin - miSignalWindow).Take(2 * miSignalWindow + 1).ToArray()
+        Dim dSelectedBins As Double() = dPowerLevels.Skip(iCenterBin - miSignalDetectionWindow).Take(2 * miSignalDetectionWindow + 1).ToArray()
         Dim dAvgPower As Double = Median(dSelectedBins)
 
         Return dAvgPower

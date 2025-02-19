@@ -2,8 +2,19 @@
 
 **A Windows-based RTL-SDR tool for detecting, capturing, and reviewing RF signals.**
 
-## Overview
-This application continuously **monitors a center frequency**, detecting signals that exceed **15 dB above the noise floor**. When a signal is detected, the system **captures up to 60 seconds of IQ data** and saves it in a **compressed archive (ZIP format)**—ensuring a minimum delay between captures, as configured by the user.
+
+## Overview  
+This application **monitors a user-defined center frequency**, detecting signals that exceed a configurable **dB threshold above the noise floor**. When a signal is detected, the system **captures IQ data for up to 60 seconds** and saves it in a **compressed ZIP archive**—ensuring a **minimum delay between captures**, as configured by the user.
+
+### 🔧 **Configurable Detection Settings**  
+- **Center Frequency** (Hz)  
+- **Sample Rate** (MSPS)  
+- **Automatic or Manual Gain Control** (with adjustable dB values)  
+- **Signal Detection Threshold** (dB above noise)  
+- **Detection Window** (FFT bins around center frequency)  
+- **Minimum Event Recording Window** (to prevent excessive captures)  
+
+The system is designed to efficiently capture meaningful signal events while avoiding unnecessary recordings.
 
 The **Playback Viewer** allows users to:
 - **Review captured signals** via waveform and waterfall visualizations.

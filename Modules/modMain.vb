@@ -24,6 +24,16 @@ Module modMain
         End Select
     End Function
 
+    Public Function FormatMSPS(ByVal iSampleRate As UInteger) As String
+        If iSampleRate >= 1000000 Then
+            Return $"{iSampleRate / 1000000.0:F2} MSPS"
+        ElseIf iSampleRate >= 1000 Then
+            Return $"{iSampleRate / 1000.0:F0} kSPS"
+        Else
+            Return $"{iSampleRate} SPS"
+        End If
+    End Function
+
     Public Function FormatBytes(ByVal plBytes As Long) As String
         Dim psSuffixes() As String = {"B", "KB", "MB", "GB"}
         Dim pdSize As Double = plBytes

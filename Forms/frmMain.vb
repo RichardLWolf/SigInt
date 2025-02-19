@@ -164,13 +164,29 @@ Public Class frmMain
                     If poFrm.ShowDialog(Me) = DialogResult.OK Then
                         ' stop monitor
                         foSDR.StopMonitor()
-                        foSDR = New RtlSdrApi(poItem.DeviceIndex, poFrm.CenterFreq, , If(poFrm.GainMode = 0, True, False), poFrm.GainValue, poFrm.DiscordServerWebhook, poFrm.DiscordMentionID)
-                        foSDR.MinimumEventWindow = poFrm.MinEventWindow
+                        Dim poSdrCfg As New RtlSdrApi.SDRConfiguration(poItem.DeviceIndex)
+                        With poSdrCfg
+                            .iDeviceIndex = poItem.DeviceIndex
+                            .iCenterFrequency = poFrm.CenterFreq
+                            .iSampleRate = poFrm.SampleRate
+                            .iDetectionThreshold = poFrm.DetectionThreshold
+                            .iDetectionWindow = poFrm.DetectionWindow
+                            .bAutomaticGain = If(poFrm.GainMode = 0, True, False)
+                            .iManualGainValue = poFrm.GainValue
+                            .dMinEventWindow = poFrm.MinEventWindow
+                            .sDiscordWebhook = poFrm.DiscordServerWebhook
+                            .sDiscordMention = poFrm.DiscordMentionID
+                        End With
+                        foSDR = New RtlSdrApi(poSdrCfg)
                         foSDR.StartMonitor()
+                        ' update config values
                         foConfig.CenterFrequency = foSDR.CenterFrequency
+                        foConfig.SampleRate = foSDR.SampleRate
                         foConfig.GainMode = poFrm.GainMode
                         foConfig.GainValue = foSDR.GainValue
                         foConfig.MinEventWindow = foSDR.MinimumEventWindow
+                        foConfig.DetectionThreshold = foSDR.DetectionThreshold
+                        foConfig.DetectionWindow = foSDR.DetectionWindow
                         foConfig.DiscordNotifications = poFrm.DiscordNotifications
                         If Not foConfig.DiscordNotifications Then
                             foConfig.DiscordServerWebhook = ""
@@ -233,7 +249,20 @@ Public Class frmMain
                 cboDeviceList.Focus()
             Else
                 If foSDR Is Nothing Then
-                    foSDR = New RtlSdrApi(poItem.DeviceIndex, foConfig.CenterFrequency,, IIf(foConfig.GainMode = 0, True, False), foConfig.GainValue, foConfig.DiscordServerWebhook, foConfig.DiscordMentionID)
+                    Dim poSdrCfg As New RtlSdrApi.SDRConfiguration(poItem.DeviceIndex)
+                    With poSdrCfg
+                        .iDeviceIndex = poItem.DeviceIndex
+                        .iCenterFrequency = foConfig.CenterFrequency
+                        .iSampleRate = foConfig.SampleRate
+                        .iDetectionThreshold = foConfig.DetectionThreshold
+                        .iDetectionWindow = foConfig.DetectionWindow
+                        .bAutomaticGain = If(foConfig.GainMode = 0, True, False)
+                        .iManualGainValue = foConfig.GainValue
+                        .dMinEventWindow = foConfig.MinEventWindow
+                        .sDiscordWebhook = foConfig.DiscordServerWebhook
+                        .sDiscordMention = foConfig.DiscordMentionID
+                    End With
+                    foSDR = New RtlSdrApi(poSdrCfg)
                 End If
                 foSDR.MinimumEventWindow = foConfig.MinEventWindow
                 If foSDR.IsRunning Then

@@ -9,6 +9,8 @@ Public Class clsAppConfig
     Public Property GainMode As Integer = 0     ' 0=auto, 1=manual
     Public Property GainValue As Integer = 300  ' 30.0dB
     Public Property MinEventWindow As Double = 10D  ' 10 mins between signals
+    Public Property DetectionThreshold As Integer = 15 ' Default: 15 dB
+    Public Property DetectionWindow As Integer = 1 ' 3 FFT bins to average for signal detection
     '   UI Preferences
     Public Property ZoomLevel As Integer = 0    ' Default: Full view (0 to 100)
     Public Property dBOffset As Integer = -20   ' Default: -20 dB  (0 to -100)
@@ -63,6 +65,8 @@ Public Class clsAppConfig
         Me.DiscordNotifications = poDefaultConfig.DiscordNotifications
         Me.DiscordServerWebhook = poDefaultConfig.DiscordServerWebhook
         Me.DiscordMentionID = poDefaultConfig.DiscordMentionID
+        Me.DetectionThreshold = poDefaultConfig.DetectionThreshold
+        Me.DetectionWindow = poDefaultConfig.DetectionWindow
         Save()
     End Sub
 

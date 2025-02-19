@@ -6,11 +6,13 @@ Public Class frmConfig
     Private fiGainMode As Integer
     Private fiGainValue As Integer
     Private fiCenterFreq As UInteger
-    Private fiSampleRate As Integer
+    Private fiSampleRate As UInteger
     Private fdMinEventWindow As Double
     Private fbDiscordNotifications As Boolean
     Private fsDiscordServerWebhook As String
     Private fsDiscordMentionID As String
+    Private fiDetThresh As Integer
+    Private fiDetWind As Integer
 
 
     Private foGains As New List(Of Integer)
@@ -35,7 +37,7 @@ Public Class frmConfig
         End Get
     End Property
 
-    Public ReadOnly Property SampleRate As Integer
+    Public ReadOnly Property SampleRate As UInteger
         Get
             Return fiSampleRate
         End Get
@@ -65,6 +67,18 @@ Public Class frmConfig
         End Get
     End Property
 
+    Public ReadOnly Property DetectionThreshold As Integer
+        Get
+            Return fiDetThresh
+        End Get
+    End Property
+
+    Public ReadOnly Property DetectionWindow As Integer
+        Get
+            Return fiDetWind
+        End Get
+    End Property
+
     Public Property SelectedDeviceName As String
         Get
             Return fsDeviceName
@@ -76,22 +90,6 @@ Public Class frmConfig
     End Property
 
     Public Sub ReadyForm(ByVal SelectedDevice As String, ByVal oSDR As RtlSdrApi, ByVal oConfig As clsAppConfig)
-        Me.SelectedDeviceName = SelectedDevice
-
-        fiGainMode = oSDR.GainMode
-        fiGainValue = oSDR.GainValue
-        foGains = oSDR.GetTunerGainsList()
-        Dim poFreqs As New List(Of UInteger)
-        poFreqs = oSDR.GetFrequencyRangeList()
-        fiMinFreq = poFreqs(0)
-        fiMaxFreq = poFreqs(1)
-        fiCenterFreq = oSDR.CenterFrequency
-        fiSampleRate = oSDR.SampleRate
-        fdMinEventWindow = oSDR.MinimumEventWindow
-        fbDiscordNotifications = oConfig.DiscordNotifications
-        fsDiscordServerWebhook = oConfig.DiscordServerWebhook
-        fsDiscordMentionID = oConfig.DiscordMentionID
-
 
         cboScale.Items.Clear()
         cboScale.Items.Add("Hz")
@@ -100,14 +98,9 @@ Public Class frmConfig
         cboScale.Items.Add("GHz")
         cboScale.SelectedIndex = 0
 
-        lblFreqRange.Text = $"({modMain.FormatHertz(fiMinFreq)} – {modMain.FormatHertz(fiMaxFreq)})"
 
-        txtFrequency.TextPadding = New Padding(0, 0, 25, 0)
-        txtFrequency.TextAlign = HorizontalAlignment.Right
-        txtFrequency.Text = String.Format("{0:#########0}", fiCenterFreq)
-
-        cboMinEventWindow.Items.Clear()
         With cboMinEventWindow
+            .Items.Clear()
             .Items.Add(New KeyValuePair(Of String, Double)("30 sec", 0.5D))
             .Items.Add(New KeyValuePair(Of String, Double)("1 min", 1D))
             .Items.Add(New KeyValuePair(Of String, Double)("2 min", 2D))
@@ -121,13 +114,68 @@ Public Class frmConfig
             .DisplayMember = "Key"
             .ValueMember = "Value"
         End With
-        For i As Integer = 0 To cboMinEventWindow.Items.Count - 1
-            Dim kvp As KeyValuePair(Of String, Double) = DirectCast(cboMinEventWindow.Items(i), KeyValuePair(Of String, Double))
-            If kvp.Value = fdMinEventWindow Then
-                cboMinEventWindow.SelectedIndex = i
-                Exit For
-            End If
-        Next
+        cboMinEventWindow.SelectedIndex = 0
+
+        With cboDetThresh
+            .Items.Clear()
+            .Items.Add(New KeyValuePair(Of String, Integer)("5 dB", 5))
+            .Items.Add(New KeyValuePair(Of String, Integer)("10 dB", 10))
+            .Items.Add(New KeyValuePair(Of String, Integer)("15 dB (Default)", 15))
+            .Items.Add(New KeyValuePair(Of String, Integer)("20 dB", 20))
+            .Items.Add(New KeyValuePair(Of String, Integer)("25 dB", 25))
+            .DisplayMember = "Key"
+            .ValueMember = "Value"
+        End With
+        cboDetThresh.SelectedIndex = 0
+
+        With cboDetWind
+            .Items.Clear()
+            .Items.Add(New KeyValuePair(Of String, Integer)("3 bins (Default)", 1))
+            .Items.Add(New KeyValuePair(Of String, Integer)("5 bins", 2))
+            .Items.Add(New KeyValuePair(Of String, Integer)("7 bins", 3))
+            .Items.Add(New KeyValuePair(Of String, Integer)("9 bins", 4))
+            .Items.Add(New KeyValuePair(Of String, Integer)("11 bins", 5))
+            .Items.Add(New KeyValuePair(Of String, Integer)("15 bins", 7))
+            .DisplayMember = "Key"
+            .ValueMember = "Value"
+        End With
+        cboDetWind.SelectedIndex = 0
+
+        With cboSampleRate
+            .Items.Clear()
+            .Items.Add(New KeyValuePair(Of String, UInteger)("3.2 MSPS (~1.6 MHz BW)", 3200000))
+            .Items.Add(New KeyValuePair(Of String, UInteger)("2.8 MSPS (~1.4 MHz BW)", 2800000))
+            .Items.Add(New KeyValuePair(Of String, UInteger)("2.56 MSPS (~1.28 MHz BW)", 2560000))
+            .Items.Add(New KeyValuePair(Of String, UInteger)("2.4 MSPS (~1.2 MHz BW)", 2400000))
+            .Items.Add(New KeyValuePair(Of String, UInteger)("2.048 MSPS (~1.024 MHz BW) (Default)", 2048000))
+            .Items.Add(New KeyValuePair(Of String, UInteger)("1.92 MSPS (~960 kHz BW)", 1920000))
+            .Items.Add(New KeyValuePair(Of String, UInteger)("1.8 MSPS (~900 kHz BW)", 1800000))
+            .Items.Add(New KeyValuePair(Of String, UInteger)("1.4 MSPS (~700 kHz BW)", 1400000))
+            .Items.Add(New KeyValuePair(Of String, UInteger)("1.024 MSPS (~512 kHz BW)", 1024000))
+            .Items.Add(New KeyValuePair(Of String, UInteger)("0.900001 MSPS (~450 kHz BW)", 900001))
+            .Items.Add(New KeyValuePair(Of String, UInteger)("0.25 MSPS (~125 kHz BW)", 250000))
+            .DisplayMember = "Key"
+            .ValueMember = "Value"
+        End With
+        cboSampleRate.SelectedIndex = 0
+
+        ' Load values form config to form-level vars
+        Me.SelectedDeviceName = SelectedDevice
+        fiGainMode = oConfig.GainMode
+        fiGainValue = oConfig.GainValue
+        foGains = oSDR.GetTunerGainsList()
+        Dim poFreqs As New List(Of UInteger)
+        poFreqs = oSDR.GetFrequencyRangeList()
+        fiMinFreq = poFreqs(0)
+        fiMaxFreq = poFreqs(1)
+        fiCenterFreq = oConfig.CenterFrequency
+        fiSampleRate = oConfig.SampleRate
+        fdMinEventWindow = oConfig.MinEventWindow
+        fiDetWind = oConfig.DetectionWindow
+        fiDetThresh = oConfig.DetectionThreshold
+        fbDiscordNotifications = oConfig.DiscordNotifications
+        fsDiscordServerWebhook = oConfig.DiscordServerWebhook
+        fsDiscordMentionID = oConfig.DiscordMentionID
 
         If foGains.Count > 0 Then
             foGains.Sort()
@@ -138,18 +186,15 @@ Public Class frmConfig
             sldGain.DisplayValue = False
         End If
         sldGain_ValueChanged(Nothing, Nothing)
-        chkAutomatic.Checked = CBool(oSDR.GainMode = 0)
-        chkDiscordNotify.Checked = oConfig.DiscordNotifications
-        txtDiscordServer.Text = oConfig.DiscordServerWebhook
-        txtDiscordMention.Text = oConfig.DiscordMentionID
+
+        ' put values onto screen
+        LoadUIControls()
     End Sub
-
-
 
 
     Private Sub btnApply_Click(sender As Object, e As EventArgs) Handles btnApply.Click
         'check values
-        Dim pbError As Boolean = False
+        Dim pbError = False
         If fiCenterFreq < fiMinFreq Or fiCenterFreq > fiMaxFreq Then
             MsgBox("Please enter a valid center frequency before applying changes.", MsgBoxStyle.OkOnly + MsgBoxStyle.Exclamation, "Invalid Frequency")
             pbError = True
@@ -174,7 +219,7 @@ Public Class frmConfig
         End If
 
         If Not pbError Then
-            Me.DialogResult = DialogResult.OK
+            DialogResult = DialogResult.OK
         End If
     End Sub
 
@@ -183,8 +228,40 @@ Public Class frmConfig
         txtFrequency.Focus()
     End Sub
 
+    Private Sub btnReset_Click(sender As Object, e As EventArgs) Handles btnReset.Click
+        Dim poSdrCfg As New RtlSdrApi.SDRConfiguration(0)
+
+        fiGainMode = If(poSdrCfg.bAutomaticGain, 0, 1)
+        fiGainValue = poSdrCfg.iManualGainValue
+        fiCenterFreq = poSdrCfg.iCenterFrequency
+        fiSampleRate = poSdrCfg.iSampleRate
+        fdMinEventWindow = poSdrCfg.dMinEventWindow
+        fiDetWind = poSdrCfg.iDetectionWindow
+        fiDetThresh = poSdrCfg.iDetectionThreshold
+        If String.IsNullOrEmpty(poSdrCfg.sDiscordWebhook) Then
+            fsDiscordServerWebhook = ""
+            fsDiscordMentionID = ""
+        Else
+            fsDiscordServerWebhook = poSdrCfg.sDiscordWebhook
+            fsDiscordMentionID = poSdrCfg.sDiscordMention
+        End If
+        LoadUIControls()
+    End Sub
+
+    Private Sub cboDetThresh_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboDetThresh.SelectedIndexChanged
+        fiDetThresh = DirectCast(cboDetThresh.SelectedItem, KeyValuePair(Of String, Integer)).Value
+    End Sub
+
+    Private Sub cboDetWind_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboDetWind.SelectedIndexChanged
+        fiDetWind = DirectCast(cboDetWind.SelectedItem, KeyValuePair(Of String, Integer)).Value
+    End Sub
+
     Private Sub cboMinEventWindow_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboMinEventWindow.SelectedIndexChanged
         fdMinEventWindow = DirectCast(cboMinEventWindow.SelectedItem, KeyValuePair(Of String, Double)).Value
+    End Sub
+
+    Private Sub cboSampleRate_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSampleRate.SelectedIndexChanged
+        fiSampleRate = DirectCast(cboSampleRate.SelectedItem, KeyValuePair(Of String, UInteger)).Value
     End Sub
 
     Private Sub cboScale_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboScale.SelectedIndexChanged
@@ -202,17 +279,23 @@ Public Class frmConfig
     End Sub
 
     Private Sub chkDiscordNotify_CheckedChanged(sender As Object, e As EventArgs) Handles chkDiscordNotify.CheckedChanged
-        fbDiscordNotifications = CBool(chkDiscordNotify.Checked)
+        fbDiscordNotifications = chkDiscordNotify.Checked
         If fbDiscordNotifications Then
             If fsDiscordServerWebhook = "" Then
                 txtDiscordServer.Text = "https://discord.com/api/webhooks/"
                 txtDiscordServer.SelectionStart = txtDiscordServer.Text.Length
                 txtDiscordMention.Text = ""
-                txtDiscordServer.Focus()
+            Else
+                txtDiscordServer.Text = fsDiscordServerWebhook
+                txtDiscordMention.Text = fsDiscordMentionID
+            End If
+            panDiscordVals.Visible = True
+            txtDiscordServer.Focus()
+            If Me.Visible Then
+                panInner.ScrollControlIntoView(panDiscordVals)
             End If
         Else
-            txtDiscordServer.Text = ""
-            txtDiscordMention.Text = ""
+            panDiscordVals.Visible = False
         End If
     End Sub
 
@@ -255,6 +338,66 @@ Public Class frmConfig
     Private Sub txtFrequency_TextChanged(sender As Object, e As EventArgs) Handles txtFrequency.TextChanged
         ConvertFrequency()
     End Sub
+
+
+    Private Sub LoadUIControls()
+        lblFreqRange.Text = $"({modMain.FormatHertz(fiMinFreq)} – {modMain.FormatHertz(fiMaxFreq)})"
+        txtFrequency.TextPadding = New Padding(0, 0, 25, 0)
+        txtFrequency.TextAlign = HorizontalAlignment.Right
+        txtFrequency.Text = String.Format("{0:#########0}", fiCenterFreq)
+
+        ' Note: Do not set a default SelectedIndex for the comboboxes, as it will trigger the SelectedIndexChanged event and overwrite the form-level values
+
+        For piIndex As Integer = 0 To cboMinEventWindow.Items.Count - 1
+            Dim kvp As KeyValuePair(Of String, Double) = DirectCast(cboMinEventWindow.Items(piIndex), KeyValuePair(Of String, Double))
+            If kvp.Value = fdMinEventWindow Then
+                cboMinEventWindow.SelectedIndex = piIndex
+                Exit For
+            End If
+        Next
+
+        For piIndex = 0 To cboDetThresh.Items.Count - 1
+            Dim poKvp As KeyValuePair(Of String, Integer) = DirectCast(cboDetThresh.Items(piIndex), KeyValuePair(Of String, Integer))
+            If poKvp.Value = fiDetThresh Then
+                cboDetThresh.SelectedIndex = piIndex
+                Exit For
+            End If
+        Next
+
+        For piIndex = 0 To cboDetWind.Items.Count - 1
+            Dim poKvp As KeyValuePair(Of String, Integer) = DirectCast(cboDetWind.Items(piIndex), KeyValuePair(Of String, Integer))
+            If poKvp.Value = fiDetWind Then
+                cboDetWind.SelectedIndex = piIndex
+                Exit For
+            End If
+        Next
+
+        For piIndex = 0 To cboSampleRate.Items.Count - 1
+            Dim poKvp As KeyValuePair(Of String, UInteger) = DirectCast(cboSampleRate.Items(piIndex), KeyValuePair(Of String, UInteger))
+            If poKvp.Value = fiSampleRate Then
+                cboSampleRate.SelectedIndex = piIndex
+                Exit For
+            End If
+        Next
+
+        chkAutomatic.Checked = CBool(fiGainMode = 0)
+
+        If foGains.Count > 0 Then
+            foGains.Sort()
+            sldGain.Minimum = 0
+            sldGain.Maximum = foGains.Count
+            sldGain.Value = GetClosestIndex(fiGainValue, foGains)
+            fiGainValue = foGains(sldGain.Value)
+            sldGain.DisplayValue = False
+        End If
+        sldGain_ValueChanged(Nothing, Nothing)
+
+        txtDiscordServer.Text = fsDiscordServerWebhook
+        txtDiscordMention.Text = fsDiscordMentionID
+        chkDiscordNotify.Checked = fbDiscordNotifications
+        panDiscordVals.Visible = fbDiscordNotifications
+    End Sub
+
 
     Private Sub ConvertFrequency()
         Dim pdInput As Double = 0
@@ -303,6 +446,7 @@ Public Class frmConfig
     End Sub
 
 
+
     Private Function IsValidDiscordWebhook(ByVal sWebhookURL As String) As Boolean
         Dim sPattern As String = "^https:\/\/discord\.com\/api\/webhooks\/\d{17,20}\/[\w-]+$"
         Return Regex.IsMatch(sWebhookURL, sPattern)
@@ -312,6 +456,9 @@ Public Class frmConfig
         Dim sPattern As String = "^<@&?\d{17,20}>$"
         Return Regex.IsMatch(sMentionID, sPattern)
     End Function
+
+
+
 
 
     '
