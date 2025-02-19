@@ -1,4 +1,6 @@
-﻿Public Class frmConfig
+﻿Imports System.Text.RegularExpressions
+
+Public Class frmConfig
 
     Dim fsDeviceName As String = ""
     Private fiGainMode As Integer
@@ -6,6 +8,10 @@
     Private fiCenterFreq As UInteger
     Private fiSampleRate As Integer
     Private fdMinEventWindow As Double
+    Private fbDiscordNotifications As Boolean
+    Private fsDiscordServerWebhook As String
+    Private fsDiscordMentionID As String
+
 
     Private foGains As New List(Of Integer)
     Private fiMinFreq As UInteger
@@ -41,6 +47,24 @@
         End Get
     End Property
 
+    Public ReadOnly Property DiscordNotifications As Boolean
+        Get
+            Return fbDiscordNotifications
+        End Get
+    End Property
+
+    Public ReadOnly Property DiscordServerWebhook As String
+        Get
+            Return fsDiscordServerWebhook
+        End Get
+    End Property
+
+    Public ReadOnly Property DiscordMentionID As String
+        Get
+            Return fsDiscordMentionID
+        End Get
+    End Property
+
     Public Property SelectedDeviceName As String
         Get
             Return fsDeviceName
@@ -51,7 +75,7 @@
         End Set
     End Property
 
-    Public Sub ReadyForm(ByVal SelectedDevice As String, ByVal oSDR As RtlSdrApi)
+    Public Sub ReadyForm(ByVal SelectedDevice As String, ByVal oSDR As RtlSdrApi, ByVal oConfig As clsAppConfig)
         Me.SelectedDeviceName = SelectedDevice
 
         fiGainMode = oSDR.GainMode
@@ -64,6 +88,10 @@
         fiCenterFreq = oSDR.CenterFrequency
         fiSampleRate = oSDR.SampleRate
         fdMinEventWindow = oSDR.MinimumEventWindow
+        fbDiscordNotifications = oConfig.DiscordNotifications
+        fsDiscordServerWebhook = oConfig.DiscordServerWebhook
+        fsDiscordMentionID = oConfig.DiscordMentionID
+
 
         cboScale.Items.Clear()
         cboScale.Items.Add("Hz")
@@ -110,7 +138,42 @@
             sldGain.DisplayValue = False
         End If
         sldGain_ValueChanged(Nothing, Nothing)
-        chkAutomatic.Checked = (oSDR.GainMode = 0)
+        chkAutomatic.Checked = CBool(oSDR.GainMode = 0)
+        chkDiscordNotify.Checked = oConfig.DiscordNotifications
+        txtDiscordServer.Text = oConfig.DiscordServerWebhook
+        txtDiscordMention.Text = oConfig.DiscordMentionID
+    End Sub
+
+
+
+
+    Private Sub btnApply_Click(sender As Object, e As EventArgs) Handles btnApply.Click
+        'check values
+        Dim pbError As Boolean = False
+        If fiCenterFreq < fiMinFreq Or fiCenterFreq > fiMaxFreq Then
+            MsgBox("Please enter a valid center frequency before applying changes.", MsgBoxStyle.OkOnly + MsgBoxStyle.Exclamation, "Invalid Frequency")
+            pbError = True
+        End If
+
+        If chkAutomatic.Checked = True Then
+            If String.IsNullOrEmpty(fsDiscordServerWebhook) OrElse IsValidDiscordWebhook(fsDiscordServerWebhook) = False Then
+                MsgBox("You must enter a valid Discord server webhook when using Discord notifications.", MsgBoxStyle.OkOnly + MsgBoxStyle.Exclamation, "Invalid Discord Webhook")
+                pbError = True
+            End If
+            If String.IsNullOrEmpty(fsDiscordMentionID) = False Then
+                If Not IsValidDiscordMentionID(fsDiscordMentionID) Then
+                    MsgBox($"You must enter a valid Discord NUMERIC User or Role ID number.  For Example:{vbCrLf}User ID:   <@123456789012345678>{vbCrLf}Role ID:  <@&987654321098765432>", MsgBoxStyle.OkOnly + MsgBoxStyle.Exclamation, "Invalid Discord Webhook")
+                    pbError = True
+                End If
+            End If
+        Else
+            fsDiscordMentionID = ""
+            fsDiscordServerWebhook = ""
+        End If
+
+        If Not pbError Then
+            Me.DialogResult = DialogResult.OK
+        End If
     End Sub
 
     Private Sub btnClearFreq_Click(sender As Object, e As EventArgs) Handles btnClearFreq.Click
@@ -136,11 +199,45 @@
         fiGainMode = If(chkAutomatic.Checked, 0, 1)
     End Sub
 
+    Private Sub chkDiscordNotify_CheckedChanged(sender As Object, e As EventArgs) Handles chkDiscordNotify.CheckedChanged
+        fbDiscordNotifications = CBool(chkDiscordNotify.Checked)
+        If fbDiscordNotifications Then
+            If fsDiscordServerWebhook = "" Then
+                txtDiscordServer.Text = "https://discord.com/api/webhooks/"
+                txtDiscordServer.SelectionStart = txtDiscordServer.Text.Length
+                txtDiscordMention.Text = ""
+                txtDiscordServer.Focus()
+            End If
+        Else
+            txtDiscordServer.Text = ""
+            txtDiscordMention.Text = ""
+        End If
+    End Sub
+
     Private Sub sldGain_ValueChanged(sender As Object, e As EventArgs) Handles sldGain.ValueChanged
         If sldGain.Value >= 0 And sldGain.Value < foGains.Count Then
             fiGainValue = foGains(sldGain.Value)
             lblGainValue.Text = String.Format("{0:#0.0} dB", fiGainValue / 10)
         End If
+    End Sub
+
+    Private Sub txtDiscordMention_GotFocus(sender As Object, e As EventArgs) Handles txtDiscordMention.GotFocus
+        If txtDiscordMention.Text.Trim = "" Then
+            txtDiscordMention.Text = "<@>"
+            ' Force the cursor position AFTER all focus events have been processed
+            BeginInvoke(New Action(Sub()
+                                       txtDiscordMention.SelectionStart = 2
+                                       txtDiscordMention.SelectionLength = 0
+                                   End Sub))
+        End If
+    End Sub
+
+    Private Sub txtDiscordMention_TextChanged(sender As Object, e As EventArgs) Handles txtDiscordMention.TextChanged
+        fsDiscordMentionID = txtDiscordMention.Text.Trim
+    End Sub
+
+    Private Sub txtDiscordServer_TextChanged(sender As Object, e As EventArgs) Handles txtDiscordServer.TextChanged
+        fsDiscordServerWebhook = txtDiscordServer.Text.Trim
     End Sub
 
     Private Sub txtFrequency_KeyDown(sender As Object, e As KeyEventArgs) Handles txtFrequency.KeyDown
@@ -203,18 +300,20 @@
         End If
     End Sub
 
-    Private Sub btnApply_Click(sender As Object, e As EventArgs) Handles btnApply.Click
-        'check values
-        Dim pbError As Boolean = False
-        If fiCenterFreq < fiMinFreq Or fiCenterFreq > fiMaxFreq Then
-            MsgBox("Please enter a valid center frequency before applying changes.", MsgBoxStyle.OkOnly + MsgBoxStyle.Exclamation, "Invalid Frequency")
-            pbError = True
-        End If
 
-        If Not pbError Then
-            Me.DialogResult = DialogResult.OK
-        End If
-    End Sub
+    Private Function IsValidDiscordWebhook(ByVal sWebhookURL As String) As Boolean
+        Dim sPattern As String = "^https:\/\/discord\.com\/api\/webhooks\/\d{17,20}\/[\w-]+$"
+        Return Regex.IsMatch(sWebhookURL, sPattern)
+    End Function
 
+    Private Function IsValidDiscordMentionID(ByVal sMentionID As String) As Boolean
+        Dim sPattern As String = "^<@&?\d{17,20}>$"
+        Return Regex.IsMatch(sMentionID, sPattern)
+    End Function
+
+
+    '
 
 End Class
+
+'

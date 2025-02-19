@@ -106,6 +106,8 @@ Public Class RtlSdrApi
     Private msDeviceName As String = ""
     Private miCenterFrequency As UInteger
     Private miDeviceIndex As Integer
+    Private msDiscordWebhook As String = ""
+    Private msDiscordMention As String = ""
     Private msLogFolder As String = "C:\"
     Private moMonitorThread As Thread
     Private mbRunning As Boolean = False
@@ -259,19 +261,22 @@ Public Class RtlSdrApi
 
 
 
-    Public Sub New(deviceIndex As Integer, Optional ByVal centerFrequency As UInteger = 1600000000 _
-            , Optional ByVal sampleRate As UInteger = 2048000 _
-            , Optional ByVal automaticGain As Boolean = True _
-            , Optional ByVal manualGainValue As Integer = 300)
+    Public Sub New(iDeviceIndex As Integer, Optional ByVal iCenterFrequency As UInteger = 1600000000 _
+            , Optional ByVal iSampleRate As UInteger = 2048000 _
+            , Optional ByVal bAutomaticGain As Boolean = True _
+            , Optional ByVal iManualGainValue As Integer = 300 _
+            , Optional ByVal sDiscordWebhook As String = "", Optional ByVal sDiscordMention As String = "")
 
-        miDeviceIndex = deviceIndex
-        miCenterFrequency = centerFrequency
-        miSampleRate = sampleRate
-        miGainMode = If(automaticGain, 0, 1)
-        miGainValue = manualGainValue
+        miDeviceIndex = iDeviceIndex
+        miCenterFrequency = iCenterFrequency
+        miSampleRate = iSampleRate
+        miGainMode = If(bAutomaticGain, 0, 1)
+        miGainValue = iManualGainValue
+        msDiscordWebhook = sDiscordWebhook
+        msDiscordMention = sDiscordMention
 
         ' get the name of the device, function returns pointer to string var
-        Dim oDeviceNamePtr As IntPtr = rtlsdr_get_device_name(deviceIndex)
+        Dim oDeviceNamePtr As IntPtr = rtlsdr_get_device_name(iDeviceIndex)
         ' Convert the IntPtr to a string
         msDeviceName = Marshal.PtrToStringAnsi(oDeviceNamePtr)
         ' Capture UI thread context
@@ -300,7 +305,7 @@ Public Class RtlSdrApi
     End Sub
 
 
-    
+
     ' Public method to retrieve the latest buffer (for UI visualization)
     Public Function GetBuffer() As Byte()
         SyncLock myIqBuffer
@@ -766,6 +771,10 @@ Public Class RtlSdrApi
                     End With
                     If poZipper.SaveArchive Then
                         clsLogger.Log("RtlSdrApi.ProcessRecordingQueue", $"✅ Saved to {poZipper.ArchiveFile} (Start: {adjustedStartTime}, length: {poZipper.TotalIQBytes}, duration: {poZipper.DurationSeconds} seconds.)")
+                        If msDiscordWebhook <> "" Then
+                            Dim psNotificaiton As String = $"Signal detected and recorded at frequency {modMain.FormatHertz(miCenterFrequency)}.  Data Size: {modMain.FormatBytes(poZipper.TotalIQBytes)}, duration: {poZipper.DurationSeconds:G2} seconds."
+                            Call modMain.SendDiscordNotification(psNotificaiton, msDiscordWebhook, msDiscordMention)
+                        End If
                     Else
                         RaiseError($"Error saving IQ data archive {poZipper.ArchiveFile} to folder.")
                     End If
@@ -777,55 +786,6 @@ Public Class RtlSdrApi
             mbWritingToDisk = False
         End Try
     End Sub
-
-    '    Private Sub SaveIqDataToZip(recordedData As List(Of Byte()))
-    '        Try
-    '            ' Calculate pre-buffer time in seconds
-    '            Dim samplesPerBuffer As Integer = miBufferSize \ 2 ' IQ samples per buffer
-    '            Dim timePerBuffer As Double = samplesPerBuffer / miSampleRate
-    '            Dim preBufferTime As Double = timePerBuffer * miQueueMaxSize
-
-    '            ' Adjust the timestamp for accurate event timing
-    '            Dim adjustedStartTime As DateTime = mtRecordingStartTime.AddSeconds(-preBufferTime).ToUniversalTime()
-    '            Dim timestamp As String = adjustedStartTime.ToString("yyyyMMdd_HHmmss.fff") & "Z"
-    '            Dim outputFile As String = System.IO.Path.Combine(msLogFolder, $"IQ_Record_{timestamp}.zip")
-
-    '            Using fs As New FileStream(outputFile, FileMode.Create)
-    '                Using zip As New ZipArchive(fs, ZipArchiveMode.Create)
-    '                    ' Create IQ data entry
-    '                    Dim iqEntry As ZipArchiveEntry = zip.CreateEntry("signal.iq", CompressionLevel.Optimal)
-    '                    Using entryStream As Stream = iqEntry.Open()
-    '                        For Each chunk In recordedData
-    '                            entryStream.Write(chunk, 0, chunk.Length)
-    '                        Next
-    '                    End Using
-
-    '                    ' Create metadata entry
-    '                    Dim metadataEntry As ZipArchiveEntry = zip.CreateEntry("metadata.json", CompressionLevel.Optimal)
-    '                    Using metadataStream As Stream = metadataEntry.Open()
-    '                        Using writer As New StreamWriter(metadataStream)
-    '                            Dim appVersion As String = $"{My.Application.Info.Version.Major}.{My.Application.Info.Version.Minor}"
-    '                            Dim metadata As String = $"
-    '{{
-    '    ""UTC_Start_Time"": ""{adjustedStartTime:yyyy-MM-ddTHH:mm:ss.fffZ}"",
-    '    ""Center_Frequency_Hz"": {miCenterFrequency},
-    '    ""Sample_Rate_Hz"": {miSampleRate},
-    '    ""Total_IQ_Bytes"": {recordedData.Sum(Function(b) b.Length)},
-    '    ""Recording_Duration_S"": {(DateTime.Now - mtRecordingStartTime).TotalSeconds:F2},
-    '    ""Software_Version"": ""{appVersion}""
-    '}}"
-    '                            writer.Write(metadata)
-    '                        End Using
-    '                    End Using
-    '                End Using
-    '            End Using
-    '            clsLogger.Log("RtlSdrApi.SaveIqDataToZip", $"✅ Saved to {outputFile} (Start: {adjustedStartTime})")
-    '        Catch ex As Exception
-    '            clsLogger.LogException("RtlSdrAPI.SaveIqDataToZip", ex)
-    '            RaiseError("Error saving IQ data: " & ex.Message)
-    '        End Try
-    '    End Sub
-
 
     Private Function CalculatePowerAtFrequency(dPowerLevels As Double()) As Double
         Dim iFftBins As Integer = dPowerLevels.Length ' FFT bins after shift

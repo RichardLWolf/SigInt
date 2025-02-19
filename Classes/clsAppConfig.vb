@@ -13,6 +13,10 @@ Public Class clsAppConfig
     Public Property ZoomLevel As Integer = 0    ' Default: Full view (0 to 100)
     Public Property dBOffset As Integer = -20   ' Default: -20 dB  (0 to -100)
     Public Property dBRange As Integer = 100    ' Default: 100 dB graphed (10-150)
+    '  Discord Notifications
+    Public Property DiscordNotifications As Boolean = False
+    Public Property DiscordServerWebhook As String = ""
+    Public Property DiscordMentionID As String = ""
 
 
 
@@ -56,6 +60,9 @@ Public Class clsAppConfig
         Me.ZoomLevel = poDefaultConfig.ZoomLevel
         Me.dBOffset = poDefaultConfig.dBOffset
         Me.dBRange = poDefaultConfig.dBRange
+        Me.DiscordNotifications = poDefaultConfig.DiscordNotifications
+        Me.DiscordServerWebhook = poDefaultConfig.DiscordServerWebhook
+        Me.DiscordMentionID = poDefaultConfig.DiscordMentionID
         Save()
     End Sub
 

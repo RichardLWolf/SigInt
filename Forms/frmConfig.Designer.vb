@@ -22,6 +22,7 @@ Partial Class frmConfig
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
+        components = New ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmConfig))
         btnApply = New Button()
         btnCancel = New Button()
@@ -39,6 +40,14 @@ Partial Class frmConfig
         Label2 = New Label()
         cboMinEventWindow = New ComboBox()
         txtFrequency = New PaddedTextbox()
+        Label4 = New Label()
+        chkDiscordNotify = New CheckBox()
+        Label5 = New Label()
+        txtDiscordServer = New TextBox()
+        txtDiscordMention = New TextBox()
+        Label6 = New Label()
+        ToolTip1 = New ToolTip(components)
+        Label8 = New Label()
         SuspendLayout()
         ' 
         ' btnApply
@@ -50,11 +59,11 @@ Partial Class frmConfig
         btnApply.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
         btnApply.FlatStyle = FlatStyle.Flat
         btnApply.ForeColor = Color.Black
-        btnApply.Location = New Point(12, 406)
+        btnApply.Location = New Point(12, 629)
         btnApply.Name = "btnApply"
         btnApply.Size = New Size(100, 50)
-        btnApply.TabIndex = 13
-        btnApply.Text = "APPLY"
+        btnApply.TabIndex = 19
+        btnApply.Text = "&APPLY"
         btnApply.UseVisualStyleBackColor = False
         ' 
         ' btnCancel
@@ -67,11 +76,11 @@ Partial Class frmConfig
         btnCancel.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
         btnCancel.FlatStyle = FlatStyle.Flat
         btnCancel.ForeColor = Color.Black
-        btnCancel.Location = New Point(454, 406)
+        btnCancel.Location = New Point(454, 629)
         btnCancel.Name = "btnCancel"
         btnCancel.Size = New Size(100, 50)
-        btnCancel.TabIndex = 14
-        btnCancel.Text = "CANCEL"
+        btnCancel.TabIndex = 20
+        btnCancel.Text = "CA&NCEL"
         btnCancel.UseVisualStyleBackColor = False
         ' 
         ' lblCenter
@@ -224,16 +233,93 @@ Partial Class frmConfig
         txtFrequency.Location = New Point(319, 25)
         txtFrequency.Name = "txtFrequency"
         txtFrequency.Size = New Size(147, 29)
-        txtFrequency.TabIndex = 15
+        txtFrequency.TabIndex = 2
         txtFrequency.TextAlign = HorizontalAlignment.Right
         txtFrequency.TextPadding = New Padding(0, 0, 25, 0)
+        ' 
+        ' Label4
+        ' 
+        Label4.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        Label4.BackColor = Color.Silver
+        Label4.Location = New Point(12, 337)
+        Label4.Name = "Label4"
+        Label4.Size = New Size(540, 3)
+        Label4.TabIndex = 13
+        ' 
+        ' chkDiscordNotify
+        ' 
+        chkDiscordNotify.AutoSize = True
+        chkDiscordNotify.Location = New Point(13, 361)
+        chkDiscordNotify.Name = "chkDiscordNotify"
+        chkDiscordNotify.Size = New Size(348, 25)
+        chkDiscordNotify.TabIndex = 14
+        chkDiscordNotify.Text = "&Send Discord Notification On Signal Detection"
+        chkDiscordNotify.UseVisualStyleBackColor = True
+        ' 
+        ' Label5
+        ' 
+        Label5.AutoSize = True
+        Label5.Location = New Point(27, 389)
+        Label5.Name = "Label5"
+        Label5.Size = New Size(292, 21)
+        Label5.TabIndex = 15
+        Label5.Text = "&Discord Server Webhook URL (Required)"
+        ' 
+        ' txtDiscordServer
+        ' 
+        txtDiscordServer.Location = New Point(30, 413)
+        txtDiscordServer.Name = "txtDiscordServer"
+        txtDiscordServer.Size = New Size(514, 29)
+        txtDiscordServer.TabIndex = 16
+        ToolTip1.SetToolTip(txtDiscordServer, "How To Create a webhook in Discord:" & vbCrLf & vbCrLf & "Go to Server Settings → Integrations → Webhooks." & vbCrLf & "Click ""New Webhook"" and copy the Webhook URL." & vbCrLf & vbCrLf)
+        ' 
+        ' txtDiscordMention
+        ' 
+        txtDiscordMention.Location = New Point(33, 469)
+        txtDiscordMention.Name = "txtDiscordMention"
+        txtDiscordMention.Size = New Size(514, 29)
+        txtDiscordMention.TabIndex = 18
+        ToolTip1.SetToolTip(txtDiscordMention, resources.GetString("txtDiscordMention.ToolTip"))
+        ' 
+        ' Label6
+        ' 
+        Label6.AutoSize = True
+        Label6.Location = New Point(30, 445)
+        Label6.Name = "Label6"
+        Label6.Size = New Size(331, 21)
+        Label6.TabIndex = 17
+        Label6.Text = "Discord C&hannel @UserID/@RoleID (Optional)"
+        ' 
+        ' ToolTip1
+        ' 
+        ToolTip1.AutoPopDelay = 10000
+        ToolTip1.InitialDelay = 500
+        ToolTip1.ReshowDelay = 100
+        ' 
+        ' Label8
+        ' 
+        Label8.AutoSize = True
+        Label8.Font = New Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        Label8.Location = New Point(56, 501)
+        Label8.Name = "Label8"
+        Label8.Size = New Size(374, 75)
+        Label8.TabIndex = 22
+        Label8.Text = "User ID format should be ""<@&...>"" and Role ID should be ""<@&...>""" & vbCrLf & "The ""..."" will always be 17-20 numeric digits." & vbCrLf & vbCrLf & "User Mention: <@123456789012345678>" & vbCrLf & "Role Mention: <@&987654321098765432>"
+        Label8.UseMnemonic = False
         ' 
         ' frmConfig
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        ClientSize = New Size(566, 468)
+        ClientSize = New Size(566, 691)
+        Controls.Add(Label8)
+        Controls.Add(txtDiscordMention)
+        Controls.Add(Label6)
+        Controls.Add(txtDiscordServer)
+        Controls.Add(Label5)
+        Controls.Add(chkDiscordNotify)
+        Controls.Add(Label4)
         Controls.Add(btnClearFreq)
         Controls.Add(cboMinEventWindow)
         Controls.Add(Label2)
@@ -280,4 +366,12 @@ Partial Class frmConfig
     Friend WithEvents Label2 As Label
     Friend WithEvents cboMinEventWindow As ComboBox
     Friend WithEvents txtFrequency As PaddedTextbox
+    Friend WithEvents Label4 As Label
+    Friend WithEvents chkDiscordNotify As CheckBox
+    Friend WithEvents Label5 As Label
+    Friend WithEvents txtDiscordServer As TextBox
+    Friend WithEvents txtDiscordMention As TextBox
+    Friend WithEvents ToolTip1 As ToolTip
+    Friend WithEvents Label6 As Label
+    Friend WithEvents Label8 As Label
 End Class

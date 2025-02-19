@@ -1,15 +1,11 @@
 ﻿Imports System.Security.Cryptography.Pkcs
+Imports System.Net.Http
+Imports System.Text
+
 
 Module modMain
 
     Function FormatHertz(ByVal piFrequencyHz As UInteger) As String
-        'Select Case piFrequencyHz
-        '    Case Is >= 1_000_000_000UI : Return (piFrequencyHz \ 1_000_000_000UI).ToString("0") & "." & ((piFrequencyHz Mod 1_000_000_000UI) \ 1_000_000UI).ToString("00000") & " GHz"
-        '    Case Is >= 1_000_000UI : Return (piFrequencyHz \ 1_000_000UI).ToString("0") & "." & ((piFrequencyHz Mod 1_000_000UI) \ 1_000UI).ToString("000") & " MHz"
-        '    Case Is >= 1_000UI : Return (piFrequencyHz \ 1_000UI).ToString("0") & "." & (piFrequencyHz Mod 1_000UI).ToString("000") & " kHz"
-        '    Case Else : Return piFrequencyHz.ToString("0") & " Hz"
-        'End Select
-
         Select Case piFrequencyHz
             Case Is >= 1_000_000_000UI
                 Dim pdFreq As Double = piFrequencyHz / 1000000000UI
@@ -107,6 +103,36 @@ Module modMain
 
         ' Otherwise, return the closest smaller index
         Return iIndex - 1
+    End Function
+
+
+
+
+    Public Async Function SendDiscordNotification(ByVal sMessage As String, ByVal sWebhookURL As String, ByVal sMentionID As String) As Task
+        If String.IsNullOrWhiteSpace(sWebhookURL) Then
+            clsLogger.Log("modMain.SendDiscordNotification", "Discord Webhook URL is not set, cannot send notification.")
+            Exit Function
+        End If
+
+        ' Add mention if provided
+        If Not String.IsNullOrWhiteSpace(sMentionID) Then
+            sMessage = sMentionID & " " & sMessage
+        End If
+
+        Dim oHttpClient As New HttpClient()
+        Dim sJson As String = "{""content"":""" & sMessage & """}"
+        Dim oContent As New StringContent(sJson, Encoding.UTF8, "application/json")
+
+        Try
+            Dim oResponse As HttpResponseMessage = Await oHttpClient.PostAsync(sWebhookURL, oContent)
+            If oResponse.StatusCode = Net.HttpStatusCode.NoContent Then
+                clsLogger.Log("modMain.SendDiscordNotification", $"✔ - Sent Discord message to Mention ID.")
+            Else
+                clsLogger.Log("modMain.SendDiscordNotification", $"❌ - FAILED to send Discord message, server response: {oResponse.StatusCode} - {oResponse.StatusCode.ToString}.")
+            End If
+        Catch ex As Exception
+            clsLogger.LogException("modMain.SendDiscordNotification", ex)
+        End Try
     End Function
 
 End Module
