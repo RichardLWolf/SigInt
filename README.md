@@ -16,6 +16,7 @@ The **Playback Viewer** allows users to:
 📊 **Playback & Visualization** – Displays waveform and waterfall plots of recorded signals.  
 ⏪ **Seekable Playback** – Scrub through recordings with a timeline control.  
 🎛 **WAV Export for SDRSharp** – Convert recorded IQ data into a Baseband WAV file for external analysis.  
+🔔 **Real-Time Discord Channel Notifications** – Get alerts when signals are detected.  
 
 ## Use Case
 Ideal for **radio enthusiasts, spectrum monitoring, and signal intelligence (SIGINT) applications**, this tool enables efficient detection, recording, and review of intermittent RF signals.
