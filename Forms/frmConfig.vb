@@ -155,7 +155,7 @@ Public Class frmConfig
             pbError = True
         End If
 
-        If chkAutomatic.Checked = True Then
+        If chkDiscordNotify.Checked = True Then
             If String.IsNullOrEmpty(fsDiscordServerWebhook) OrElse IsValidDiscordWebhook(fsDiscordServerWebhook) = False Then
                 MsgBox("You must enter a valid Discord server webhook when using Discord notifications.", MsgBoxStyle.OkOnly + MsgBoxStyle.Exclamation, "Invalid Discord Webhook")
                 pbError = True
@@ -166,7 +166,9 @@ Public Class frmConfig
                     pbError = True
                 End If
             End If
+            fbDiscordNotifications = True
         Else
+            fbDiscordNotifications = False
             fsDiscordMentionID = ""
             fsDiscordServerWebhook = ""
         End If
