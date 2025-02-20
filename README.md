@@ -95,4 +95,10 @@ Once your RTL-SDR is working, download and install **SigInt** from the repositor
 - **Minimize SigInt** and let it run. It will automatically detect and log signal events.  
 - To view the log, click the **green folder icon** to open the log folder, then double-click the `"Application_Log.txt"` file in File Explorer. 
 - To view recorded events, click the **microphone icon** to open the playback window.  Select the desired archive from the list at top-left then click the play button to begin playback.
+
+## Contributing  
+Contributions are welcome! If you have feature requests, bug reports, or improvements, feel free to:
+- Open an issue [here](https://github.com/RichardLWolf/SigInt/issues).
+- Fork the repo and submit a pull request.
+
 ---
