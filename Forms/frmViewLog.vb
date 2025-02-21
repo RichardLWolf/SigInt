@@ -128,6 +128,9 @@ Public Class frmViewLog
                 lvwLog.Items.AddRange(oItems.ToArray())
             End If
             lvwLog.ResumeLayout(True)
+            If lvwLog.Items.Count > 0 Then
+                lvwLog.Items(lvwLog.Items.Count - 1).EnsureVisible()
+            End If
         End If
     End Sub
 
