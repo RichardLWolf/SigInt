@@ -38,14 +38,23 @@ Public Class frmMain
     End Sub
 
 
-    Private Sub foSDR_SignalChange(sender As Object, SignalFound As Boolean) Handles foSDR.SignalChange
+    Private Sub foSDR_SignalChange(sender As Object, SignalFound As Boolean) Handles foSDR.RecordingEvent
         'update signal count
-        If foSDR.SignalEventCount = 0 Then
+        If foSDR.SignalEventCount = 0 And foSDR.NoiseFloorEventCount = 0 Then
             lblEvents.Text = "No signals found during this session."
         Else
-            lblEvents.Text = $"{foSDR.SignalEventCount} event{IIf(foSDR.SignalEventCount > 1, "s", "")} detected this session."
+            Dim psLbl As String = ""
+            If foSDR.SignalEventCount > 0 Then
+                psLbl = psLbl & $"{foSDR.SignalEventCount} signal event{IIf(foSDR.SignalEventCount > 1, "s", "")}"
+            End If
+            If foSDR.NoiseFloorEventCount > 0 Then
+                psLbl = $"{If(psLbl = "", "", ", ")}{foSDR.NoiseFloorEventCount} noise floor event{IIf(foSDR.NoiseFloorEventCount > 1, "s", "")}"
+            End If
+            psLbl = psLbl & " detected this session."
+            lblEvents.Text = psLbl
             If SignalFound Then
-                foNotify.ShowBalloonTip(3000, "1.6Ghz Signal Detected", "Signal 10dB above noise floor was detected.", ToolTipIcon.Info)
+                foNotify.Text = psLbl
+                foNotify.ShowBalloonTip(3000, "SigInt Event", psLbl, ToolTipIcon.Info)
             End If
         End If
     End Sub
@@ -174,24 +183,36 @@ Public Class frmMain
                             .iDeviceIndex = poItem.DeviceIndex
                             .iCenterFrequency = poFrm.CenterFreq
                             .iSampleRate = poFrm.SampleRate
-                            .iDetectionThreshold = poFrm.DetectionThreshold
-                            .iDetectionWindow = poFrm.DetectionWindow
+                            .iSignalInitTime = poFrm.SignalInitTime
+                            .iSignalDetectionThreshold = poFrm.DetectionThreshold
+                            .iSignalDetectionWindow = poFrm.DetectionWindow
                             .bAutomaticGain = If(poFrm.GainMode = 0, True, False)
                             .iManualGainValue = poFrm.GainValue
-                            .dMinEventWindow = poFrm.MinEventWindow
+                            .dSignalEventResetTime = poFrm.SignalEventResetTime
+                            .iNoiseFloorBaselineInitTime = poFrm.NoiseFloorBaselineInitTime
+                            .iNoiseFloorCooldownDuration = poFrm.NoiseFloorCooldownDuration
+                            .iNoiseFloorEventResetTime = poFrm.NoiseFloorEventResetTime
+                            .iNoiseFloorMinEventDuration = poFrm.NoiseFloorMinEventDuration
+                            .dNoiseFloorThreshold = poFrm.NoiseFloorThreshold
                             .sDiscordWebhook = poFrm.DiscordServerWebhook
                             .sDiscordMention = poFrm.DiscordMentionID
                         End With
                         foSDR = New RtlSdrApi(poSdrCfg)
                         foSDR.StartMonitor()
-                        ' update config values
+                        ' update config values from API class as it will enforce property value limits
                         foConfig.CenterFrequency = foSDR.CenterFrequency
                         foConfig.SampleRate = foSDR.SampleRate
-                        foConfig.GainMode = poFrm.GainMode
+                        foConfig.GainMode = foSDR.GainMode
                         foConfig.GainValue = foSDR.GainValue
-                        foConfig.MinEventWindow = foSDR.MinimumEventWindow
-                        foConfig.DetectionThreshold = foSDR.DetectionThreshold
-                        foConfig.DetectionWindow = foSDR.DetectionWindow
+                        foConfig.SignalEventResetTime = foSDR.SignalEventResetTime
+                        foConfig.SignalDetectionThreshold = foSDR.SignalDetectionThreshold
+                        foConfig.SignalDetectionWindow = foSDR.SignalDetectionWindow
+                        foConfig.SignalInitTime = foSDR.SignalInitTime
+                        foConfig.NoiseFloorBaselineInitTime = foSDR.NoiseFloorBaselineInitTime
+                        foConfig.NoiseFloorCooldownDuration = foSDR.NoiseFloorCooldownDuration
+                        foConfig.NoiseFloorEventResetTime = foSDR.NoiseFloorEventResetTime
+                        foConfig.NoiseFloorMinEventDuration = foSDR.NoiseFloorMinEventDuration
+                        foConfig.NoiseFloorThreshold = foSDR.NoiseFloorThreshold
                         foConfig.DiscordNotifications = poFrm.DiscordNotifications
                         If Not foConfig.DiscordNotifications Then
                             foConfig.DiscordServerWebhook = ""
@@ -272,17 +293,22 @@ Public Class frmMain
                         .iDeviceIndex = poItem.DeviceIndex
                         .iCenterFrequency = foConfig.CenterFrequency
                         .iSampleRate = foConfig.SampleRate
-                        .iDetectionThreshold = foConfig.DetectionThreshold
-                        .iDetectionWindow = foConfig.DetectionWindow
+                        .iSignalInitTime = foConfig.SignalInitTime
+                        .iSignalDetectionThreshold = foConfig.SignalDetectionThreshold
+                        .iSignalDetectionWindow = foConfig.SignalDetectionWindow
                         .bAutomaticGain = If(foConfig.GainMode = 0, True, False)
                         .iManualGainValue = foConfig.GainValue
-                        .dMinEventWindow = foConfig.MinEventWindow
+                        .dSignalEventResetTime = foConfig.SignalEventResetTime
+                        .iNoiseFloorBaselineInitTime = foConfig.NoiseFloorBaselineInitTime
+                        .iNoiseFloorCooldownDuration = foConfig.NoiseFloorCooldownDuration
+                        .iNoiseFloorEventResetTime = foConfig.NoiseFloorEventResetTime
+                        .iNoiseFloorMinEventDuration = foConfig.NoiseFloorMinEventDuration
+                        .dNoiseFloorThreshold = foConfig.NoiseFloorThreshold
                         .sDiscordWebhook = foConfig.DiscordServerWebhook
                         .sDiscordMention = foConfig.DiscordMentionID
                     End With
                     foSDR = New RtlSdrApi(poSdrCfg)
                 End If
-                foSDR.MinimumEventWindow = foConfig.MinEventWindow
                 If foSDR.IsRunning Then
                     foSDR.StopMonitor()
                 Else

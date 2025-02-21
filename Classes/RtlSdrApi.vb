@@ -102,9 +102,15 @@ Public Class RtlSdrApi
         Public iSampleRate As UInteger
         Public bAutomaticGain As Boolean
         Public iManualGainValue As Integer
-        Public iDetectionThreshold As Integer
-        Public iDetectionWindow As Integer
-        Public dMinEventWindow As Double
+        Public iSignalInitTime As Integer
+        Public iSignalDetectionThreshold As Integer
+        Public iSignalDetectionWindow As Integer
+        Public dSignalEventResetTime As Integer
+        Public iNoiseFloorBaselineInitTime As Integer
+        Public dNoiseFloorThreshold As Double
+        Public iNoiseFloorMinEventDuration As Integer
+        Public iNoiseFloorCooldownDuration As Integer
+        Public iNoiseFloorEventResetTime As Integer
         Public sDiscordWebhook As String
         Public sDiscordMention As String
 
@@ -113,11 +119,17 @@ Public Class RtlSdrApi
             iDeviceIndex = iDeviceIdx
             iCenterFrequency = 1600000000
             iSampleRate = 2048000
-            iDetectionThreshold = 15
-            iDetectionWindow = 1
+            iSignalDetectionThreshold = 15
+            iSignalDetectionWindow = 1
+            iSignalInitTime = 3
             bAutomaticGain = False
             iManualGainValue = 166
-            dMinEventWindow = 10
+            dSignalEventResetTime = 600
+            iNoiseFloorBaselineInitTime = 60
+            dNoiseFloorThreshold = 4.0
+            iNoiseFloorMinEventDuration = 5
+            iNoiseFloorCooldownDuration = 10
+            iNoiseFloorEventResetTime = 30
             sDiscordWebhook = ""
             sDiscordMention = ""
         End Sub
@@ -127,7 +139,7 @@ Public Class RtlSdrApi
 
     ' Event for UI-safe error reporting
     Public Event ErrorOccurred(ByVal sender As Object, ByVal message As String)
-    Public Event SignalChange(ByVal sender As Object, ByVal SignalFound As Boolean)
+    Public Event RecordingEvent(ByVal sender As Object, ByVal RecordingActive As Boolean)
     Public Event MonitorStarted(ByVal sender As Object, ByVal success As Boolean)
     Public Event MonitorEnded(ByVal Sender As Object)
 
@@ -141,24 +153,33 @@ Public Class RtlSdrApi
     Private moMonitorThread As Thread
     Private mbRunning As Boolean = False
     Private moSyncContext As SynchronizationContext
-    Private miSignalEvents As Integer = 0
+    Private miNFEvents As Integer = 0           ' noise floor event count
     Private miSignalDetectionWindow As Integer = 1   ' 1 "3 bins" about 250Hz on each side of center frequency
-    Private miDetectionThreshold As Integer = 15 ' dB above noise floor to detect signal
-    Private mdMinimumEventWindow As Double = 10D ' minimum number of minutes between recording events
-    Private mbShowDeviceInfo As Boolean = True
-
+    Private miSignalInitTime As Integer = 3         ' Seconds to wait before looking for signal
+    Private miSignalDetectionThreshold As Integer = 15 ' dB above noise floor to detect signal
+    Private miSignalEventResetTime As Integer = 600        ' minimum number of seconds between signal recording events (60 to 3600)
+    Private miNoiseFloorBaselineInitTime As Integer = 60  ' Time to establish baseline (seconds, 10 to 120)
+    Private mdNoiseFloorThreshold As Double = 4.0         ' dB rise to trigger event (2dB to 8dB)
+    Private miNoiseFloorMinEventDuration As Integer = 5   ' Seconds the rise must sustain (2 sec to 15 sec)
+    Private miNoiseFloorCooldownDuration As Integer = 10  ' Seconds to pause averaging after event (5 sec to 30 sec)
+    Private miNoiseFloorEventResetTime As Integer = 30    ' Quiet time before new event  (seconds, 10 to 600)
     Private miGainMode As Integer = 0 '0=automatic, 1=manual
     Private miGainValue As Integer = 300    'tenths of dB
+
+    Private mbShowDeviceInfo As Boolean = True
 
 
     ' Circular buffer for pre-trigger storage
     Private mqQueue As New Queue(Of Byte())()
     Private miQueueMaxSize As Integer = 10 ' Adjust for X seconds of pre-buffering
-    Private mbSignalDetected As Boolean = False
+    Private mbRecordingActive As Boolean = False
     ' Recording limit
     Private mtRecordingStartTime As Date
     Private mtRecordingEndTime As Date
     Private miMaxRecordingTime As Integer = 60 ' Max seconds to record per event
+    ' Event Counters
+    Private miSignalEvents As Integer = 0       ' singal spike event count
+    Private miNoiseFloorEvents As Integer = 0   ' noise floor event count
     ' File writing and recording state
     Private myRecordingBuffer As New List(Of Byte()) ' Holds IQ data during an event
     Private miSampleRate As UInteger = 2048000 ' SDR sample rate (2.048 MSPS)
@@ -184,13 +205,13 @@ Public Class RtlSdrApi
 
     Public ReadOnly Property IsRecording As Boolean
         Get
-            Return mbSignalDetected
+            Return mbRecordingActive
         End Get
     End Property
 
     Public ReadOnly Property RecordingElapsed As TimeSpan
         Get
-            If mbSignalDetected Then
+            If mbRecordingActive Then
                 Return DateTime.Now.Subtract(mtRecordingStartTime)
             Else
                 Return TimeSpan.FromSeconds(0)
@@ -203,6 +224,13 @@ Public Class RtlSdrApi
             Return miSignalEvents
         End Get
     End Property
+
+    Public ReadOnly Property NoiseFloorEventCount As Integer
+        Get
+            Return miNoiseFloorEvents
+        End Get
+    End Property
+
 
     ''' <summary>
     ''' Center for the frequency sample in Mhz
@@ -266,15 +294,15 @@ Public Class RtlSdrApi
     End Property
 
     ''' <summary>
-    ''' The minimum time (in minutes) to wait between recordings (0.5 to 60).
+    ''' The minimum time (in seconds) to wait between recordings (60 to 3600).
     ''' </summary>
     ''' <returns></returns>
-    Public Property MinimumEventWindow As Decimal
+    Public Property SignalEventResetTime As Integer
         Get
-            Return mdMinimumEventWindow
+            Return miSignalEventResetTime
         End Get
-        Set(value As Decimal)
-            mdMinimumEventWindow = Math.Max(0.5D, Math.Min(60D, value))
+        Set(value As Integer)
+            miSignalEventResetTime = Math.Min(3600, Math.Max(60, value))
         End Set
     End Property
 
@@ -287,7 +315,7 @@ Public Class RtlSdrApi
     ''' The maximum time (in seconds) to record per event (10 to 600).
     ''' </summary>
     ''' <returns></returns>
-    Public Property DetectionWindow As Integer
+    Public Property SignalDetectionWindow As Integer
         Get
             Return miSignalDetectionWindow
         End Get
@@ -300,12 +328,91 @@ Public Class RtlSdrApi
     ''' Number of dB above noise floor required to trigger a signal detection (5 to 25).
     ''' </summary>
     ''' <returns></returns>
-    Public Property DetectionThreshold As Integer
+    Public Property SignalDetectionThreshold As Integer
         Get
-            Return miDetectionThreshold
+            Return miSignalDetectionThreshold
         End Get
         Set(value As Integer)
-            miDetectionThreshold = Math.Min(25, Math.Max(5, value))
+            miSignalDetectionThreshold = Math.Min(25, Math.Max(5, value))
+        End Set
+    End Property
+
+
+    ''' <summary>
+    ''' Seconds to wait before looking for signal spike (seconds, 1 to 10)
+    ''' </summary>
+    ''' <returns></returns>
+    Public Property SignalInitTime As Integer
+        Get
+            Return miSignalInitTime
+        End Get
+        Set(ByVal value As Integer)
+            miSignalInitTime = Math.Min(10, Math.Max(1, value))
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Seconds to establish baseline noise floor (10 to 120)
+    ''' </summary>
+    ''' <returns></returns>
+    Public Property NoiseFloorBaselineInitTime As Integer
+        Get
+            Return miNoiseFloorBaselineInitTime
+        End Get
+        Set(ByVal value As Integer)
+            miNoiseFloorBaselineInitTime = Math.Min(120, Math.Max(30, value))
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' dB rise to trigger event (2dB to 8dB)
+    ''' </summary>
+    ''' <returns></returns>
+    Public Property NoiseFloorThreshold As Double
+        Get
+            Return mdNoiseFloorThreshold
+        End Get
+        Set(ByVal value As Double)
+            mdNoiseFloorThreshold = Math.Min(8D, Math.Max(2D, value))
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Seconds the rise must sustain before recording is triggerd (2 sec to 15 sec)
+    ''' </summary>
+    ''' <returns></returns>
+    Public Property NoiseFloorMinEventDuration As Integer
+        Get
+            Return miNoiseFloorMinEventDuration
+        End Get
+        Set(ByVal value As Integer)
+            miNoiseFloorMinEventDuration = Math.Min(15, Math.Max(2, value))
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Seconds to pause averaging after event (5 sec to 30 sec)
+    ''' </summary>
+    ''' <returns></returns>
+    Public Property NoiseFloorCooldownDuration As Integer
+        Get
+            Return miNoiseFloorCooldownDuration
+        End Get
+        Set(ByVal value As Integer)
+            miNoiseFloorCooldownDuration = Math.Min(30, Math.Max(5, value))
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Seconds to wait between noise floor event detections (60-3600)
+    ''' </summary>
+    ''' <returns></returns>
+    Public Property NoiseFloorEventResetTime As Integer
+        Get
+            Return miNoiseFloorEventResetTime
+        End Get
+        Set(ByVal value As Integer)
+            miNoiseFloorEventResetTime = Math.Min(3600, Math.Max(10, value))
         End Set
     End Property
 #End Region
@@ -313,15 +420,23 @@ Public Class RtlSdrApi
 
 
     Public Sub New(ByVal oSdrConfig As SDRConfiguration)
-        ' copy configuration to class 
+        ' copy configuration to class, readonly properties
         miDeviceIndex = oSdrConfig.iDeviceIndex
         miCenterFrequency = oSdrConfig.iCenterFrequency
         miSampleRate = oSdrConfig.iSampleRate
-        miDetectionThreshold = oSdrConfig.iDetectionThreshold
-        miSignalDetectionWindow = oSdrConfig.iDetectionWindow
         miGainMode = If(oSdrConfig.bAutomaticGain, 0, 1)
         miGainValue = oSdrConfig.iManualGainValue
-        mdMinimumEventWindow = oSdrConfig.dMinEventWindow
+        ' read/write properties, set via properties in order to enforce value limits
+        Me.SignalInitTime = oSdrConfig.iSignalInitTime
+        Me.SignalEventResetTime = oSdrConfig.dSignalEventResetTime
+        Me.SignalDetectionThreshold = oSdrConfig.iSignalDetectionThreshold
+        Me.SignalDetectionWindow = oSdrConfig.iSignalDetectionWindow
+        Me.NoiseFloorBaselineInitTime = oSdrConfig.iNoiseFloorBaselineInitTime
+        Me.NoiseFloorThreshold = oSdrConfig.dNoiseFloorThreshold
+        Me.NoiseFloorMinEventDuration = oSdrConfig.iNoiseFloorMinEventDuration
+        Me.NoiseFloorCooldownDuration = oSdrConfig.iNoiseFloorCooldownDuration
+        Me.NoiseFloorEventResetTime = oSdrConfig.iNoiseFloorEventResetTime
+        ' not properties
         msDiscordWebhook = oSdrConfig.sDiscordWebhook
         msDiscordMention = oSdrConfig.sDiscordMention
 
@@ -339,7 +454,7 @@ Public Class RtlSdrApi
         If mbRunning Then Exit Sub ' Prevent duplicate threads
 
         ReDim myIqBuffer(miBufferSize - 1) ' Initialize buffer
-        mbSignalDetected = False
+        mbRecordingActive = False
 
         moMonitorThread = New Thread(AddressOf MonitorThread)
         moMonitorThread.IsBackground = True
@@ -641,7 +756,10 @@ Public Class RtlSdrApi
             End If
 
             mtStartMonitor = DateTime.Now
+            mtRecordingStartTime = DateTime.MinValue
+            mtRecordingEndTime = DateTime.MinValue
             miSignalEvents = 0
+            miNoiseFloorEvents = 0
             mbRunning = True
             clsLogger.Log("RtlSdrApi.MonitorThread", $"Starting monitor IQ data stream {mtStartMonitor:MM/dd/yyyy HH:mm:ss} - {modMain.FormatHertz(miCenterFrequency)}, {modMain.FormatMSPS(miSampleRate)}, {modMain.FormatBytes(miBufferSize)} buffer.")
             RaiseStarted(True)
@@ -650,9 +768,18 @@ Public Class RtlSdrApi
             Dim piBytesRead As Integer = 0
             Dim piLostSignalCount As Integer = 0
             Dim ptMonitorStart As Date = DateTime.Now
-            Dim ptLastRecording As Date = DateTime.MinValue
-            Dim piDetectCount As Integer = 0
-            mbSignalDetected = False
+            Dim piSignalDetectCount As Integer = 0
+            Dim pdNoiseFloorAverage As Double = 0D ' Running average noise floor
+            Dim ptLastSignalEvent As DateTime = DateTime.MinValue
+            Dim ptLastNFEvent As DateTime = DateTime.MinValue
+            Dim piNFResetTimer As Integer = 0
+            Dim pbNoiseFloorEventActive As Boolean = False
+            Dim pbSignalEventActive As Boolean = False
+            Dim ptNoiseFloorEventStart As Date = Date.MinValue
+            Dim poNoiseFloorEventElapsed As TimeSpan = TimeSpan.FromSeconds(0)
+            Dim pbUpdateNoiseFloorAverage As Boolean = True
+            mbRecordingActive = False
+
 
             While mbRunning
                 Dim tempBuffer(miBufferSize - 1) As Byte ' Temp buffer for this read
@@ -679,69 +806,147 @@ Public Class RtlSdrApi
                     End If
                 End SyncLock
 
-                ' Analyze data for a signal at center frequency
+                ' Analyze data
                 Dim pdPowerLevels() As Double = ConvertRawToPowerLevels(tempBuffer)
-                Dim dNoiseFloor As Double = CalculateNoiseFloor(pdPowerLevels) ' Get noise level
-                Dim dSignalPower As Double = CalculatePowerAtFrequency(pdPowerLevels) ' Get signal power at center frequency
-                ' Detect signal if power is significantly above noise floor and we've been buffering for at least 3 seconds
-                ' Debug.WriteLine($"Noise floor is {dNoiseFloor}dB and Center signal is {dSignalPower}db.")
-                If dSignalPower > (dNoiseFloor + miDetectionThreshold) AndAlso Now.Subtract(ptMonitorStart).TotalSeconds > 3 Then
-                    piDetectCount = piDetectCount + 1   ' need to see it 3 times in a row
-                Else
-                    piDetectCount = 0
+                Dim pdNoiseFloor As Double = CalculateNoiseFloor(pdPowerLevels) ' Get noise level for this buffer chunk
+                Dim pdSignalPower As Double = CalculatePowerAtFrequency(pdPowerLevels) ' Get signal power at center frequency
+                Dim ptNow As DateTime = DateTime.Now
+
+                ' ***** NOISE FLOOR MONITORING *****
+                ' If we're outside the cooldown window, update the noise floor average
+                If pbUpdateNoiseFloorAverage Then
+                    pdNoiseFloorAverage = (pdNoiseFloorAverage * 0.9) + (pdNoiseFloor * 0.1) ' Exponential moving average
                 End If
-                ' tell me 3 times
-                If piDetectCount > 3 OrElse mbSignalDetected Then
-                    Dim ptNow As DateTime = DateTime.Now
-                    ' Ensure a minimum delay between recordings (e.g., 10 minutes)
-                    If (ptLastRecording = DateTime.MinValue) OrElse (ptNow.Subtract(ptLastRecording).TotalMinutes >= mdMinimumEventWindow) Then
-                        Debug.WriteLine($"🔹 Signal Detected! Strength: {dSignalPower}dB, noise floor: {dNoiseFloor}dB.")
-                        If Not mbSignalDetected Then
-                            mbSignalDetected = True
-                            piLostSignalCount = 0
-                            mtRecordingStartTime = ptNow
-                            miSignalEvents += 1
-                            clsLogger.Log("RtlSdrApi.MonitorThread", $"🔹 Signal Detected! Strength: {dSignalPower:F4}dB, noise floor: {dNoiseFloor:F4}dB.")
-                            ' Save pre-buffered IQ data and the current data
-                            SyncLock mqQueue
-                                myRecordingBuffer.AddRange(mqQueue.ToList())
-                                mqQueue.Clear() ' Reset queue
-                            End SyncLock
-                            RaiseSignalChange(True)
-                        End If
+
+                ' Detect noise floor rise event
+                If Not mbRecordingActive AndAlso pdNoiseFloor > (pdNoiseFloorAverage + mdNoiseFloorThreshold) Then
+                    If ptNoiseFloorEventStart = Date.MinValue Then
+                        ptNoiseFloorEventStart = ptNow
+                    End If
+                    poNoiseFloorEventElapsed = ptNow.Subtract(ptNoiseFloorEventStart)
+                Else
+                    ptNoiseFloorEventStart = Date.MinValue
+                    poNoiseFloorEventElapsed = TimeSpan.FromSeconds(0)
+                End If
+
+                ' Noise floor event detection, make sure it's been eleveated for at least specified min duration
+                ' and it's been at least reset time since last event and we're not recording
+                If poNoiseFloorEventElapsed.TotalSeconds >= miNoiseFloorMinEventDuration _
+                AndAlso Not mbRecordingActive _
+                AndAlso Not pbNoiseFloorEventActive _
+                AndAlso ptNow.Subtract(ptLastNFEvent).TotalSeconds >= miNoiseFloorEventResetTime Then
+                    ' Log the noise floor event
+                    clsLogger.Log("RtlSdrApi.MonitorThread", $"⚠️ Noise Floor Event Detected! Noise floor: {pdNoiseFloor:F4}dB, Threshold: {mdNoiseFloorThreshold}dB.")
+                    miNoiseFloorEvents += 1
+                    ptLastNFEvent = ptNow
+                    pbNoiseFloorEventActive = True     ' trigger event recording
+                    pbUpdateNoiseFloorAverage = False  'don't add risen event into floor average while event is ongoing
+                End If
+
+                ' If noise floor normalizes, resume averaging if past cooldown
+                If Not pbUpdateNoiseFloorAverage _
+                AndAlso Not mbRecordingActive _
+                AndAlso ptLastNFEvent <> DateTime.MinValue _
+                AndAlso (ptNow.Subtract(ptLastNFEvent).TotalSeconds >= miNoiseFloorCooldownDuration) Then
+                    pbUpdateNoiseFloorAverage = True
+                    clsLogger.Log("RtlSdrApi.MonitorThread", $"✅ Noise Floor Event Cleared. Resuming normal averaging.")
+                End If
+
+                ' ***** SIGNAL DETECTION *****
+                ' If we are not active already and not already recording
+                ' and it's been at least misignalInitTime since we started
+                ' and it's been at least mdsignalEventResetTime since the last signal event
+                If Not pbSignalEventActive _
+                AndAlso Not mbRecordingActive _
+                AndAlso pdSignalPower > (pdNoiseFloor + miSignalDetectionThreshold) _
+                AndAlso ptNow.Subtract(ptMonitorStart).TotalSeconds > miSignalInitTime _
+                AndAlso ptNow.Subtract(ptLastSignalEvent).TotalSeconds > miSignalEventResetTime Then
+                    piSignalDetectCount += 1
+                    If piSignalDetectCount >= 3 Then
+                        clsLogger.Log("RtlSdrApi.MonitorThread", $"⚠️ Signal Detected! Strength: {pdSignalPower:F4}dB, Noise Floor: {pdNoiseFloor:F4}dB.")
+                        ptLastSignalEvent = DateTime.Now
+                        miSignalEvents += 1
+                        pbSignalEventActive = True
+                    End If
+                Else
+                    piSignalDetectCount = 0
+                End If
+
+                ' If we're recording, check for signal loss and duration limit
+                If mbRecordingActive Then
+                    ' Save new IQ data to recording buffer
+                    SyncLock myRecordingBuffer
+                        myRecordingBuffer.Add(tempBuffer)
+                    End SyncLock
+                    ' check for singal loss
+                    If pbSignalEventActive OrElse pbNoiseFloorEventActive Then
+                        ' some event is active, reset lost signal counter
                         piLostSignalCount = 0
+                        ' Check for max recording time
+                        If ptNow.Subtract(mtRecordingStartTime).TotalSeconds > miMaxRecordingTime Then
+                            clsLogger.Log("RtlSdrApi.MonitorThread", $"⏳ Max recording time reached. Stopping recording.")
+                            ' reset both signal flags
+                            pbSignalEventActive = False
+                            pbNoiseFloorEventActive = False
+                            StopRecording(pdNoiseFloorAverage)
+                        End If
+                    Else
+                        ' check for lost singal abort
+                        piLostSignalCount += 1
+                        If piLostSignalCount >= 3 Then
+                            clsLogger.Log("RtlSdrApi.MonitorThread", $"🔻 Signal Lost! Strength: {pdSignalPower:F4}dB, Noise Floor: {pdNoiseFloor:F4}dB.")
+                            ' reset both signal flags
+                            pbSignalEventActive = False
+                            pbNoiseFloorEventActive = False
+                            StopRecording(pdNoiseFloorAverage)
+                            RaiseSignalChange(False)
+                        End If
+                    End If
+                Else
+                    ' see if we have a new signal to record
+                    If pbSignalEventActive OrElse pbNoiseFloorEventActive Then
+                        ' Start recording
+                        mbRecordingActive = True
+                        piLostSignalCount = 0
+                        mtRecordingStartTime = ptNow
+                        Select Case True
+                            Case pbSignalEventActive And Not pbNoiseFloorEventActive
+                                clsLogger.Log("RtlSdrApi.MonitorThread", $"🎙️ Recording started due to Signal Detection Event.")
+                            Case pbNoiseFloorEventActive And Not pbSignalEventActive
+                                clsLogger.Log("RtlSdrApi.MonitorThread", $"🎙️ Recording started due to Noise Floor Event.")
+                            Case Else
+                                ' both active
+                                clsLogger.Log("RtlSdrApi.MonitorThread", $"🎙️ Recording started due to simultaneous Signal and Noise Floor Events.")
+                        End Select
+                        ' Save pre-buffered IQ data
+                        SyncLock mqQueue
+                            myRecordingBuffer.AddRange(mqQueue.ToList())
+                            mqQueue.Clear()
+                        End SyncLock
                         ' Save new IQ data
                         SyncLock myRecordingBuffer
                             myRecordingBuffer.Add(tempBuffer)
                         End SyncLock
-                        ' Check for max recording time
-                        If DateTime.Now.Subtract(mtRecordingStartTime).TotalSeconds > miMaxRecordingTime Then
-                            clsLogger.Log("RtlSdrApi.MonitorThread", $"⏳ Max recording time reached. Stopping recording.")
-                            mbSignalDetected = False
-                            ptLastRecording = DateTime.Now
-                            StopRecording()
-                        End If
-                    Else
-                        Debug.WriteLine($"Skipping recording; last recorded {ptLastRecording}.")
-                    End If
-                Else
-                    If mbSignalDetected Then
-                        piLostSignalCount += 1
-                        If piLostSignalCount >= 3 Then
-                            ' we lost the signal
-                            clsLogger.Log("RtlSdrApi.MonitorThread", $"🔻 Signal Lost! Strength: {dSignalPower:F4}dB, noise floor: {dNoiseFloor:F4}dB.")
-                            mbSignalDetected = False
-                            ptLastRecording = DateTime.Now ' Update last recording timestamp
-                            StopRecording()
-                        End If
+                        ' notify owner
+                        RaiseSignalChange(True)
                     End If
                 End If
             End While
+
             ' Log end of monitoring session
             Dim ptEnd As Date = DateTime.Now
             Dim poElapsed As TimeSpan = ptEnd.Subtract(mtStartMonitor)
-            Dim psSignalText As String = If(miSignalEvents = 0, "no", miSignalEvents.ToString()) & " signal event" & If(miSignalEvents <> 1, "s", "")
-            clsLogger.Log("RtlSdrApi.MonitorThread", $"Monitor thread ending at {ptEnd:MM/dd/yyyy HH:mm:ss} with {psSignalText}, {modMain.FullDisplayElapsed(poElapsed.TotalSeconds)} elapsed.")
+            Dim psEnding As String = $"Monitor thread ending at {ptEnd:MM/dd/yyyy HH:mm:ss}, {modMain.FullDisplayElapsed(poElapsed.TotalSeconds)} elapsed.  "
+            Dim psEventText As String = $"Average noise floor was {pdNoiseFloorAverage:F4} dB.  "
+            If miSignalEvents = 0 And miNoiseFloorEvents = 0 Then
+                psEventText = "No events were recorded."
+            Else
+                psEventText = If(miSignalEvents = 0, "No", miSignalEvents.ToString()) & " signal event" & If(miSignalEvents <> 1, "s", "")
+                psEventText = psEventText & " and " & If(miNoiseFloorEvents = 0, "no", miNoiseFloorEvents.ToString()) & "noise floor event" & If(miNoiseFloorEvents <> 1, "s", "")
+                psEventText = psEventText & " were recorded."
+            End If
+            psEnding = psEnding & psEventText
+            clsLogger.Log("RtlSdrApi.MonitorThread", psEnding)
 
         Catch ex As Exception
             clsLogger.LogException("rtlSdrApi.MonitorThread", ex)
@@ -749,22 +954,20 @@ Public Class RtlSdrApi
         Finally
             ' Cleanup SDR device
             If miDeviceHandle <> IntPtr.Zero Then
-                RtlSdrApi.rtlsdr_close(miDeviceHandle)
+                Dim piResult As Integer = RtlSdrApi.rtlsdr_close(miDeviceHandle)
                 miDeviceHandle = IntPtr.Zero
             End If
+            mbRecordingActive = False
             mbRunning = False
-            If mbSignalDetected Then
-                RaiseSignalChange(False)
-            End If
             RaiseEnded()
-            mbSignalDetected = False
             clsLogger.Log("RtlSdrApi.MonitorThread", $"Exiting monitor thread.")
         End Try
     End Sub
 
-    Private Sub StopRecording()
-        mbSignalDetected = False
+    Private Sub StopRecording(ByVal dAvgNoiseFloor As Double)
+        mbRecordingActive = False
         mtRecordingEndTime = DateTime.Now
+        Dim poEl As TimeSpan = mtStartMonitor.Subtract(mtRecordingEndTime)
 
         ' Lock and queue the recorded buffer for background processing
         SyncLock mqRecordingQueue
@@ -778,7 +981,7 @@ Public Class RtlSdrApi
         If moWriteThread Is Nothing OrElse Not moWriteThread.IsAlive Then
             Dim ptStart As Date = mtRecordingStartTime
             Dim ptEnd As Date = mtRecordingEndTime
-            moWriteThread = New Thread(Sub() ProcessRecordingQueue(ptStart, ptEnd))
+            moWriteThread = New Thread(Sub() ProcessRecordingQueue(ptStart, ptEnd, dAvgNoiseFloor, poEl.TotalSeconds))
             moWriteThread.IsBackground = True
             moWriteThread.Start()
         End If
@@ -787,7 +990,7 @@ Public Class RtlSdrApi
     End Sub
 
     ' background thread for writing recorded data out to disk
-    Private Sub ProcessRecordingQueue(ByVal tRecordingStartTime As Date, ByVal tRecordingEndTime As Date)
+    Private Sub ProcessRecordingQueue(ByVal tRecordingStartTime As Date, ByVal tRecordingEndTime As Date, ByVal dAverageNoiseFloor As Double, ByVal oSessionElapsedSec As Double)
         mbWritingToDisk = True
         Try
             While True
@@ -818,6 +1021,8 @@ Public Class RtlSdrApi
                         .GainMode = If(miGainMode = 0, "auto", String.Format("{0:#0.0} dB", miGainValue / 10))
                         .TotalIQBytes = recordedData.Sum(Function(b) b.Length)
                         .DurationSeconds = tRecordingEndTime.Subtract(tRecordingStartTime).TotalSeconds
+                        .AverageNoiseFloor = dAverageNoiseFloor
+                        .SessionElapsedSeconds = oSessionElapsedSec
                         .IQBuffer = recordedData
                     End With
                     If poZipper.SaveArchive Then
@@ -937,9 +1142,9 @@ Public Class RtlSdrApi
     ' Raises an error event on the UI thread
     Private Sub RaiseSignalChange(ByVal SignalFound As Boolean)
         If moSyncContext IsNot Nothing Then
-            moSyncContext.Post(Sub(state) RaiseEvent SignalChange(Me, SignalFound), Nothing)
+            moSyncContext.Post(Sub(state) RaiseEvent RecordingEvent(Me, SignalFound), Nothing)
         Else
-            RaiseEvent SignalChange(Me, SignalFound)
+            RaiseEvent RecordingEvent(Me, SignalFound)
         End If
     End Sub
 

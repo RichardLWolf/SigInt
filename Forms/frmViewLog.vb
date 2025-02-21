@@ -3,6 +3,15 @@
 Public Class frmViewLog
     Private foLogEntries As New List(Of String)
 
+
+    Private Sub btnClear_Click(sender As Object, e As EventArgs) Handles btnClear.Click
+        If MsgBox("This will clear the entire log of all entries, this cannot be undone." & vbCrLf & vbCrLf & "Are you sure you wish to clear the log file?", MsgBoxStyle.YesNo + MsgBoxStyle.Exclamation, "CONFIRM LOG CLEAR") = MsgBoxResult.Yes Then
+            clsLogger.ClearLog()
+            LoadLogFile()
+            txtSearch_TextChanged(Nothing, Nothing)
+        End If
+    End Sub
+
     Private Sub btnCopy_Click(sender As Object, e As EventArgs) Handles btnCopy.Click
         Try
             Clipboard.Clear()

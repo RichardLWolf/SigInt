@@ -7,12 +7,21 @@ Public Class frmConfig
     Private fiGainValue As Integer
     Private fiCenterFreq As UInteger
     Private fiSampleRate As UInteger
-    Private fdMinEventWindow As Double
+
+    Private fiSigEventResetTime As Integer
+    Private fiSigDetThresh As Integer
+    Private fiSigDetWind As Integer
+    Private fiSignalInitTime As Integer
+
+    Private fiNFBaselineInitTime As Integer
+    Private fdNFThreshold As Double
+    Private fiNFMinEventDuration As Integer
+    Private fiNFCooldownDuration As Integer
+    Private fiNFEventResetTime As Integer
+
     Private fbDiscordNotifications As Boolean
     Private fsDiscordServerWebhook As String
     Private fsDiscordMentionID As String
-    Private fiDetThresh As Integer
-    Private fiDetWind As Integer
 
 
     Private foGains As New List(Of Integer)
@@ -43,9 +52,9 @@ Public Class frmConfig
         End Get
     End Property
 
-    Public ReadOnly Property MinEventWindow As Double
+    Public ReadOnly Property SignalEventResetTime As Double
         Get
-            Return fdMinEventWindow
+            Return fiSigEventResetTime
         End Get
     End Property
 
@@ -69,15 +78,55 @@ Public Class frmConfig
 
     Public ReadOnly Property DetectionThreshold As Integer
         Get
-            Return fiDetThresh
+            Return fiSigDetThresh
         End Get
     End Property
 
     Public ReadOnly Property DetectionWindow As Integer
         Get
-            Return fiDetWind
+            Return fiSigDetWind
         End Get
     End Property
+
+    Public ReadOnly Property SignalInitTime As Integer
+        Get
+            Return fiSignalInitTime
+        End Get
+    End Property
+
+    Public ReadOnly Property NoiseFloorThreshold As Double
+        Get
+            Return fdNFThreshold
+        End Get
+    End Property
+
+    Public ReadOnly Property NoiseFloorMinEventDuration As Integer
+        Get
+            Return fiNFMinEventDuration
+        End Get
+    End Property
+
+    Public ReadOnly Property NoiseFloorCooldownDuration As Integer
+        Get
+            Return fiNFCooldownDuration
+        End Get
+    End Property
+
+    Public ReadOnly Property NoiseFloorEventResetTime As Integer
+        Get
+            Return fiNFEventResetTime
+        End Get
+    End Property
+
+    Public ReadOnly Property NoiseFloorBaselineInitTime As Integer
+        Get
+            Return fiNFBaselineInitTime
+        End Get
+    End Property
+
+
+
+
 
     Public Property SelectedDeviceName As String
         Get
@@ -99,22 +148,23 @@ Public Class frmConfig
         cboScale.SelectedIndex = 0
 
 
-        With cboMinEventWindow
+        With cboSigEventReset
             .Items.Clear()
-            .Items.Add(New KeyValuePair(Of String, Double)("30 sec", 0.5D))
-            .Items.Add(New KeyValuePair(Of String, Double)("1 min", 1D))
-            .Items.Add(New KeyValuePair(Of String, Double)("2 min", 2D))
-            .Items.Add(New KeyValuePair(Of String, Double)("5 min", 5D))
-            .Items.Add(New KeyValuePair(Of String, Double)("10 min (Default)", 10D))
-            .Items.Add(New KeyValuePair(Of String, Double)("15 min", 15D))
-            .Items.Add(New KeyValuePair(Of String, Double)("20 min", 20D))
-            .Items.Add(New KeyValuePair(Of String, Double)("30 min", 30D))
-            .Items.Add(New KeyValuePair(Of String, Double)("45 min", 45D))
-            .Items.Add(New KeyValuePair(Of String, Double)("60 min (1 hour)", 60D))
+            .Items.Add(New KeyValuePair(Of String, Integer)("1 min ", 60))
+            .Items.Add(New KeyValuePair(Of String, Integer)("2 min ", 120))
+            .Items.Add(New KeyValuePair(Of String, Integer)("3 min ", 180))
+            .Items.Add(New KeyValuePair(Of String, Integer)("4 min ", 250))
+            .Items.Add(New KeyValuePair(Of String, Integer)("5 min (Default)", 300))
+            .Items.Add(New KeyValuePair(Of String, Integer)("10 min", 600))
+            .Items.Add(New KeyValuePair(Of String, Integer)("15 min", 900))
+            .Items.Add(New KeyValuePair(Of String, Integer)("20 min", 1200))
+            .Items.Add(New KeyValuePair(Of String, Integer)("30 min", 1800))
+            .Items.Add(New KeyValuePair(Of String, Integer)("45 min", 2700))
+            .Items.Add(New KeyValuePair(Of String, Integer)("60 min (1 hour)", 3600))
             .DisplayMember = "Key"
             .ValueMember = "Value"
         End With
-        cboMinEventWindow.SelectedIndex = 0
+        cboSigEventReset.SelectedIndex = 0
 
         With cboDetThresh
             .Items.Clear()
@@ -159,6 +209,86 @@ Public Class frmConfig
         End With
         cboSampleRate.SelectedIndex = 0
 
+        With cboSignalInit
+            .Items.Clear()
+            .Items.Add(New KeyValuePair(Of String, Integer)("1 second", 1))
+            .Items.Add(New KeyValuePair(Of String, Integer)("2 seconds", 2))
+            .Items.Add(New KeyValuePair(Of String, Integer)("3 seconds (Default)", 3))
+            .Items.Add(New KeyValuePair(Of String, Integer)("5 seconds", 5))
+            .Items.Add(New KeyValuePair(Of String, Integer)("10 seconds", 10))
+            .DisplayMember = "Key"
+            .ValueMember = "Value"
+        End With
+        cboSignalInit.SelectedIndex = 0
+
+        With cboNFBaselineInit
+            .Items.Clear()
+            .Items.Add(New KeyValuePair(Of String, Integer)("30 seconds", 30))
+            .Items.Add(New KeyValuePair(Of String, Integer)("45 seconds", 45))
+            .Items.Add(New KeyValuePair(Of String, Integer)("60 seconds (Default)", 60))
+            .Items.Add(New KeyValuePair(Of String, Integer)("90 seconds", 90))
+            .Items.Add(New KeyValuePair(Of String, Integer)("120 seconds", 120))
+            .DisplayMember = "Key"
+            .ValueMember = "Value"
+        End With
+        cboNFBaselineInit.SelectedIndex = 0
+
+        With cboNFDetThresh
+            .Items.Clear()
+            .Items.Add(New KeyValuePair(Of String, Double)("2.0 dB", 2.0))
+            .Items.Add(New KeyValuePair(Of String, Double)("3.0 dB", 3.0))
+            .Items.Add(New KeyValuePair(Of String, Double)("4.0 dB (Default)", 4.0))
+            .Items.Add(New KeyValuePair(Of String, Double)("5.0 dB", 5.0))
+            .Items.Add(New KeyValuePair(Of String, Double)("6.0 dB", 6.0))
+            .Items.Add(New KeyValuePair(Of String, Double)("7.0 dB", 7.0))
+            .Items.Add(New KeyValuePair(Of String, Double)("8.0 dB", 8.0))
+            .DisplayMember = "Key"
+            .ValueMember = "Value"
+        End With
+        cboNFDetThresh.SelectedIndex = 0
+
+        With cboNFMinDur
+            .Items.Clear()
+            .Items.Add(New KeyValuePair(Of String, Integer)("2 seconds", 2))
+            .Items.Add(New KeyValuePair(Of String, Integer)("3 seconds", 3))
+            .Items.Add(New KeyValuePair(Of String, Integer)("5 seconds (Default)", 5))
+            .Items.Add(New KeyValuePair(Of String, Integer)("10 seconds", 10))
+            .Items.Add(New KeyValuePair(Of String, Integer)("15 seconds", 15))
+            .DisplayMember = "Key"
+            .ValueMember = "Value"
+        End With
+        cboNFMinDur.SelectedIndex = 0
+
+        With cboNFCooldown
+            .Items.Clear()
+            .Items.Add(New KeyValuePair(Of String, Integer)("5 seconds", 5))
+            .Items.Add(New KeyValuePair(Of String, Integer)("10 seconds (Default)", 10))
+            .Items.Add(New KeyValuePair(Of String, Integer)("15 seconds", 15))
+            .Items.Add(New KeyValuePair(Of String, Integer)("20 seconds", 20))
+            .Items.Add(New KeyValuePair(Of String, Integer)("30 seconds", 30))
+            .DisplayMember = "Key"
+            .ValueMember = "Value"
+        End With
+        cboNFCooldown.SelectedIndex = 0
+
+        With cboNFReset
+            .Items.Clear()
+            .Items.Add(New KeyValuePair(Of String, Integer)("1 min ", 60))
+            .Items.Add(New KeyValuePair(Of String, Integer)("2 min ", 120))
+            .Items.Add(New KeyValuePair(Of String, Integer)("3 min ", 180))
+            .Items.Add(New KeyValuePair(Of String, Integer)("4 min ", 250))
+            .Items.Add(New KeyValuePair(Of String, Integer)("5 min (Default)", 300))
+            .Items.Add(New KeyValuePair(Of String, Integer)("10 min", 600))
+            .Items.Add(New KeyValuePair(Of String, Integer)("15 min", 900))
+            .Items.Add(New KeyValuePair(Of String, Integer)("20 min", 1200))
+            .Items.Add(New KeyValuePair(Of String, Integer)("30 min", 1800))
+            .Items.Add(New KeyValuePair(Of String, Integer)("45 min", 2700))
+            .Items.Add(New KeyValuePair(Of String, Integer)("60 min (1 hour)", 3600))
+            .DisplayMember = "Key"
+            .ValueMember = "Value"
+        End With
+        cboNFReset.SelectedIndex = 0
+
         ' Load values form config to form-level vars
         Me.SelectedDeviceName = SelectedDevice
         fiGainMode = oConfig.GainMode
@@ -170,12 +300,18 @@ Public Class frmConfig
         fiMaxFreq = poFreqs(1)
         fiCenterFreq = oConfig.CenterFrequency
         fiSampleRate = oConfig.SampleRate
-        fdMinEventWindow = oConfig.MinEventWindow
-        fiDetWind = oConfig.DetectionWindow
-        fiDetThresh = oConfig.DetectionThreshold
+        fiSigEventResetTime = oConfig.SignalEventResetTime
+        fiSigDetWind = oConfig.SignalDetectionWindow
+        fiSigDetThresh = oConfig.SignalDetectionThreshold
+        fiSignalInitTime = oConfig.SignalInitTime
         fbDiscordNotifications = oConfig.DiscordNotifications
         fsDiscordServerWebhook = oConfig.DiscordServerWebhook
         fsDiscordMentionID = oConfig.DiscordMentionID
+        fiNFBaselineInitTime = oConfig.NoiseFloorBaselineInitTime
+        fdNFThreshold = oConfig.NoiseFloorThreshold
+        fiNFMinEventDuration = oConfig.NoiseFloorMinEventDuration
+        fiNFCooldownDuration = oConfig.NoiseFloorCooldownDuration
+        fiNFEventResetTime = oConfig.NoiseFloorEventResetTime
 
         If foGains.Count > 0 Then
             foGains.Sort()
@@ -235,9 +371,18 @@ Public Class frmConfig
         fiGainValue = poSdrCfg.iManualGainValue
         fiCenterFreq = poSdrCfg.iCenterFrequency
         fiSampleRate = poSdrCfg.iSampleRate
-        fdMinEventWindow = poSdrCfg.dMinEventWindow
-        fiDetWind = poSdrCfg.iDetectionWindow
-        fiDetThresh = poSdrCfg.iDetectionThreshold
+        fiSigEventResetTime = poSdrCfg.dSignalEventResetTime
+        fiSigDetWind = poSdrCfg.iSignalDetectionWindow
+        fiSigDetThresh = poSdrCfg.iSignalDetectionThreshold
+        fiSignalInitTime = poSdrCfg.iSignalInitTime
+
+        fiSigEventResetTime = poSdrCfg.dSignalEventResetTime
+        fiNFBaselineInitTime = poSdrCfg.iNoiseFloorBaselineInitTime
+        fdNFThreshold = poSdrCfg.dNoiseFloorThreshold
+        fiNFMinEventDuration = poSdrCfg.iNoiseFloorMinEventDuration
+        fiNFCooldownDuration = poSdrCfg.iNoiseFloorCooldownDuration
+        fiNFEventResetTime = poSdrCfg.iNoiseFloorEventResetTime
+
         If String.IsNullOrEmpty(poSdrCfg.sDiscordWebhook) Then
             fsDiscordServerWebhook = ""
             fsDiscordMentionID = ""
@@ -249,15 +394,15 @@ Public Class frmConfig
     End Sub
 
     Private Sub cboDetThresh_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboDetThresh.SelectedIndexChanged
-        fiDetThresh = DirectCast(cboDetThresh.SelectedItem, KeyValuePair(Of String, Integer)).Value
+        fiSigDetThresh = DirectCast(cboDetThresh.SelectedItem, KeyValuePair(Of String, Integer)).Value
     End Sub
 
     Private Sub cboDetWind_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboDetWind.SelectedIndexChanged
-        fiDetWind = DirectCast(cboDetWind.SelectedItem, KeyValuePair(Of String, Integer)).Value
+        fiSigDetWind = DirectCast(cboDetWind.SelectedItem, KeyValuePair(Of String, Integer)).Value
     End Sub
 
-    Private Sub cboMinEventWindow_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboMinEventWindow.SelectedIndexChanged
-        fdMinEventWindow = DirectCast(cboMinEventWindow.SelectedItem, KeyValuePair(Of String, Double)).Value
+    Private Sub cboSigEventReset_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSigEventReset.SelectedIndexChanged
+        fiSigEventResetTime = DirectCast(cboSigEventReset.SelectedItem, KeyValuePair(Of String, Integer)).Value
     End Sub
 
     Private Sub cboSampleRate_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSampleRate.SelectedIndexChanged
@@ -270,6 +415,35 @@ Public Class frmConfig
         txtFrequency.SelectAll()
         txtFrequency.Focus()
     End Sub
+
+    Private Sub cboNFBaselineInit_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboNFBaselineInit.SelectedIndexChanged
+        fiNFBaselineInitTime = DirectCast(cboNFBaselineInit.SelectedItem, KeyValuePair(Of String, Integer)).Value
+    End Sub
+
+    Private Sub cboNFCooldown_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboNFCooldown.SelectedIndexChanged
+        fiNFCooldownDuration = DirectCast(cboNFCooldown.SelectedItem, KeyValuePair(Of String, Integer)).Value
+    End Sub
+
+    Private Sub cboNFDetThresh_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboNFDetThresh.SelectedIndexChanged
+        fdNFThreshold = DirectCast(cboNFDetThresh.SelectedItem, KeyValuePair(Of String, Double)).Value
+    End Sub
+
+    Private Sub cboNFMinDur_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboNFMinDur.SelectedIndexChanged
+        fiNFMinEventDuration = DirectCast(cboNFMinDur.SelectedItem, KeyValuePair(Of String, Integer)).Value
+    End Sub
+
+    Private Sub cboNFReset_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboNFReset.SelectedIndexChanged
+        fiNFEventResetTime = DirectCast(cboNFReset.SelectedItem, KeyValuePair(Of String, Integer)).Value
+    End Sub
+
+    Private Sub cboSignalInit_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSignalInit.SelectedIndexChanged
+        fiSignalInitTime = DirectCast(cboSignalInit.SelectedItem, KeyValuePair(Of String, Integer)).Value
+    End Sub
+
+
+
+
+
 
     Private Sub chkAutomatic_CheckedChanged(sender As Object, e As EventArgs) Handles chkAutomatic.CheckedChanged
         lblMainGain.Visible = Not chkAutomatic.Checked
@@ -348,17 +522,17 @@ Public Class frmConfig
 
         ' Note: Do not set a default SelectedIndex for the comboboxes, as it will trigger the SelectedIndexChanged event and overwrite the form-level values
 
-        For piIndex As Integer = 0 To cboMinEventWindow.Items.Count - 1
-            Dim kvp As KeyValuePair(Of String, Double) = DirectCast(cboMinEventWindow.Items(piIndex), KeyValuePair(Of String, Double))
-            If kvp.Value = fdMinEventWindow Then
-                cboMinEventWindow.SelectedIndex = piIndex
+        For piIndex As Integer = 0 To cboSigEventReset.Items.Count - 1
+            Dim kvp As KeyValuePair(Of String, Integer) = DirectCast(cboSigEventReset.Items(piIndex), KeyValuePair(Of String, Integer))
+            If kvp.Value = fiSigEventResetTime Then
+                cboSigEventReset.SelectedIndex = piIndex
                 Exit For
             End If
         Next
 
         For piIndex = 0 To cboDetThresh.Items.Count - 1
             Dim poKvp As KeyValuePair(Of String, Integer) = DirectCast(cboDetThresh.Items(piIndex), KeyValuePair(Of String, Integer))
-            If poKvp.Value = fiDetThresh Then
+            If poKvp.Value = fiSigDetThresh Then
                 cboDetThresh.SelectedIndex = piIndex
                 Exit For
             End If
@@ -366,7 +540,7 @@ Public Class frmConfig
 
         For piIndex = 0 To cboDetWind.Items.Count - 1
             Dim poKvp As KeyValuePair(Of String, Integer) = DirectCast(cboDetWind.Items(piIndex), KeyValuePair(Of String, Integer))
-            If poKvp.Value = fiDetWind Then
+            If poKvp.Value = fiSigDetWind Then
                 cboDetWind.SelectedIndex = piIndex
                 Exit For
             End If
@@ -376,6 +550,54 @@ Public Class frmConfig
             Dim poKvp As KeyValuePair(Of String, UInteger) = DirectCast(cboSampleRate.Items(piIndex), KeyValuePair(Of String, UInteger))
             If poKvp.Value = fiSampleRate Then
                 cboSampleRate.SelectedIndex = piIndex
+                Exit For
+            End If
+        Next
+
+        For piIndex = 0 To cboSignalInit.Items.Count - 1
+            Dim poKvp As KeyValuePair(Of String, Integer) = DirectCast(cboSignalInit.Items(piIndex), KeyValuePair(Of String, Integer))
+            If poKvp.Value = fiSignalInitTime Then
+                cboSignalInit.SelectedIndex = piIndex
+                Exit For
+            End If
+        Next
+
+        For piIndex = 0 To cboNFBaselineInit.Items.Count - 1
+            Dim poKvp As KeyValuePair(Of String, Integer) = DirectCast(cboNFBaselineInit.Items(piIndex), KeyValuePair(Of String, Integer))
+            If poKvp.Value = fiNFBaselineInitTime Then
+                cboNFBaselineInit.SelectedIndex = piIndex
+                Exit For
+            End If
+        Next
+
+        For piIndex = 0 To cboNFDetThresh.Items.Count - 1
+            Dim poKvp As KeyValuePair(Of String, Double) = DirectCast(cboNFDetThresh.Items(piIndex), KeyValuePair(Of String, Double))
+            If poKvp.Value = fdNFThreshold Then
+                cboNFDetThresh.SelectedIndex = piIndex
+                Exit For
+            End If
+        Next
+
+        For piIndex = 0 To cboNFMinDur.Items.Count - 1
+            Dim poKvp As KeyValuePair(Of String, Integer) = DirectCast(cboNFMinDur.Items(piIndex), KeyValuePair(Of String, Integer))
+            If poKvp.Value = fiNFMinEventDuration Then
+                cboNFMinDur.SelectedIndex = piIndex
+                Exit For
+            End If
+        Next
+
+        For piIndex = 0 To cboNFCooldown.Items.Count - 1
+            Dim poKvp As KeyValuePair(Of String, Integer) = DirectCast(cboNFCooldown.Items(piIndex), KeyValuePair(Of String, Integer))
+            If poKvp.Value = fiNFCooldownDuration Then
+                cboNFCooldown.SelectedIndex = piIndex
+                Exit For
+            End If
+        Next
+
+        For piIndex = 0 To cboNFReset.Items.Count - 1
+            Dim poKvp As KeyValuePair(Of String, Integer) = DirectCast(cboNFReset.Items(piIndex), KeyValuePair(Of String, Integer))
+            If poKvp.Value = fiNFEventResetTime Then
+                cboNFReset.SelectedIndex = piIndex
                 Exit For
             End If
         Next
@@ -456,6 +678,8 @@ Public Class frmConfig
         Dim sPattern As String = "^<@&?\d{17,20}>$"
         Return Regex.IsMatch(sMentionID, sPattern)
     End Function
+
+
 
 
 

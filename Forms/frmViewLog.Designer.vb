@@ -29,6 +29,8 @@ Partial Class frmViewLog
         ToolStripLabel1 = New ToolStripLabel()
         btnCopy = New ToolStripButton()
         lvwLog = New WatermarkListview()
+        ToolStripSeparator1 = New ToolStripSeparator()
+        btnClear = New ToolStripButton()
         ToolStrip1.SuspendLayout()
         SuspendLayout()
         ' 
@@ -37,7 +39,7 @@ Partial Class frmViewLog
         ToolStrip1.BackColor = Color.FromArgb(CByte(50), CByte(50), CByte(55))
         ToolStrip1.GripStyle = ToolStripGripStyle.Hidden
         ToolStrip1.ImageScalingSize = New Size(32, 32)
-        ToolStrip1.Items.AddRange(New ToolStripItem() {btnRefresh, txtSearch, ToolStripLabel1, btnCopy})
+        ToolStrip1.Items.AddRange(New ToolStripItem() {btnRefresh, txtSearch, ToolStripLabel1, btnCopy, ToolStripSeparator1, btnClear})
         ToolStrip1.Location = New Point(0, 0)
         ToolStrip1.Name = "ToolStrip1"
         ToolStrip1.Padding = New Padding(10, 0, 1, 0)
@@ -96,6 +98,22 @@ Partial Class frmViewLog
         lvwLog.WatermarkAlpha = 200
         lvwLog.WatermarkImage = Nothing
         ' 
+        ' ToolStripSeparator1
+        ' 
+        ToolStripSeparator1.Margin = New Padding(10, 0, 5, 0)
+        ToolStripSeparator1.Name = "ToolStripSeparator1"
+        ToolStripSeparator1.Size = New Size(6, 39)
+        ' 
+        ' btnClear
+        ' 
+        btnClear.DisplayStyle = ToolStripItemDisplayStyle.Image
+        btnClear.Image = My.Resources.Resources.delete2
+        btnClear.ImageTransparentColor = Color.Magenta
+        btnClear.Name = "btnClear"
+        btnClear.Size = New Size(36, 36)
+        btnClear.Text = "Clear Log"
+        btnClear.ToolTipText = "Clear Log "
+        ' 
         ' frmViewLog
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
@@ -123,4 +141,6 @@ Partial Class frmViewLog
     Friend WithEvents ToolStripLabel1 As ToolStripLabel
     Friend WithEvents btnCopy As ToolStripButton
     Friend WithEvents lvwLog As WatermarkListview
+    Friend WithEvents ToolStripSeparator1 As ToolStripSeparator
+    Friend WithEvents btnClear As ToolStripButton
 End Class

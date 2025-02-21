@@ -165,7 +165,11 @@ Public Class frmPlayback
         DrawMetadataLine(poG, "Duration:", TimeSpan.FromSeconds(foArchive.DurationSeconds).ToString("mm\:ss"), poLabelFont, poDataFont, poLabelBrush, poDataBrush, piXOffset, piYOffset)
         piYOffset += piSpacing
 
-        DrawMetadataLine(poG, "App Version:", foArchive.AppVer, poLabelFont, poDataFont, poLabelBrush, poDataBrush, piXOffset, piYOffset)
+        DrawMetadataLine(poG, "Avg. Floor:", foArchive.AverageNoiseFloor.ToString("0.0###") & "dB", poLabelFont, poDataFont, poLabelBrush, poDataBrush, piXOffset, piYOffset)
+        piYOffset += piSpacing
+
+        DrawMetadataLine(poG, "Timestamp:", TimeSpan.FromSeconds(foArchive.SessionElapsedSeconds).ToString("mm\:ss"), poLabelFont, poDataFont, poLabelBrush, poDataBrush, piXOffset, piYOffset)
+        piYOffset += piSpacing
 
         ' Cleanup
         poTitleFont.Dispose()

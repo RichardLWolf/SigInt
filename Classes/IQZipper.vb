@@ -16,6 +16,8 @@ Public Class IQZipper
         Public GainMode As String
         Public TotalIQBytes As Long
         Public RecordingDurationSec As Double
+        Public AverageNoiseFloor As Double
+        Public SessionElapsedSec As Double
         Public AppSoftwareVer As String
         Public UncompressedSize As Long
     End Structure
@@ -32,6 +34,8 @@ Public Class IQZipper
     Private msGainMode As String            ' should be "auto" or the manual gain value, e.g. "16.6dB"
     Private miTotalIQBytes As Integer
     Private miDurationSeconds As Double
+    Private mdAvgNoiseFloor As Double
+    Private mdSessionElapsedSec As Double
     Private msAppVer As String
     Private myIQData As List(Of Byte())
     Private disposedValue As Boolean
@@ -109,6 +113,24 @@ Public Class IQZipper
         End Set
     End Property
 
+    Public Property AverageNoiseFloor As Double
+        Get
+            Return mdAvgNoiseFloor
+        End Get
+        Set(ByVal value As Double)
+            mdAvgNoiseFloor = value
+        End Set
+    End Property
+
+    Public Property SessionElapsedSeconds As Double
+        Get
+            Return mdSessionElapsedSec
+        End Get
+        Set(ByVal value As Double)
+            mdSessionElapsedSec = value
+        End Set
+    End Property
+
     Public Property AppVer As String
         Get
             Return msAppVer
@@ -177,6 +199,8 @@ Public Class IQZipper
             msGainMode = poData.GainMode
             miTotalIQBytes = poData.TotalIQBytes
             miDurationSeconds = poData.RecordingDurationSec
+            mdAvgNoiseFloor = poData.AverageNoiseFloor
+            mdSessionElapsedSec = poData.SessionElapsedSec
             msAppVer = poData.AppSoftwareVer
 
             ' Initialize myIQData
@@ -252,6 +276,8 @@ Public Class IQZipper
                                     ""Gain_Mode"": ""{msGainMode}"",
                                     ""Total_IQ_Bytes"": {myIQData.Sum(Function(b) b.Length)},
                                     ""Recording_Duration_S"": {miDurationSeconds:F2},
+                                    ""Avg_Noise_Floor_dB"": {mdAvgNoiseFloor:F4},
+                                    ""Session_Elapsed_Sec"": {mdSessionElapsedSec:F2},
                                     ""Software_Version"": ""{psAppVersion}""
                                 }}"
                             poWriter.Write(psMetadata)
@@ -360,6 +386,8 @@ Public Class IQZipper
             poIQ.GainMode = oJson.Value(Of String)("Gain_Mode")
             poIQ.TotalIQBytes = oJson.Value(Of Long)("Total_IQ_Bytes")
             poIQ.RecordingDurationSec = oJson.Value(Of Double)("Recording_Duration_S")
+            poIQ.AverageNoiseFloor = oJson.Value(Of Double)("Avg_Noise_Floor_dB")
+            poIQ.SessionElapsedSec = oJson.Value(Of Double)("Session_Elapsed_Sec")
             poIQ.AppSoftwareVer = oJson.Value(Of String)("Software_Version")
             poIQ.UncompressedSize = GetIQFileSize(sArchiveFilename)
 

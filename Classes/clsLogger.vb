@@ -88,7 +88,7 @@ Public Class clsLogger
         Try
             Using poSW As New StreamWriter(msLogFile, True)
                 Dim poSB As New System.Text.StringBuilder
-                poSB.Append("[").Append(Format(Now(), "MM/dd/yyyy hh:mm:ss")).Append($"|{ModuleName}] RTE: ")
+                poSB.Append("[").Append(Format(Now(), "MM/dd/yyyy hh:mm:ss")).Append($"|{ModuleName}] - RTE: ")
                 If Ex IsNot Nothing Then
                     poSB.Append(Ex.Message)
                     If Ex.InnerException IsNot Nothing Then
