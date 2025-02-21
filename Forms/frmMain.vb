@@ -244,6 +244,19 @@ Public Class frmMain
         picPlayback.Image = My.Resources.microphone2
     End Sub
 
+    Private Sub picViewLog_Click(sender As Object, e As EventArgs) Handles picViewLog.Click
+        Using poFrm As New frmViewLog
+            poFrm.ShowDialog(Me)
+        End Using
+    End Sub
+
+    Private Sub picViewLog_MouseEnter(sender As Object, e As EventArgs) Handles picViewLog.MouseEnter
+        picViewLog.Image = My.Resources.scroll_view_hover
+    End Sub
+
+    Private Sub picViewLog_MouseLeave(sender As Object, e As EventArgs) Handles picViewLog.MouseLeave
+        picViewLog.Image = My.Resources.scroll_view
+    End Sub
 
 
     Private Sub picStartStop_Click(sender As Object, e As EventArgs) Handles picStartStop.MouseClick
@@ -374,6 +387,7 @@ Public Class frmMain
             Return New Size(panSignal.Width, panSignal.Height)
         End If
     End Function
+
 
 End Class
 ''

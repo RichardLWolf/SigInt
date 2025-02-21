@@ -150,6 +150,19 @@ Public Class clsLogger
         Return True
     End Function
 
+
+    Public Shared Function LoadLog() As List(Of String)
+        Dim poLog As New List(Of String)
+        Try
+            If System.IO.File.Exists(msLogFile) Then
+                poLog = System.IO.File.ReadAllLines(msLogFile).ToList
+            End If
+        Catch ex As Exception
+            ' don't care, just exit out
+        End Try
+        Return poLog
+    End Function
+
 #End Region
 
 End Class

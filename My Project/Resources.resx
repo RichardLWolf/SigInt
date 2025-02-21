@@ -169,5 +169,18 @@
   <data name="wav_file_blue" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>N:\Repository\SigInt\My Project\Resources\wav_file_blue.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="sigint_icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>N:\Repository\SigInt\My Project\Resources\sigint_icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="copy" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>N:\Repository\SigInt\My Project\Resources\copy.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="scroll_view" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>N:\Repository\SigInt\My Project\Resources\scroll_view.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="scroll_view_hover" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>N:\Repository\SigInt\My Project\Resources\scroll_view_hover.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+
 
 </root>

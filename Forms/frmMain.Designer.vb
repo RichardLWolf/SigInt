@@ -42,11 +42,13 @@ Partial Class frmMain
         ToolTip1 = New ToolTip(components)
         picConfig = New PictureBox()
         picPlayback = New PictureBox()
+        picViewLog = New PictureBox()
         Panel1.SuspendLayout()
         CType(picStartStop, ComponentModel.ISupportInitialize).BeginInit()
         CType(picBrowseFolder, ComponentModel.ISupportInitialize).BeginInit()
         CType(picConfig, ComponentModel.ISupportInitialize).BeginInit()
         CType(picPlayback, ComponentModel.ISupportInitialize).BeginInit()
+        CType(picViewLog, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
         ' cboDeviceList
@@ -264,12 +266,24 @@ Partial Class frmMain
         picPlayback.TabStop = False
         ToolTip1.SetToolTip(picPlayback, "Playback recorded archives")
         ' 
+        ' picViewLog
+        ' 
+        picViewLog.Image = My.Resources.Resources.scroll_view
+        picViewLog.Location = New Point(363, 34)
+        picViewLog.Name = "picViewLog"
+        picViewLog.Size = New Size(29, 29)
+        picViewLog.SizeMode = PictureBoxSizeMode.StretchImage
+        picViewLog.TabIndex = 25
+        picViewLog.TabStop = False
+        ToolTip1.SetToolTip(picViewLog, "View Application Log")
+        ' 
         ' frmMain
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
         ClientSize = New Size(1029, 547)
+        Controls.Add(picViewLog)
         Controls.Add(picPlayback)
         Controls.Add(picConfig)
         Controls.Add(picBrowseFolder)
@@ -291,6 +305,7 @@ Partial Class frmMain
         CType(picBrowseFolder, ComponentModel.ISupportInitialize).EndInit()
         CType(picConfig, ComponentModel.ISupportInitialize).EndInit()
         CType(picPlayback, ComponentModel.ISupportInitialize).EndInit()
+        CType(picViewLog, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
         PerformLayout()
     End Sub
@@ -314,5 +329,6 @@ Partial Class frmMain
     Friend WithEvents ToolTip1 As ToolTip
     Friend WithEvents picConfig As PictureBox
     Friend WithEvents picPlayback As PictureBox
+    Friend WithEvents picViewLog As PictureBox
 
 End Class
