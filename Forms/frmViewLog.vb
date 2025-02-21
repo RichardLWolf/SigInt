@@ -107,6 +107,12 @@ Public Class frmViewLog
         lvItem.Text = psTimestamp
         lvItem.SubItems.Add(psSource)
         lvItem.SubItems.Add(psMessage)
+        If psMessage.StartsWith("RTE:") Then
+            lvItem.ForeColor = Color.Pink
+            lvItem.SubItems(1).ForeColor = Color.Pink
+            lvItem.SubItems(2).ForeColor = Color.Pink
+        End If
+
 
         Return lvItem
     End Function

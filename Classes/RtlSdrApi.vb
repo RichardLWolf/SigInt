@@ -769,7 +769,7 @@ Public Class RtlSdrApi
             Dim piLostSignalCount As Integer = 0
             Dim ptMonitorStart As Date = DateTime.Now
             Dim piSignalDetectCount As Integer = 0
-            Dim pdNoiseFloorAverage As Double = 0D ' Running average noise floor
+            Dim pdNoiseFloorAverage As Double = Double.NaN  ' Running average noise floor
             Dim ptLastSignalEvent As DateTime = DateTime.MinValue
             Dim ptLastNFEvent As DateTime = DateTime.MinValue
             Dim piNFResetTimer As Integer = 0
@@ -779,6 +779,7 @@ Public Class RtlSdrApi
             Dim poNoiseFloorEventElapsed As TimeSpan = TimeSpan.FromSeconds(0)
             Dim pbUpdateNoiseFloorAverage As Boolean = True
             mbRecordingActive = False
+
 
 
             While mbRunning
@@ -812,10 +813,20 @@ Public Class RtlSdrApi
                 Dim pdSignalPower As Double = CalculatePowerAtFrequency(pdPowerLevels) ' Get signal power at center frequency
                 Dim ptNow As DateTime = DateTime.Now
 
+                ' Sanitize the noise floor value in case the device returns bad/partial data buffer
+                If Double.IsNaN(pdNoiseFloor) OrElse Double.IsInfinity(pdNoiseFloor) Then
+                    clsLogger.Log("RtlSdrApi.MonitorThread", $"⚠️ Invalid Noise Floor Calculation: {pdNoiseFloor}")
+                    pdNoiseFloor = -80D ' Set to a safe default dB value
+                End If
+
                 ' ***** NOISE FLOOR MONITORING *****
                 ' If we're outside the cooldown window, update the noise floor average
-                If pbUpdateNoiseFloorAverage Then
-                    pdNoiseFloorAverage = (pdNoiseFloorAverage * 0.9) + (pdNoiseFloor * 0.1) ' Exponential moving average
+                If Not mbRecordingActive AndAlso pbUpdateNoiseFloorAverage Then
+                    If pdNoiseFloorAverage = Double.NaN Then
+                        pdNoiseFloorAverage = pdNoiseFloor
+                    Else
+                        pdNoiseFloorAverage = (pdNoiseFloorAverage * 0.9) + (pdNoiseFloor * 0.1) ' Exponential moving average
+                    End If
                 End If
 
                 ' Detect noise floor rise event
@@ -824,19 +835,22 @@ Public Class RtlSdrApi
                         ptNoiseFloorEventStart = ptNow
                     End If
                     poNoiseFloorEventElapsed = ptNow.Subtract(ptNoiseFloorEventStart)
+                ElseIf poNoiseFloorEventElapsed.TotalSeconds > 0 Then
+                    poNoiseFloorEventElapsed = poNoiseFloorEventElapsed.Subtract(TimeSpan.FromSeconds(1)) ' Gradual decay to allow for fluctuations
                 Else
                     ptNoiseFloorEventStart = Date.MinValue
                     poNoiseFloorEventElapsed = TimeSpan.FromSeconds(0)
                 End If
 
                 ' Noise floor event detection, make sure it's been eleveated for at least specified min duration
-                ' and it's been at least reset time since last event and we're not recording
+                ' and it's been at least reset time since last event and we're not recording and it's => threshold
                 If poNoiseFloorEventElapsed.TotalSeconds >= miNoiseFloorMinEventDuration _
                 AndAlso Not mbRecordingActive _
                 AndAlso Not pbNoiseFloorEventActive _
-                AndAlso ptNow.Subtract(ptLastNFEvent).TotalSeconds >= miNoiseFloorEventResetTime Then
+                AndAlso ptNow.Subtract(ptLastNFEvent).TotalSeconds >= miNoiseFloorEventResetTime _
+                AndAlso Math.Abs(pdNoiseFloorAverage - pdNoiseFloor) >= mdNoiseFloorThreshold Then
                     ' Log the noise floor event
-                    clsLogger.Log("RtlSdrApi.MonitorThread", $"⚠️ Noise Floor Event Detected! Noise floor: {pdNoiseFloor:F4}dB, Threshold: {mdNoiseFloorThreshold}dB.")
+                    clsLogger.Log("RtlSdrApi.MonitorThread", $"⚠️ Noise Floor Event Detected! Noise floor: {pdNoiseFloor:F4}dB, Avg. floor: {pdNoiseFloorAverage:F4}dB, Threshold: {mdNoiseFloorThreshold}dB.")
                     miNoiseFloorEvents += 1
                     ptLastNFEvent = ptNow
                     pbNoiseFloorEventActive = True     ' trigger event recording
@@ -849,7 +863,10 @@ Public Class RtlSdrApi
                 AndAlso ptLastNFEvent <> DateTime.MinValue _
                 AndAlso (ptNow.Subtract(ptLastNFEvent).TotalSeconds >= miNoiseFloorCooldownDuration) Then
                     pbUpdateNoiseFloorAverage = True
-                    clsLogger.Log("RtlSdrApi.MonitorThread", $"✅ Noise Floor Event Cleared. Resuming normal averaging.")
+                    If Double.IsInfinity(pdNoiseFloorAverage) OrElse Double.IsNaN(pdNoiseFloorAverage) Then
+                        pdNoiseFloorAverage = pdNoiseFloor ' Reset to actual noise floor in case of error
+                    End If
+                    clsLogger.Log("RtlSdrApi.MonitorThread", $"✅ Noise Floor Event Cleared. Resuming normal floor averaging.")
                 End If
 
                 ' ***** SIGNAL DETECTION *****
@@ -878,6 +895,7 @@ Public Class RtlSdrApi
                     SyncLock myRecordingBuffer
                         myRecordingBuffer.Add(tempBuffer)
                     End SyncLock
+
                     ' check for singal loss
                     If pbSignalEventActive OrElse pbNoiseFloorEventActive Then
                         ' some event is active, reset lost signal counter
@@ -957,6 +975,8 @@ Public Class RtlSdrApi
                 Dim piResult As Integer = RtlSdrApi.rtlsdr_close(miDeviceHandle)
                 miDeviceHandle = IntPtr.Zero
             End If
+            myRecordingBuffer.Clear()
+            mqQueue.Clear 
             mbRecordingActive = False
             mbRunning = False
             RaiseEnded()
@@ -967,7 +987,7 @@ Public Class RtlSdrApi
     Private Sub StopRecording(ByVal dAvgNoiseFloor As Double)
         mbRecordingActive = False
         mtRecordingEndTime = DateTime.Now
-        Dim poEl As TimeSpan = mtStartMonitor.Subtract(mtRecordingEndTime)
+        Dim poEl As TimeSpan = mtRecordingEndTime.Subtract(mtRecordingEndTime)
 
         ' Lock and queue the recorded buffer for background processing
         SyncLock mqRecordingQueue
@@ -1098,27 +1118,69 @@ Public Class RtlSdrApi
 
         ' Ensure enough bins are available
         If iFftBins < 1000 Then
-            Return -70 ' Insufficient data, return a reasonable default
+            clsLogger.Log("CalculateNoiseFloor", $"⚠️ Insufficient FFT bins ({iFftBins}). Returning -80 dB default.")
+            Return -80
         End If
 
         ' Define how many bins to use for noise calculation (e.g., first 500 + last 500)
         Dim iNoiseBinCount As Integer = 1000
         Dim dNoisePowerSum As Double = 0
 
-        ' Sum power from the first 500 and last 500 bins
+        ' Check for invalid values (all zeros or negatives)
+        If dPowerLevels.All(Function(x) x <= 0) Then
+            clsLogger.Log("CalculateNoiseFloor", "⚠️ All FFT bins are <= 0! Returning -80 dB default.")
+            Return -80
+        End If
+
+        ' Sum power from the first 500 bins
         For i As Integer = 0 To 499
             dNoisePowerSum += dPowerLevels(i)
         Next
-        For i As Integer = iFftBins - 500 To iFftBins - 1
+
+        ' Sum power from the last 500 bins (with underflow protection)
+        For i As Integer = Math.Max(iFftBins - 500, 0) To iFftBins - 1
             dNoisePowerSum += dPowerLevels(i)
         Next
 
         ' Compute average noise power
         Dim dAvgNoisePower As Double = dNoisePowerSum / iNoiseBinCount
 
+        ' Prevent division by zero
+        If dAvgNoisePower <= 0 Then
+            clsLogger.Log("CalculateNoiseFloor", $"⚠️ Noise Power Sum = {dNoisePowerSum}, Count = {iNoiseBinCount}, returning default -80 dB")
+            Return -80
+        End If
+
         ' Convert to dB and return
-        Return dAvgNoisePower
+        Return 10 * Math.Log10(dAvgNoisePower)
     End Function
+
+    'Private Function CalculateNoiseFloor(dPowerLevels As Double()) As Double
+    '    Dim iFftBins As Integer = dPowerLevels.Length ' FFT bins after shift
+
+    '    ' Ensure enough bins are available
+    '    If iFftBins < 1000 Then
+    '        Return -70 ' Insufficient data, return a reasonable default
+    '    End If
+
+    '    ' Define how many bins to use for noise calculation (e.g., first 500 + last 500)
+    '    Dim iNoiseBinCount As Integer = 1000
+    '    Dim dNoisePowerSum As Double = 0
+
+    '    ' Sum power from the first 500 and last 500 bins
+    '    For i As Integer = 0 To 499
+    '        dNoisePowerSum += dPowerLevels(i)
+    '    Next
+    '    For i As Integer = iFftBins - 500 To iFftBins - 1
+    '        dNoisePowerSum += dPowerLevels(i)
+    '    Next
+
+    '    ' Compute average noise power
+    '    Dim dAvgNoisePower As Double = dNoisePowerSum / iNoiseBinCount
+
+    '    ' Convert to dB and return
+    '    Return dAvgNoisePower
+    'End Function
 
 
     ' Retrieve stored pre-trigger data (for recording)

@@ -276,7 +276,7 @@ Public Class IQZipper
                                     ""Gain_Mode"": ""{msGainMode}"",
                                     ""Total_IQ_Bytes"": {myIQData.Sum(Function(b) b.Length)},
                                     ""Recording_Duration_S"": {miDurationSeconds:F2},
-                                    ""Avg_Noise_Floor_dB"": {mdAvgNoiseFloor:F4},
+                                    ""Avg_Noise_Floor_dB"": {If(Double.IsNaN(mdAvgNoiseFloor) Or Double.IsInfinity(mdAvgNoiseFloor), 0, mdAvgNoiseFloor):F4},
                                     ""Session_Elapsed_Sec"": {mdSessionElapsedSec:F2},
                                     ""Software_Version"": ""{psAppVersion}""
                                 }}"
