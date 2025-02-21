@@ -75,11 +75,16 @@ Public Class frmMain
         foConfig.dBOffset = sldOffset.Value
         foConfig.dBRange = sldRange.Value
         foConfig.Save()
+        ' shut down unhandled exception handler
+        clsUEH.StopUEH()
     End Sub
 
 
     Private Sub frmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         foConfig = clsAppConfig.Load
+
+        ' start the unhandled exception handler
+        clsUEH.StartUEH()
 
         DoubleBuffered = True
 
