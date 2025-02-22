@@ -4,15 +4,16 @@
 
 
 ## Overview  
-This application **monitors a user-defined center frequency**, detecting signals that exceed a configurable **dB threshold above the noise floor**. When a signal is detected, the system **captures IQ data for up to 60 seconds** and saves it in a **compressed ZIP archive**—ensuring a **minimum delay between captures**, as configured by the user.
+This application **monitors a user-defined center frequency**, detecting signals or an increase in average noise floor level that exceed a configurable **dB threshold value**. When an event is detected, the system **captures the raw IQ data for up to 60 seconds** and saves it in a **compressed ZIP archive**—ensuring a **minimum delay between captures**, as configured by the user.
 
 ### 🔧 **Configurable Detection Settings**  
 - **Center Frequency** (Hz)  
 - **Sample Rate** (MSPS)  
 - **Automatic or Manual Gain Control** (with adjustable dB values)  
 - **Signal Detection Threshold** (dB above noise)  
-- **Detection Window** (FFT bins around center frequency)  
-- **Minimum Event Recording Window** (to prevent excessive captures)  
+- **Signal Detection Window** (FFT bins around center frequency)  
+- **Noise Floor Detection Threshold** (dB above average noise floor)  
+- **Event Reset Delay** (to prevent excessive captures)  
 
 The system is designed to efficiently capture meaningful signal events while avoiding unnecessary recordings.
 
@@ -22,7 +23,7 @@ The **Playback Viewer** allows users to:
 - **Export recordings to SDRSharp-compatible WAV format** for further analysis.
 
 ## Key Features
-📡 **Real-Time Signal Detection** – Automatically records signals that exceed a configurable threshold.  
+📡 **Real-Time Event Detection** – Automatically records signals or increase in noise floor level that exceed a configurable threshold.  
 💾 **Compressed IQ Data Storage** – Saves signal captures efficiently in a ZIP archive.  
 📊 **Playback & Visualization** – Displays waveform and waterfall plots of recorded signals.  
 ⏪ **Seekable Playback** – Scrub through recordings with a timeline control.  
@@ -92,8 +93,8 @@ Once your RTL-SDR is working, download and install **SigInt** from the repositor
 
 ### **How SigInt Works**
 - The signal spectrum will be displayed, and monitoring will begin.  
-- **Minimize SigInt** and let it run. It will automatically detect and log signal events.  
-- To view the log, click the **green folder icon** to open the log folder, then double-click the `"Application_Log.txt"` file in File Explorer. 
+- **Minimize SigInt** and let it run. It will automatically detect and log signal and noise floor events.  
+- To view the log, click the **scroll icon**.  To open the log folder in Windows Explorer, click the **green folder icon**. 
 - To view recorded events, click the **microphone icon** to open the playback window.  Select the desired archive from the list at top-left then click the play button to begin playback.
 
 ## Contributing  
