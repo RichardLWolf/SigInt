@@ -669,6 +669,11 @@ Public Class RtlSdrApi
         Dim poComplexData(piFftSize - 1) As Complex
         Dim pdPowerValues(piFftSize - 1) As Double
 
+        ' Check for stuck buffer (all 127/128 values)
+        If buffer.All(Function(x) x = 127 OrElse x = 128) Then
+            clsLogger.Log("ConvertRawToPowerLevels", "⚠️ Raw IQ buffer is all 127/128! Returning default noise.")
+            Return Enumerable.Repeat(-80.0, piFftSize).ToArray()
+        End If
 
         ' Convert raw IQ data to complex values
         For piIndex As Integer = 0 To buffer.Length - 2 Step 2
@@ -676,29 +681,40 @@ Public Class RtlSdrApi
             Dim pdQuad As Double = (buffer(piIndex + 1) - 127.5) / 127.5
             poComplexData(piIndex \ 2) = New Complex(pdInPhase, pdQuad)
         Next
-        ' Perform FFT on the complex data
+
+        ' Perform FFT
         Fourier.Forward(poComplexData, FourierOptions.NoScaling)
-        ' Convert complex to dB values
+
+        ' Normalize FFT output
+        Dim pdScaleFactor As Double = 1.0 / Math.Sqrt(piFftSize)
+        For piIndex = 0 To piFftSize - 1
+            poComplexData(piIndex) *= pdScaleFactor
+        Next
+
+        ' Convert to dB
         For piIndex = 0 To piFftSize - 1
             Dim pdRealPart As Double = poComplexData(piIndex).Real
             Dim pdImagPart As Double = poComplexData(piIndex).Imaginary
             pdPowerValues(piIndex) = pdRealPart * pdRealPart + pdImagPart * pdImagPart ' Compute power
-            If pdPowerValues(piIndex) = 0 Then
-                pdPowerValues(piIndex) = Double.NegativeInfinity
-            Else
-                pdPowerValues(piIndex) = 10 * Math.Log10(pdPowerValues(piIndex)) - 70
-            End If
+
+            ' Prevent Log10(0) errors
+            pdPowerValues(piIndex) = 10 * Math.Log10(pdPowerValues(piIndex) + 0.000000000001) - 30 ' Adjusted reference
         Next
+
         ' Rearrange FFT bins (shift zero frequency to center)
         Dim pdPowerShifted(piFftSize - 1) As Double
         Dim piHalfSize As Integer = piFftSize \ 2
         Array.Copy(pdPowerValues, piHalfSize, pdPowerShifted, 0, piHalfSize)
         Array.Copy(pdPowerValues, 0, pdPowerShifted, piHalfSize, piHalfSize)
 
+
+        ' 🔍 Debug log if ALL FFT bins are zero or <= -100 dB
+        If pdPowerShifted.All(Function(x) x <= -100) Then
+            clsLogger.Log("ConvertRawToPowerLevels", "⚠️ FFT Power Shifted Values are all <= -100 dB! Possible data issue.")
+        End If
+
         Return pdPowerShifted
     End Function
-
-
 
 
     ' Background thread for monitoring SDR data
@@ -822,7 +838,7 @@ Public Class RtlSdrApi
                 ' ***** NOISE FLOOR MONITORING *****
                 ' If we're outside the cooldown window, update the noise floor average
                 If Not mbRecordingActive AndAlso pbUpdateNoiseFloorAverage Then
-                    If pdNoiseFloorAverage = Double.NaN Then
+                    If Double.IsNaN(pdNoiseFloorAverage) Then
                         pdNoiseFloorAverage = pdNoiseFloor
                     Else
                         pdNoiseFloorAverage = (pdNoiseFloorAverage * 0.9) + (pdNoiseFloor * 0.1) ' Exponential moving average
@@ -960,7 +976,7 @@ Public Class RtlSdrApi
                 psEventText = "No events were recorded."
             Else
                 psEventText = If(miSignalEvents = 0, "No", miSignalEvents.ToString()) & " signal event" & If(miSignalEvents <> 1, "s", "")
-                psEventText = psEventText & " and " & If(miNoiseFloorEvents = 0, "no", miNoiseFloorEvents.ToString()) & "noise floor event" & If(miNoiseFloorEvents <> 1, "s", "")
+                psEventText = psEventText & " and " & If(miNoiseFloorEvents = 0, "no", miNoiseFloorEvents.ToString()) & " noise floor event" & If(miNoiseFloorEvents <> 1, "s", "")
                 psEventText = psEventText & " were recorded."
             End If
             psEnding = psEnding & psEventText
@@ -987,7 +1003,7 @@ Public Class RtlSdrApi
     Private Sub StopRecording(ByVal dAvgNoiseFloor As Double)
         mbRecordingActive = False
         mtRecordingEndTime = DateTime.Now
-        Dim poEl As TimeSpan = mtRecordingEndTime.Subtract(mtRecordingEndTime)
+        Dim poEl As TimeSpan = mtRecordingStartTime.Subtract(mtStartMonitor)
 
         ' Lock and queue the recorded buffer for background processing
         SyncLock mqRecordingQueue
@@ -1046,9 +1062,9 @@ Public Class RtlSdrApi
                         .IQBuffer = recordedData
                     End With
                     If poZipper.SaveArchive Then
-                        clsLogger.Log("RtlSdrApi.ProcessRecordingQueue", $"✅ Saved to {poZipper.ArchiveFile} (Start: {adjustedStartTime}, length: {poZipper.TotalIQBytes}, duration: {poZipper.DurationSeconds} seconds.)")
+                        clsLogger.Log("RtlSdrApi.ProcessRecordingQueue", $"✅ Saved to {poZipper.ArchiveFile} (Start: {adjustedStartTime.ToLocalTime}, length: {poZipper.TotalIQBytes}, duration: {poZipper.DurationSeconds} seconds.)")
                         If msDiscordWebhook <> "" Then
-                            Dim psNotificaiton As String = $"Signal detected and recorded at frequency {modMain.FormatHertz(miCenterFrequency)}.  Data Size: {modMain.FormatBytes(poZipper.TotalIQBytes)}, duration: {poZipper.DurationSeconds:G2} seconds."
+                            Dim psNotificaiton As String = $"Event detected and recorded at frequency {modMain.FormatHertz(miCenterFrequency)}.  Data Size: {modMain.FormatBytes(poZipper.TotalIQBytes)}, duration: {poZipper.DurationSeconds:G2} seconds."
                             Call modMain.SendDiscordNotification(psNotificaiton, msDiscordWebhook, msDiscordMention)
                         End If
                     Else
@@ -1122,66 +1138,44 @@ Public Class RtlSdrApi
             Return -80
         End If
 
-        ' Define how many bins to use for noise calculation (e.g., first 500 + last 500)
-        Dim iNoiseBinCount As Integer = 1000
         Dim dNoisePowerSum As Double = 0
 
-        ' Check for invalid values (all zeros or negatives)
-        If dPowerLevels.All(Function(x) x <= 0) Then
-            clsLogger.Log("CalculateNoiseFloor", "⚠️ All FFT bins are <= 0! Returning -80 dB default.")
+        ' Count valid bins in the first and last 500 bins
+        Dim iValidBins As Integer = dPowerLevels.Take(500).Count(Function(x) x > -100) +
+                                dPowerLevels.Skip(iFftBins - 500).Count(Function(x) x > -100)
+
+        ' Require at least 100 valid bins across both sections
+        If iValidBins < 100 Then
+            clsLogger.Log("CalculateNoiseFloor", $"⚠️ Not enough valid FFT bins in noise range! ({iValidBins}/1000 found) Returning -80 dB default.")
             Return -80
         End If
 
-        ' Sum power from the first 500 bins
+        ' Sum power from the first 500 bins (convert dB → linear scale)
         For i As Integer = 0 To 499
-            dNoisePowerSum += dPowerLevels(i)
+            If dPowerLevels(i) > -100 Then ' Ignore extremely low power bins
+                dNoisePowerSum += 10 ^ (dPowerLevels(i) / 10)
+            End If
         Next
 
-        ' Sum power from the last 500 bins (with underflow protection)
-        For i As Integer = Math.Max(iFftBins - 500, 0) To iFftBins - 1
-            dNoisePowerSum += dPowerLevels(i)
+        ' Sum power from the last 500 bins (convert dB → linear scale)
+        For i As Integer = iFftBins - 500 To iFftBins - 1
+            If dPowerLevels(i) > -100 Then ' Ignore extremely low power bins
+                dNoisePowerSum += 10 ^ (dPowerLevels(i) / 10)
+            End If
         Next
 
-        ' Compute average noise power
-        Dim dAvgNoisePower As Double = dNoisePowerSum / iNoiseBinCount
+        ' Compute average noise power in linear scale
+        Dim dAvgNoisePower As Double = dNoisePowerSum / 1000
 
         ' Prevent division by zero
         If dAvgNoisePower <= 0 Then
-            clsLogger.Log("CalculateNoiseFloor", $"⚠️ Noise Power Sum = {dNoisePowerSum}, Count = {iNoiseBinCount}, returning default -80 dB")
+            clsLogger.Log("CalculateNoiseFloor", $"⚠️ Noise Power Sum = {dNoisePowerSum}, returning default -80 dB")
             Return -80
         End If
 
-        ' Convert to dB and return
+        ' Convert back to dB and return
         Return 10 * Math.Log10(dAvgNoisePower)
     End Function
-
-    'Private Function CalculateNoiseFloor(dPowerLevels As Double()) As Double
-    '    Dim iFftBins As Integer = dPowerLevels.Length ' FFT bins after shift
-
-    '    ' Ensure enough bins are available
-    '    If iFftBins < 1000 Then
-    '        Return -70 ' Insufficient data, return a reasonable default
-    '    End If
-
-    '    ' Define how many bins to use for noise calculation (e.g., first 500 + last 500)
-    '    Dim iNoiseBinCount As Integer = 1000
-    '    Dim dNoisePowerSum As Double = 0
-
-    '    ' Sum power from the first 500 and last 500 bins
-    '    For i As Integer = 0 To 499
-    '        dNoisePowerSum += dPowerLevels(i)
-    '    Next
-    '    For i As Integer = iFftBins - 500 To iFftBins - 1
-    '        dNoisePowerSum += dPowerLevels(i)
-    '    Next
-
-    '    ' Compute average noise power
-    '    Dim dAvgNoisePower As Double = dNoisePowerSum / iNoiseBinCount
-
-    '    ' Convert to dB and return
-    '    Return dAvgNoisePower
-    'End Function
-
 
     ' Retrieve stored pre-trigger data (for recording)
     Public Function GetPreTriggerData() As List(Of Byte())
