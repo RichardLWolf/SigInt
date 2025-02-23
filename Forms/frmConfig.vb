@@ -138,7 +138,7 @@ Public Class frmConfig
         End Set
     End Property
 
-    Public Sub ReadyForm(ByVal SelectedDevice As String, ByVal oSDR As RtlSdrApi, ByVal oConfig As clsAppConfig)
+    Public Sub ReadyForm(ByVal SelectedDevice As String, ByVal oSDR As RtlSdrApi, ByVal oConfig As DeviceConfig)
 
         cboScale.Items.Clear()
         cboScale.Items.Add("Hz")
@@ -304,9 +304,9 @@ Public Class frmConfig
         fiSigDetWind = oConfig.SignalDetectionWindow
         fiSigDetThresh = oConfig.SignalDetectionThreshold
         fiSignalInitTime = oConfig.SignalInitTime
-        fbDiscordNotifications = oConfig.DiscordNotifications
-        fsDiscordServerWebhook = oConfig.DiscordServerWebhook
-        fsDiscordMentionID = oConfig.DiscordMentionID
+        'fbDiscordNotifications = oConfig.DiscordNotifications
+        'fsDiscordServerWebhook = oConfig.DiscordServerWebhook
+        'fsDiscordMentionID = oConfig.DiscordMentionID
         fiNFBaselineInitTime = oConfig.NoiseFloorBaselineInitTime
         fdNFThreshold = oConfig.NoiseFloorThreshold
         fiNFMinEventDuration = oConfig.NoiseFloorMinEventDuration
