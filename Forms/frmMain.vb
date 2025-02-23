@@ -14,12 +14,8 @@ Public Class frmMain
     Private WithEvents foSDR As RtlSdrApi = Nothing
     Private foSignalBMP As Bitmap = Nothing
     Private foRollingBMP As Bitmap = Nothing
-    'Private foWaterfallBMP As Bitmap = Nothing
     Private foBitmapsLock As New Object()
 
-    'Private fdZoomFactor As Double = 0 ' no zoom, show full graph, to 1.0 (show double resolution).
-    'Private fddBOffset As Double = -20 ' Adjusts the dB scaling this value is added to the Y-axis start (0 to -100) 
-    'Private fddBRange As Double = 100   ' dB range to display on Y-axis (100dB range, 10dB minimum to 150dB maximum)
     Private foNotify As New NotifyIcon With {.Icon = SystemIcons.Information}
 
     Private foConfig As clsAppConfig

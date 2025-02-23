@@ -15,7 +15,7 @@ This application **monitors a user-defined center frequency**, detecting signals
 - **Noise Floor Detection Threshold** (dB above average noise floor)  
 - **Event Reset Delay** (to prevent excessive captures)  
 
-The system is designed to efficiently capture meaningful signal events while avoiding unnecessary recordings.
+The system Displays **real-time spectrum activity**, including a **waveform and rolling signal history graph** for tracking power fluctuations over time and is designed to efficiently capture meaningful signal events while avoiding unnecessary recordings.
 
 The **Playback Viewer** allows users to:
 - **Review captured signals** via waveform and waterfall visualizations.
@@ -25,6 +25,7 @@ The **Playback Viewer** allows users to:
 ## Key Features
 📡 **Real-Time Event Detection** – Automatically records signals or increase in noise floor level that exceed a configurable threshold.  
 💾 **Compressed IQ Data Storage** – Saves signal captures efficiently in a ZIP archive.  
+📊 **Live Signal History Graph (Monitoring Mode)** – Displays a rolling graph of signal power vs. noise floor, giving a real-time view of changes over time.
 📊 **Playback & Visualization** – Displays waveform and waterfall plots of recorded signals.  
 ⏪ **Seekable Playback** – Scrub through recordings with a timeline control.  
 🎛 **WAV Export for SDRSharp** – Convert recorded IQ data into a Baseband WAV file for external analysis.  

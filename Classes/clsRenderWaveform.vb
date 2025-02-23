@@ -214,12 +214,11 @@ Public Class clsRenderWaveform
 
         Using poG As Graphics = Graphics.FromImage(poNewBmp)
             poG.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
-            poG.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+            poG.TextRenderingHint = Text.TextRenderingHint.AntiAliasGridFit
 
-            ' 🔹 Clear background
             poG.Clear(Color.Black)
 
-            ' 🔹 Define Pens & Fonts
+            ' Pens & Fonts
             Dim poAxisPen As New Pen(Color.Gray, 1)
             Dim poGridPen As New Pen(Color.DimGray, 1) With {.DashStyle = Drawing2D.DashStyle.Dot}
             Dim poSignalPen As New Pen(Color.Yellow, 2)
@@ -235,17 +234,17 @@ Public Class clsRenderWaveform
             Dim piMarginLeft As Integer = CInt(poYLabelSize.Width) + 5
             Dim piMarginBottom As Integer = CInt(poXLabelSize.Height) + 5
 
-            ' 🔹 Define Graph Area
+            ' Define Graph Area
             Dim piGraphX As Integer = piMarginLeft
             Dim piGraphY As Integer = 10
             Dim piGraphW As Integer = iBmpWidth - (piGraphX + 10)
             Dim piGraphH As Integer = iBmpHeight - (piGraphY + piMarginBottom)
 
-            ' 🔹 Draw Axes
+            ' Draw Axes
             poG.DrawLine(poAxisPen, piGraphX, piGraphY, piGraphX, piGraphY + piGraphH) ' Y Axis
             poG.DrawLine(poAxisPen, piGraphX, piGraphY + piGraphH, piGraphX + piGraphW, piGraphY + piGraphH) ' X Axis
 
-            ' 🔹 Y-Axis Labels & Gridlines
+            ' Y-Axis Labels & Gridlines
             Dim piYSteps As Integer = 10 ' Number of dB labels
             For i As Integer = 0 To piYSteps
                 Dim pdB As Double = piMinDB + (i / piYSteps) * (piMaxDB - piMinDB)
@@ -257,7 +256,7 @@ Public Class clsRenderWaveform
                 End If
             Next
 
-            ' 🔹 X-Axis Labels (Time markers)
+            ' X-Axis Labels (Time markers)
             Dim piXSteps As Integer = 5 ' Number of divisions
             For i As Integer = 0 To piXSteps
                 Dim piX As Integer = piGraphX + CInt((i / piXSteps) * piGraphW)
@@ -267,7 +266,7 @@ Public Class clsRenderWaveform
             Next
 
 
-            ' 🔹 Draw Signal & Noise Floor Graphs
+            ' Draw Signal & Noise Floor Graphs
             Dim piCount As Integer = oSignalData.Count
             If piCount > 1 Then
                 Dim paSignalPoints As New List(Of Point)()
@@ -290,7 +289,7 @@ Public Class clsRenderWaveform
                 If paNoisePoints.Count > 1 Then poG.DrawLines(poNoisePen, paNoisePoints.ToArray())
             End If
 
-            ' 🔹 Draw Graph Key (Optional)
+            ' Draw Graph Key (Optional)
             If bShowKey Then
                 Dim piKeyW As Integer = 100
                 Dim piKeyH As Integer = 40
@@ -310,6 +309,10 @@ Public Class clsRenderWaveform
             End If
 
             'cleanup
+            poAxisPen.Dispose()
+            poGridPen.Dispose()
+            poSignalPen.Dispose()
+            poNoisePen.Dispose()
             poFont.Dispose()
             poBrush.Dispose()
         End Using
