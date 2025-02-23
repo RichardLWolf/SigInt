@@ -393,7 +393,6 @@ Public Class frmMain
                     foSignalBMP = GenerateSignalBitmap(buffer, panelSize.Width, panelSize.Height)
                     ' update the rolling graph bitmap
                     Dim piTimeWindow As Integer = CInt(foSDR.RollingPowerlevelsFrameCount * foSDR.AverageMonitorLoopTime)
-                    clsLogger.Log("MonitorLoop", $"Loop Time: {foSDR.AverageMonitorLoopTime:F4} sec")
                     foRollingBMP = clsRenderWaveform.RenderRollingGraph(poRollingSize.Width, poRollingSize.Height, foSDR.RollingPowerLevels, piTimeWindow)
                 End SyncLock
             Else

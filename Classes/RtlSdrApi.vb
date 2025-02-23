@@ -1048,8 +1048,7 @@ Public Class RtlSdrApi
                 ' Do we need to pause for the cause?
                 ' Calculate the desired delay to maintain ~10ms per loop (100 FPS max)
                 Dim piTargetLoopTime As Integer = 10 ' Target in milliseconds
-                Dim piSleepTime As Integer = Math.Max(5, piTargetLoopTime - CInt(pdElapsed * 1000)) ' Enforce minimum 5ms sleep
-                Debug.WriteLine($"Monitor sleep time is {piSleepTime:G}, pdElapsed loop time is: {pdElapsed:F5}")
+                Dim piSleepTime As Integer = Math.Max(5, piTargetLoopTime - CInt(pdElapsed * 1000)) ' Enforce minimum 5ms sleep to avoid hogging CPU
                 Thread.Sleep(piSleepTime)
                 If piSleepTime > 0 Then
                     Thread.Sleep(piSleepTime)
