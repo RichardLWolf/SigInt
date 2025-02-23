@@ -43,6 +43,7 @@ Partial Class frmMain
         picConfig = New PictureBox()
         picPlayback = New PictureBox()
         picViewLog = New PictureBox()
+        panRollingGraph = New Panel()
         Panel1.SuspendLayout()
         CType(picStartStop, ComponentModel.ISupportInitialize).BeginInit()
         CType(picBrowseFolder, ComponentModel.ISupportInitialize).BeginInit()
@@ -79,7 +80,7 @@ Partial Class frmMain
         panSignal.BackColor = Color.Black
         panSignal.Location = New Point(12, 70)
         panSignal.Name = "panSignal"
-        panSignal.Size = New Size(950, 465)
+        panSignal.Size = New Size(950, 369)
         panSignal.TabIndex = 2
         ' 
         ' lblEvents
@@ -107,7 +108,7 @@ Partial Class frmMain
         Panel1.Controls.Add(Label1)
         Panel1.Location = New Point(968, 70)
         Panel1.Name = "Panel1"
-        Panel1.Size = New Size(59, 475)
+        Panel1.Size = New Size(59, 525)
         Panel1.TabIndex = 20
         ' 
         ' Label3
@@ -277,12 +278,22 @@ Partial Class frmMain
         picViewLog.TabStop = False
         ToolTip1.SetToolTip(picViewLog, "View Application Log")
         ' 
+        ' panRollingGraph
+        ' 
+        panRollingGraph.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
+        panRollingGraph.BackColor = Color.Black
+        panRollingGraph.Location = New Point(12, 445)
+        panRollingGraph.Name = "panRollingGraph"
+        panRollingGraph.Size = New Size(949, 150)
+        panRollingGraph.TabIndex = 26
+        ' 
         ' frmMain
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        ClientSize = New Size(1029, 547)
+        ClientSize = New Size(1029, 597)
+        Controls.Add(panRollingGraph)
         Controls.Add(picViewLog)
         Controls.Add(picPlayback)
         Controls.Add(picConfig)
@@ -330,5 +341,6 @@ Partial Class frmMain
     Friend WithEvents picConfig As PictureBox
     Friend WithEvents picPlayback As PictureBox
     Friend WithEvents picViewLog As PictureBox
+    Friend WithEvents panRollingGraph As Panel
 
 End Class

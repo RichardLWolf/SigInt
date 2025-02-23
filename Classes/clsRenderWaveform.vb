@@ -198,6 +198,126 @@ Public Class clsRenderWaveform
 
 
 
+    Public Shared Function RenderRollingGraph(ByVal iBmpWidth As Integer, ByVal iBmpHeight As Integer,
+                                    ByVal oSignalData As List(Of RtlSdrApi.SignalSnapshot),
+                                    ByVal iTimeWindow As Integer,
+                                    Optional ByVal bShowKey As Boolean = True) As Bitmap
+
+        ' Ensure there is data
+        If oSignalData Is Nothing OrElse oSignalData.Count = 0 OrElse iBmpWidth = 0 OrElse iBmpHeight = 0 Then Return Nothing
+
+        Dim poNewBmp As Bitmap = New Bitmap(iBmpWidth, iBmpHeight)
+
+        ' Auto-Scale Y-Axis (Min/Max dB)
+        Dim piMinDB As Integer = CInt(oSignalData.Min(Function(x) x.pdSignalPower) - 10) ' Pad slightly
+        Dim piMaxDB As Integer = CInt(oSignalData.Max(Function(x) x.pdSignalPower) + 10) ' Pad slightly
+
+        Using poG As Graphics = Graphics.FromImage(poNewBmp)
+            poG.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+            poG.TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit
+
+            ' 🔹 Clear background
+            poG.Clear(Color.Black)
+
+            ' 🔹 Define Pens & Fonts
+            Dim poAxisPen As New Pen(Color.Gray, 1)
+            Dim poGridPen As New Pen(Color.DimGray, 1) With {.DashStyle = Drawing2D.DashStyle.Dot}
+            Dim poSignalPen As New Pen(Color.Yellow, 2)
+            Dim poNoisePen As New Pen(Color.Cyan, 2)
+            Dim poFont As New Font("Arial", 10)
+            Dim poBrush As New SolidBrush(Color.White)
+
+            ' Measure the largest Y-axis label (for dB values)
+            Dim poYLabelSize As SizeF = poG.MeasureString("-888 dB", poFont)
+            ' Measure the largest X-axis label (for time values)
+            Dim poXLabelSize As SizeF = poG.MeasureString("-88 sec", poFont)
+
+            Dim piMarginLeft As Integer = CInt(poYLabelSize.Width) + 5
+            Dim piMarginBottom As Integer = CInt(poXLabelSize.Height) + 5
+
+            ' 🔹 Define Graph Area
+            Dim piGraphX As Integer = piMarginLeft
+            Dim piGraphY As Integer = 10
+            Dim piGraphW As Integer = iBmpWidth - (piGraphX + 10)
+            Dim piGraphH As Integer = iBmpHeight - (piGraphY + piMarginBottom)
+
+            ' 🔹 Draw Axes
+            poG.DrawLine(poAxisPen, piGraphX, piGraphY, piGraphX, piGraphY + piGraphH) ' Y Axis
+            poG.DrawLine(poAxisPen, piGraphX, piGraphY + piGraphH, piGraphX + piGraphW, piGraphY + piGraphH) ' X Axis
+
+            ' 🔹 Y-Axis Labels & Gridlines
+            Dim piYSteps As Integer = 10 ' Number of dB labels
+            For i As Integer = 0 To piYSteps
+                Dim pdB As Double = piMinDB + (i / piYSteps) * (piMaxDB - piMinDB)
+                Dim piY As Integer = piGraphY + piGraphH - CInt((pdB - piMinDB) / (piMaxDB - piMinDB) * piGraphH)
+                poG.DrawLine(poGridPen, piGraphX, piY, piGraphX + piGraphW, piY)
+                'label every other dB
+                If i Mod 2 = 0 Then
+                    poG.DrawString($"{pdB:F1} dB", poFont, poBrush, 2, piY - 6)
+                End If
+            Next
+
+            ' 🔹 X-Axis Labels (Time markers)
+            Dim piXSteps As Integer = 5
+            For i As Integer = 0 To piXSteps
+                Dim piX As Integer = piGraphX + CInt((i / piXSteps) * piGraphW)
+                Dim piTime As Integer = iTimeWindow - CInt((i / piXSteps) * iTimeWindow)
+                poG.DrawLine(poGridPen, piX, piGraphY, piX, piGraphY + piGraphH)
+                poG.DrawString($"-{piTime}s", poFont, poBrush, piX - 10, piGraphY + piGraphH + 2)
+            Next
+
+            ' 🔹 Draw Signal & Noise Floor Graphs
+            Dim piCount As Integer = oSignalData.Count
+            If piCount > 1 Then
+                Dim paSignalPoints As New List(Of Point)()
+                Dim paNoisePoints As New List(Of Point)()
+
+                For i As Integer = 0 To piCount - 1
+                    Dim pdTimeRatio As Double = i / (piCount - 1)
+                    Dim piX As Integer = piGraphX + CInt(pdTimeRatio * piGraphW)
+
+                    ' Convert dB values to Y-coordinates
+                    Dim piSignalY As Integer = piGraphY + piGraphH - CInt((oSignalData(i).pdSignalPower - piMinDB) / (piMaxDB - piMinDB) * piGraphH)
+                    Dim piNoiseY As Integer = piGraphY + piGraphH - CInt((oSignalData(i).pdAvgNoiseFloor - piMinDB) / (piMaxDB - piMinDB) * piGraphH)
+
+                    paSignalPoints.Add(New Point(piX, piSignalY))
+                    paNoisePoints.Add(New Point(piX, piNoiseY))
+                Next
+
+                ' Draw the signal & noise lines
+                If paSignalPoints.Count > 1 Then poG.DrawLines(poSignalPen, paSignalPoints.ToArray())
+                If paNoisePoints.Count > 1 Then poG.DrawLines(poNoisePen, paNoisePoints.ToArray())
+            End If
+
+            ' 🔹 Draw Graph Key (Optional)
+            If bShowKey Then
+                Dim piKeyW As Integer = 100
+                Dim piKeyH As Integer = 40
+                Dim piKeyX As Integer = iBmpWidth - piKeyW - 10
+                Dim piKeyY As Integer = 10
+
+                ' background
+                poG.FillRectangle(New SolidBrush(Color.FromArgb(180, 0, 0, 0)), piKeyX, piKeyY, piKeyW, piKeyH)
+                ' Draw border
+                poG.DrawRectangle(poAxisPen, piKeyX, piKeyY, piKeyW, piKeyH)
+
+                ' Adjust label positions inside the box
+                poG.DrawString("Signal Power", poFont, poBrush, piKeyX + 10, piKeyY + 5)
+                poG.DrawLine(poSignalPen, piKeyX + 5, piKeyY + 15, piKeyX + piKeyW - 5, piKeyY + 15)
+                poG.DrawString("Noise Floor", poFont, poBrush, piKeyX + 10, piKeyY + 20)
+                poG.DrawLine(poNoisePen, piKeyX + 5, piKeyY + 30, piKeyX + piKeyW - 5, piKeyY + 30)
+            End If
+
+            'cleanup
+            poFont.Dispose()
+            poBrush.Dispose()
+        End Using
+
+        Return poNewBmp
+    End Function
+
+
+
     Public Sub New(ByVal iSignalBmpWidth As Integer, ByVal iSignalBmpHeight As Integer, Optional ByVal iWaterfallBmpWidth As Integer = 0, Optional iWaterfallBmpHeight As Integer = 0)
         miSigWidth = iSignalBmpWidth
         miSigHeight = iSignalBmpHeight
@@ -209,6 +329,7 @@ Public Class clsRenderWaveform
             ResizeWaterfallBitmap(iWaterfallBmpWidth, iWaterfallBmpHeight)
         End If
     End Sub
+
 
     ''' <summary>
     ''' Renders the signal graph, resizing the bitmap if needed.  Pass Nothing for elapsed values (oRecordingElapsed, oElapsed) to supress their rendering.
@@ -512,75 +633,6 @@ Public Class clsRenderWaveform
         End SyncLock
     End Sub
 
-
-
-    'Private Sub GenerateWaterfallBitmap(ByVal ddBPowerValues() As Double, ByVal piStartBin As Integer, ByVal piEndBin As Integer, ByVal pdBinsPerPixel As Double)
-    '    If mWaterBitmap Is Nothing OrElse miWaterHeight = 0 OrElse miWaterWidth = 0 Then Exit Sub
-
-    '    SyncLock mWaterBitmap
-    '        Dim poBitmapData As BitmapData = mWaterBitmap.LockBits(New Rectangle(0, 0, miWaterWidth, miWaterHeight),
-    '                                                               ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb)
-    '        Try
-    '            Dim piStride As Integer = poBitmapData.Stride
-    '            Dim piBytes As Integer = piStride * miWaterHeight
-    '            Dim poPixelData(piBytes - 1) As Byte
-
-    '            ' Read bitmap into memory
-    '            System.Runtime.InteropServices.Marshal.Copy(poBitmapData.Scan0, poPixelData, 0, piBytes)
-
-    '            ' Shift image **DOWN** by one row
-    '            Buffer.BlockCopy(poPixelData, 0, poPixelData, piStride, piBytes - piStride)
-
-    '            ' Precompute min/max power levels
-    '            Dim pdMinPower As Double = mddBOffset - mddBRange
-    '            Dim pdMaxPower As Double = mddBOffset
-    '            Dim pdPowerRange As Double = Math.Max(1, pdMaxPower - pdMinPower)
-
-    '            ' 🔹 Apply logarithmic contrast scaling
-    '            Dim pdContrastFactor As Double = 1.0 + (Math.Log10(1 + miContrast / 20.0) * 1.5)
-
-    '            ' Scale power values and map to colors
-    '            Dim piTopRowOffset As Integer = 0 ' New row goes at the **top**
-
-    '            For x As Integer = 0 To miWaterWidth - 1
-    '                Dim pdBinStart As Double = piStartBin + x * pdBinsPerPixel
-    '                Dim pdBinEnd As Double = piStartBin + (x + 1) * pdBinsPerPixel
-    '                Dim piBinStart As Integer = Math.Max(piStartBin, Math.Floor(pdBinStart))
-    '                Dim piBinEnd As Integer = Math.Min(piEndBin, Math.Ceiling(pdBinEnd))
-
-    '                ' Select a single representative bin instead of averaging (Performance Boost)
-    '                Dim piBin As Integer = Math.Max(0, Math.Min(ddBPowerValues.Length - 1, CInt(x * pdBinsPerPixel)))
-    '                Dim pdAvgPower As Double = ddBPowerValues(piBin)
-
-    '                ' Normalize power range (Smooth log scaling for visibility)
-    '                Dim pdNormalizedPower As Double = (pdAvgPower - pdMinPower) / pdPowerRange
-    '                ' Clamp to prevent negative values causing NaN in Pow()
-    '                pdNormalizedPower = Math.Max(0.0, pdNormalizedPower)
-    '                pdNormalizedPower = Math.Pow(pdNormalizedPower, 0.85) * pdContrastFactor
-    '                ' Final clamp to prevent overflow
-    '                pdNormalizedPower = Math.Max(0.0, Math.Min(1.0, pdNormalizedPower))
-
-    '                ' 🔹 Convert to 0-255 intensity and get the LUT color
-    '                Dim piIntensity As Integer = CInt(pdNormalizedPower * 255)
-    '                piIntensity = Math.Max(0, Math.Min(255, piIntensity))
-    '                Dim oColor As Color = moColorPalette(piIntensity)
-    '                ' Set pixel data
-    '                Dim piOffset As Integer = piTopRowOffset + (x * 4)
-    '                poPixelData(piOffset) = oColor.B
-    '                poPixelData(piOffset + 1) = oColor.G
-    '                poPixelData(piOffset + 2) = oColor.R
-    '                poPixelData(piOffset + 3) = 255 ' Alpha
-    '            Next
-
-    '            ' Copy modified data back to bitmap
-    '            System.Runtime.InteropServices.Marshal.Copy(poPixelData, 0, poBitmapData.Scan0, piBytes)
-    '        Finally
-    '            mWaterBitmap.UnlockBits(poBitmapData)
-    '        End Try
-    '    End SyncLock
-
-
-    'End Sub
 
     Private Sub InitializeGradientPalette()
         For i As Integer = 0 To 255

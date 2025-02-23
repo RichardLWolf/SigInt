@@ -6,12 +6,14 @@ Imports System.Numerics
 Imports System.Drawing.Imaging
 Imports System.ComponentModel
 Imports System.Configuration
+Imports System.Drawing.Design
 
 
 
 Public Class frmMain
     Private WithEvents foSDR As RtlSdrApi = Nothing
     Private foSignalBMP As Bitmap = Nothing
+    Private foRollingBMP As Bitmap = Nothing
     'Private foWaterfallBMP As Bitmap = Nothing
     Private foBitmapsLock As New Object()
 
@@ -35,6 +37,7 @@ Public Class frmMain
         Me.Enabled = True
         Me.Cursor = Cursors.Arrow
         panSignal.Invalidate()
+        panRollingGraph.Invalidate()
     End Sub
 
 
@@ -126,6 +129,23 @@ Public Class frmMain
         clsLogger.PurgeLog()
     End Sub
 
+    Private Sub panRollingGraph_Paint(sender As Object, e As PaintEventArgs) Handles panRollingGraph.Paint
+        Dim g As Graphics = e.Graphics
+
+        If foSDR Is Nothing OrElse Not foSDR.IsRunning Then
+            ' Show "DISCONNECTED" message
+            g.Clear(Color.Black) ' Clear panel background
+        Else
+            ' Draw the latest signal bitmap if available
+            If foRollingBMP IsNot Nothing Then
+                SyncLock foRollingBMP
+                    g.DrawImage(foRollingBMP, 0, 0, panRollingGraph.Width, panRollingGraph.Height)
+                End SyncLock
+            End If
+        End If
+    End Sub
+
+
     Private Sub panSignal_Paint(sender As Object, e As PaintEventArgs) Handles panSignal.Paint
         Dim g As Graphics = e.Graphics
 
@@ -145,6 +165,13 @@ Public Class frmMain
                 End SyncLock
             End If
         End If
+    End Sub
+
+    Private Sub panRollingGraph_Resize(sender As Object, e As EventArgs) Handles panRollingGraph.Resize
+        If foSDR IsNot Nothing AndAlso foSDR.IsRunning = False Then
+            panRollingGraph.Invalidate()
+        End If
+
     End Sub
 
     Private Sub panSignal_Resize(sender As Object, e As EventArgs) Handles panSignal.Resize
@@ -362,12 +389,18 @@ Public Class frmMain
             Dim buffer As Byte() = foSDR.GetBuffer()
             If buffer IsNot Nothing AndAlso buffer.Length > 0 Then
                 Dim panelSize As Size = GetSignalPanelSize()
+                Dim poRollingSize As Size = GetRollingPanelSize()
                 SyncLock foBitmapsLock
+                    ' Signal graph
                     foSignalBMP = GenerateSignalBitmap(buffer, panelSize.Width, panelSize.Height)
+                    ' update the rolling graph bitmap
+                    Dim piTimeWindow As Integer = CInt(foSDR.RollingPowerlevelsFrameCount * foSDR.AverageMonitorLoopTime)
+                    foRollingBMP = clsRenderWaveform.RenderRollingGraph(poRollingSize.Width, poRollingSize.Height, foSDR.RollingPowerLevels, piTimeWindow)
                 End SyncLock
             Else
                 clsLogger.Log("frmMain.Worker_GenerateBitmap", "Supplied data buffer was null or zero length.")
             End If
+
             UpdateSpectrum()
             System.Threading.Thread.Sleep(50) ' Adjust refresh rate as needed
         End While
@@ -385,6 +418,18 @@ Public Class frmMain
                 Using g As Graphics = panSignal.CreateGraphics()
                     SyncLock foBitmapsLock
                         g.DrawImageUnscaled(foSignalBMP, 0, 0) ' Direct draw, no Paint flickering
+                    End SyncLock
+                End Using
+            End If
+        End If
+
+        If foRollingBMP IsNot Nothing Then
+            If panRollingGraph IsNot Nothing AndAlso panRollingGraph.Handle <> IntPtr.Zero Then
+                Using g As Graphics = panRollingGraph.CreateGraphics()
+                    SyncLock foBitmapsLock
+                        If foRollingBMP IsNot Nothing Then
+                            g.DrawImageUnscaled(foRollingBMP, 0, 0) ' Direct draw, no Paint flickering
+                        End If
                     End SyncLock
                 End Using
             End If
@@ -414,6 +459,15 @@ Public Class frmMain
         End If
     End Function
 
+    Private Function GetRollingPanelSize() As Size
+        If panRollingGraph.InvokeRequired Then
+            ' Invoke on the UI thread if called from a worker thread
+            Return CType(panRollingGraph.Invoke(Function() GetRollingPanelSize()), Size)
+        Else
+            ' Directly return panel size if already on UI thread
+            Return New Size(panRollingGraph.Width, panRollingGraph.Height)
+        End If
+    End Function
 
 End Class
 ''

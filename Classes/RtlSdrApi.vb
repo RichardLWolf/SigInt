@@ -135,6 +135,17 @@ Public Class RtlSdrApi
         End Sub
     End Structure
 
+    Public Structure SignalSnapshot
+        Public pdAvgNoiseFloor As Double ' The calculated average noise floor
+        Public pdSignalPower As Double   ' The signal strength at center frequency
+
+        ' Constructor
+        Public Sub New(pdFloor As Double, pdSignal As Double)
+            pdAvgNoiseFloor = pdFloor
+            pdSignalPower = pdSignal
+        End Sub
+    End Structure
+
 
 
     ' Event for UI-safe error reporting
@@ -190,6 +201,12 @@ Public Class RtlSdrApi
     Private mqRecordingQueue As New Queue(Of List(Of Byte()))
     Private moWriteThread As Thread
     Private mbWritingToDisk As Boolean = False
+
+    ' Queue to hold singal snapshots
+    Private mqRollingPowerLevels As New Queue(Of SignalSnapshot)
+    Private miMaxRollingBufferSize As Integer = 600 ' 60 seconds of buffer Default, can be adjusted
+    Private mdLoopTime As Double = 0 ' Average loop time in seconds
+
 
     ' Buffer for UI visualization
     Private myIqBuffer() As Byte
@@ -277,6 +294,38 @@ Public Class RtlSdrApi
             Else
                 Return TimeSpan.FromSeconds(0)
             End If
+        End Get
+    End Property
+
+    Public ReadOnly Property RollingPowerLevels() As List(Of SignalSnapshot)
+        Get
+            If mqRollingPowerLevels IsNot Nothing AndAlso mqRollingPowerLevels.Count > 0 Then
+                SyncLock mqRollingPowerLevels
+                    Return mqRollingPowerLevels.ToList()
+                End SyncLock
+            Else
+                Return New List(Of SignalSnapshot)
+            End If
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Averate monitoring loop time in seconds.
+    ''' </summary>
+    ''' <returns></returns>
+    Public ReadOnly Property AverageMonitorLoopTime As Double
+        Get
+            Return mdLoopTime
+        End Get
+    End Property
+
+    ''' <summary>
+    '''  Target frame count for the rolling powerlevels buffer, generally ~1/10 second per frame, 10 to 3600 frames.
+    ''' </summary>
+    ''' <returns></returns>
+    Public ReadOnly Property RollingPowerlevelsFrameCount As Integer
+        Get
+            Return miMaxRollingBufferSize
         End Get
     End Property
 
@@ -794,8 +843,13 @@ Public Class RtlSdrApi
             Dim ptNoiseFloorEventStart As Date = Date.MinValue
             Dim poNoiseFloorEventElapsed As TimeSpan = TimeSpan.FromSeconds(0)
             Dim pbUpdateNoiseFloorAverage As Boolean = True
+            ' Set the initial rolling buffer size
+            UpdateRollingBufferSize(miMaxRollingBufferSize)
+            ' Make sure we're not recording
             mbRecordingActive = False
-
+            ' loop FPS timing vars
+            Dim piFrameCounter As Integer = 0
+            Dim ptLastFrameTime As DateTime = DateTime.Now
 
 
             While mbRunning
@@ -828,11 +882,22 @@ Public Class RtlSdrApi
                 Dim pdNoiseFloor As Double = CalculateNoiseFloor(pdPowerLevels) ' Get noise level for this buffer chunk
                 Dim pdSignalPower As Double = CalculatePowerAtFrequency(pdPowerLevels) ' Get signal power at center frequency
                 Dim ptNow As DateTime = DateTime.Now
+                mdLoopTime = 0D
 
                 ' Sanitize the noise floor value in case the device returns bad/partial data buffer
                 If Double.IsNaN(pdNoiseFloor) OrElse Double.IsInfinity(pdNoiseFloor) Then
                     clsLogger.Log("RtlSdrApi.MonitorThread", $"⚠️ Invalid Noise Floor Calculation: {pdNoiseFloor}")
                     pdNoiseFloor = -80D ' Set to a safe default dB value
+                End If
+
+                '  Add current chunk values to rolling buffer
+                If Not Double.IsNaN(pdSignalPower) AndAlso Not Double.IsInfinity(pdSignalPower) Then
+                    SyncLock mqRollingPowerLevels
+                        mqRollingPowerLevels.Enqueue(New SignalSnapshot(pdNoiseFloor, pdSignalPower))
+                        If mqRollingPowerLevels.Count > miMaxRollingBufferSize Then
+                            mqRollingPowerLevels.Dequeue()
+                        End If
+                    End SyncLock
                 End If
 
                 ' ***** NOISE FLOOR MONITORING *****
@@ -965,6 +1030,21 @@ Public Class RtlSdrApi
                         RaiseSignalChange(True)
                     End If
                 End If
+                ' clac loop FPS
+                Dim ptFpsNow As DateTime = DateTime.Now
+                Dim pdElapsed As Double = (ptFpsNow - ptLastFrameTime).TotalSeconds
+                ptLastFrameTime = ptFpsNow
+                ' Running average of loop time (smoothing factor 0.1)
+                If piFrameCounter > 10 Then
+                    mdLoopTime = (mdLoopTime * 0.9) + (pdElapsed * 0.1)
+                Else
+                    mdLoopTime = pdElapsed ' First few frames, just assign
+                End If
+                piFrameCounter += 1
+                ' Check rolling queue size in case FPS gets too high or low
+                If piFrameCounter Mod 50 = 0 Then ' Every 50 frames (~5 sec intervals)
+                    UpdateRollingBufferSize(mdLoopTime)
+                End If
             End While
 
             ' Log end of monitoring session
@@ -999,6 +1079,42 @@ Public Class RtlSdrApi
             clsLogger.Log("RtlSdrApi.MonitorThread", $"Exiting monitor thread.")
         End Try
     End Sub
+
+
+    Private Sub UpdateRollingBufferSize(ByVal dLoopTime As Double)
+        If dLoopTime > 0 Then
+            ' Calculate how many frames fit into the desired time window
+            Dim piNewSize As Integer = CInt(miMaxRollingBufferSize / dLoopTime)
+
+            ' Enforce reasonable limits (minimum 10 frames, max 1 hour)
+            piNewSize = Math.Max(10, Math.Min(3600, piNewSize))
+
+            SyncLock mqRollingPowerLevels
+                miMaxRollingBufferSize = piNewSize
+                ' Trim queue if it's too large
+                While mqRollingPowerLevels.Count > miMaxRollingBufferSize
+                    mqRollingPowerLevels.Dequeue()
+                End While
+            End SyncLock
+        End If
+    End Sub
+
+
+
+    ' Public method to adjust buffer size dynamically
+    Public Sub SetRollingBufferSize(ByVal piNewSize As Integer)
+        If piNewSize > 10 AndAlso piNewSize <= 3600 Then ' Enforce limits (10 sec to 1 hour)
+            SyncLock mqRollingPowerLevels
+                miMaxRollingBufferSize = piNewSize
+                ' Trim excess if needed
+                While mqRollingPowerLevels.Count > miMaxRollingBufferSize
+                    mqRollingPowerLevels.Dequeue()
+                End While
+            End SyncLock
+        End If
+    End Sub
+
+
 
     Private Sub StopRecording(ByVal dAvgNoiseFloor As Double)
         mbRecordingActive = False
