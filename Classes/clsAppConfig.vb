@@ -1,4 +1,5 @@
 ﻿Imports System.IO
+Imports System.Threading
 Imports Newtonsoft.Json
 
 Public Class clsAppConfig
@@ -16,7 +17,7 @@ Public Class clsAppConfig
 
     Public Shared Function Load() As clsAppConfig
         If Not File.Exists(msConfigFile) Then
-            Return New clsAppConfig() ' Return initialized class if no file exists
+            Return MakeNewInstance()
         End If
 
         Try
@@ -25,7 +26,7 @@ Public Class clsAppConfig
 
         Catch ex As Exception
             clsLogger.LogException("clsAppConfig.Load", ex)
-            Return New clsAppConfig()
+            Return MakeNewInstance()
         End Try
     End Function
 
@@ -57,6 +58,10 @@ Public Class clsAppConfig
         If DeviceSettings.ContainsKey(ConfigID) Then
             ' Update existing configuration
             DeviceSettings.Remove(ConfigID)
+            If DeviceSettings.Count = 0 Then
+                ' make sure at least one entry
+                SetDeviceConfig(New DeviceConfig)
+            End If
         End If
         Save()
     End Sub
@@ -85,6 +90,14 @@ Public Class clsAppConfig
         ' save changes
         Save()
     End Sub
+
+    Private Shared Function MakeNewInstance() As clsAppConfig
+        Dim poNewCfg As New clsAppConfig()
+        Dim poCfg As New DeviceConfig
+        poCfg.ConfigurationName = "1.6GHz Monitor"
+        poNewCfg.SetDeviceConfig(poCfg)
+        Return poNewCfg
+    End Function
 
     Public Shared Function ValidateConfigFolder() As Boolean
         Try
