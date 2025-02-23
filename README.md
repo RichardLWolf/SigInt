@@ -25,7 +25,7 @@ The **Playback Viewer** allows users to:
 ## Key Features
 📡 **Real-Time Event Detection** – Automatically records signals or increase in noise floor level that exceed a configurable threshold.  
 💾 **Compressed IQ Data Storage** – Saves signal captures efficiently in a ZIP archive.  
-📊 **Live Signal History Graph (Monitoring Mode)** – Displays a rolling graph of signal power vs. noise floor, giving a real-time view of changes over time.
+📊 **Live Singal History Graph (Monitoring Mode)** - Displays a rolling graph of singal power vs. noise floor, giving a real-time view of changes over time.  
 📊 **Playback & Visualization** – Displays waveform and waterfall plots of recorded signals.  
 ⏪ **Seekable Playback** – Scrub through recordings with a timeline control.  
 🎛 **WAV Export for SDRSharp** – Convert recorded IQ data into a Baseband WAV file for external analysis.  
