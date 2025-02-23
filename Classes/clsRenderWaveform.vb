@@ -258,13 +258,14 @@ Public Class clsRenderWaveform
             Next
 
             ' 🔹 X-Axis Labels (Time markers)
-            Dim piXSteps As Integer = 5
+            Dim piXSteps As Integer = 5 ' Number of divisions
             For i As Integer = 0 To piXSteps
                 Dim piX As Integer = piGraphX + CInt((i / piXSteps) * piGraphW)
-                Dim piTime As Integer = iTimeWindow - CInt((i / piXSteps) * iTimeWindow)
+                Dim piTime As Integer = -CInt(iTimeWindow * (1 - (i / piXSteps))) ' Properly scale time value for drawing
                 poG.DrawLine(poGridPen, piX, piGraphY, piX, piGraphY + piGraphH)
-                poG.DrawString($"-{piTime}s", poFont, poBrush, piX - 10, piGraphY + piGraphH + 2)
+                poG.DrawString($"{piTime} sec", poFont, poBrush, piX - 10, piGraphY + piGraphH + 2)
             Next
+
 
             ' 🔹 Draw Signal & Noise Floor Graphs
             Dim piCount As Integer = oSignalData.Count

@@ -286,6 +286,7 @@ Partial Class frmMain
         panRollingGraph.Name = "panRollingGraph"
         panRollingGraph.Size = New Size(949, 150)
         panRollingGraph.TabIndex = 26
+        ToolTip1.SetToolTip(panRollingGraph, "Rolling signal graph: Shows signal strength (yellow) and noise floor (cyan) over time. Each point represents the average power level at that moment.")
         ' 
         ' frmMain
         ' 

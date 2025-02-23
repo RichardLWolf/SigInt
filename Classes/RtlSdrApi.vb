@@ -204,7 +204,7 @@ Public Class RtlSdrApi
 
     ' Queue to hold singal snapshots
     Private mqRollingPowerLevels As New Queue(Of SignalSnapshot)
-    Private miMaxRollingBufferSize As Integer = 600 ' 60 seconds of buffer Default, can be adjusted
+    Private miMaxRollingBufferSize As Integer = 200 ' 20 seconds of buffer Default, can be adjusted
     Private mdLoopTime As Double = 0 ' Average loop time in seconds
 
 
@@ -1044,6 +1044,15 @@ Public Class RtlSdrApi
                 ' Check rolling queue size in case FPS gets too high or low
                 If piFrameCounter Mod 50 = 0 Then ' Every 50 frames (~5 sec intervals)
                     UpdateRollingBufferSize(mdLoopTime)
+                End If
+                ' Do we need to pause for the cause?
+                ' Calculate the desired delay to maintain ~10ms per loop (100 FPS max)
+                Dim piTargetLoopTime As Integer = 10 ' Target in milliseconds
+                Dim piSleepTime As Integer = Math.Max(5, piTargetLoopTime - CInt(pdElapsed * 1000)) ' Enforce minimum 5ms sleep
+                Debug.WriteLine($"Monitor sleep time is {piSleepTime:G}, pdElapsed loop time is: {pdElapsed:F5}")
+                Thread.Sleep(piSleepTime)
+                If piSleepTime > 0 Then
+                    Thread.Sleep(piSleepTime)
                 End If
             End While
 

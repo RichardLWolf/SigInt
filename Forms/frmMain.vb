@@ -133,7 +133,7 @@ Public Class frmMain
         Dim g As Graphics = e.Graphics
 
         If foSDR Is Nothing OrElse Not foSDR.IsRunning Then
-            ' Show "DISCONNECTED" message
+            ' clear display
             g.Clear(Color.Black) ' Clear panel background
         Else
             ' Draw the latest signal bitmap if available
@@ -141,6 +141,8 @@ Public Class frmMain
                 SyncLock foRollingBMP
                     g.DrawImage(foRollingBMP, 0, 0, panRollingGraph.Width, panRollingGraph.Height)
                 End SyncLock
+            Else
+                g.Clear(Color.Black)
             End If
         End If
     End Sub
@@ -395,6 +397,7 @@ Public Class frmMain
                     foSignalBMP = GenerateSignalBitmap(buffer, panelSize.Width, panelSize.Height)
                     ' update the rolling graph bitmap
                     Dim piTimeWindow As Integer = CInt(foSDR.RollingPowerlevelsFrameCount * foSDR.AverageMonitorLoopTime)
+                    clsLogger.Log("MonitorLoop", $"Loop Time: {foSDR.AverageMonitorLoopTime:F4} sec")
                     foRollingBMP = clsRenderWaveform.RenderRollingGraph(poRollingSize.Width, poRollingSize.Height, foSDR.RollingPowerLevels, piTimeWindow)
                 End SyncLock
             Else
