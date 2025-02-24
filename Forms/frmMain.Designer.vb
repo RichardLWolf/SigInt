@@ -27,17 +27,30 @@ Partial Class frmMain
         lblSdrDevices = New Label()
         cboDeviceList = New ComboBox()
         Label1 = New Label()
-        ComboBox1 = New ComboBox()
+        cboConfigs = New ComboBox()
         picEdit = New PictureBox()
         picDelete = New PictureBox()
         ToolTip1 = New ToolTip(components)
-        PictureBox1 = New PictureBox()
-        btnCancel = New Button()
-        btnApply = New Button()
+        picAdd = New PictureBox()
+        picRefresh = New PictureBox()
+        picViewLog = New PictureBox()
+        picPlayback = New PictureBox()
+        picBrowseFolder = New PictureBox()
+        btnExit = New Button()
+        btnMonitor = New Button()
         lnkSigIntRepository = New LinkLabel()
+        lblViewLog = New Label()
+        lblExplorer = New Label()
+        lblPlayBack = New Label()
+        Label12 = New Label()
+        Label2 = New Label()
         CType(picEdit, ComponentModel.ISupportInitialize).BeginInit()
         CType(picDelete, ComponentModel.ISupportInitialize).BeginInit()
-        CType(PictureBox1, ComponentModel.ISupportInitialize).BeginInit()
+        CType(picAdd, ComponentModel.ISupportInitialize).BeginInit()
+        CType(picRefresh, ComponentModel.ISupportInitialize).BeginInit()
+        CType(picViewLog, ComponentModel.ISupportInitialize).BeginInit()
+        CType(picPlayback, ComponentModel.ISupportInitialize).BeginInit()
+        CType(picBrowseFolder, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
         ' lblSdrDevices
@@ -59,35 +72,35 @@ Partial Class frmMain
         cboDeviceList.Location = New Point(13, 34)
         cboDeviceList.Margin = New Padding(4)
         cboDeviceList.Name = "cboDeviceList"
-        cboDeviceList.Size = New Size(253, 29)
+        cboDeviceList.Size = New Size(463, 29)
         cboDeviceList.TabIndex = 2
         ' 
         ' Label1
         ' 
         Label1.AutoSize = True
         Label1.ForeColor = Color.White
-        Label1.Location = New Point(296, 9)
+        Label1.Location = New Point(13, 90)
         Label1.Name = "Label1"
-        Label1.Size = New Size(211, 21)
+        Label1.Size = New Size(204, 21)
         Label1.TabIndex = 5
-        Label1.Text = "Select Configuration Settings"
+        Label1.Text = "Select Configuration Setting"
         ' 
-        ' ComboBox1
+        ' cboConfigs
         ' 
-        ComboBox1.BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        ComboBox1.DropDownStyle = ComboBoxStyle.DropDownList
-        ComboBox1.ForeColor = Color.White
-        ComboBox1.FormattingEnabled = True
-        ComboBox1.Location = New Point(297, 34)
-        ComboBox1.Margin = New Padding(4)
-        ComboBox1.Name = "ComboBox1"
-        ComboBox1.Size = New Size(253, 29)
-        ComboBox1.TabIndex = 4
+        cboConfigs.BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        cboConfigs.DropDownStyle = ComboBoxStyle.DropDownList
+        cboConfigs.ForeColor = Color.White
+        cboConfigs.FormattingEnabled = True
+        cboConfigs.Location = New Point(14, 115)
+        cboConfigs.Margin = New Padding(4)
+        cboConfigs.Name = "cboConfigs"
+        cboConfigs.Size = New Size(462, 29)
+        cboConfigs.TabIndex = 4
         ' 
         ' picEdit
         ' 
         picEdit.Image = My.Resources.Resources.pencil2
-        picEdit.Location = New Point(557, 34)
+        picEdit.Location = New Point(487, 115)
         picEdit.Name = "picEdit"
         picEdit.Size = New Size(29, 29)
         picEdit.SizeMode = PictureBoxSizeMode.StretchImage
@@ -98,7 +111,7 @@ Partial Class frmMain
         ' picDelete
         ' 
         picDelete.Image = My.Resources.Resources.trash_red
-        picDelete.Location = New Point(643, 34)
+        picDelete.Location = New Point(579, 115)
         picDelete.Name = "picDelete"
         picDelete.Size = New Size(29, 29)
         picDelete.SizeMode = PictureBoxSizeMode.StretchImage
@@ -106,53 +119,102 @@ Partial Class frmMain
         picDelete.TabStop = False
         ToolTip1.SetToolTip(picDelete, "Remove selected configuration")
         ' 
-        ' PictureBox1
+        ' picAdd
         ' 
-        PictureBox1.Image = My.Resources.Resources.gear_add
-        PictureBox1.Location = New Point(592, 34)
-        PictureBox1.Name = "PictureBox1"
-        PictureBox1.Size = New Size(29, 29)
-        PictureBox1.SizeMode = PictureBoxSizeMode.StretchImage
-        PictureBox1.TabIndex = 26
-        PictureBox1.TabStop = False
-        ToolTip1.SetToolTip(PictureBox1, "Add new configuration")
+        picAdd.Image = My.Resources.Resources.add2
+        picAdd.Location = New Point(522, 115)
+        picAdd.Name = "picAdd"
+        picAdd.Size = New Size(29, 29)
+        picAdd.SizeMode = PictureBoxSizeMode.StretchImage
+        picAdd.TabIndex = 26
+        picAdd.TabStop = False
+        ToolTip1.SetToolTip(picAdd, "Add new configuration")
         ' 
-        ' btnCancel
+        ' picRefresh
         ' 
-        btnCancel.BackColor = Color.Pink
-        btnCancel.DialogResult = DialogResult.Cancel
-        btnCancel.FlatAppearance.BorderColor = Color.Black
-        btnCancel.FlatAppearance.BorderSize = 0
-        btnCancel.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
-        btnCancel.FlatStyle = FlatStyle.Flat
-        btnCancel.ForeColor = Color.Black
-        btnCancel.Location = New Point(572, 98)
-        btnCancel.Name = "btnCancel"
-        btnCancel.Size = New Size(100, 50)
-        btnCancel.TabIndex = 28
-        btnCancel.Text = "E&XIT"
-        btnCancel.UseVisualStyleBackColor = False
+        picRefresh.Image = My.Resources.Resources.refresh
+        picRefresh.Location = New Point(487, 34)
+        picRefresh.Name = "picRefresh"
+        picRefresh.Size = New Size(29, 29)
+        picRefresh.SizeMode = PictureBoxSizeMode.StretchImage
+        picRefresh.TabIndex = 30
+        picRefresh.TabStop = False
+        ToolTip1.SetToolTip(picRefresh, "Refresh Device List")
         ' 
-        ' btnApply
+        ' picViewLog
         ' 
-        btnApply.BackColor = Color.LightBlue
-        btnApply.FlatAppearance.BorderColor = Color.Black
-        btnApply.FlatAppearance.BorderSize = 0
-        btnApply.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
-        btnApply.FlatStyle = FlatStyle.Flat
-        btnApply.ForeColor = Color.Black
-        btnApply.Location = New Point(437, 98)
-        btnApply.Name = "btnApply"
-        btnApply.Size = New Size(100, 50)
-        btnApply.TabIndex = 27
-        btnApply.Text = "&MONITOR"
-        btnApply.UseVisualStyleBackColor = False
+        picViewLog.Image = My.Resources.Resources.scroll_view
+        picViewLog.Location = New Point(14, 189)
+        picViewLog.Name = "picViewLog"
+        picViewLog.Size = New Size(29, 29)
+        picViewLog.SizeMode = PictureBoxSizeMode.StretchImage
+        picViewLog.TabIndex = 33
+        picViewLog.TabStop = False
+        ToolTip1.SetToolTip(picViewLog, "View Application Log")
+        ' 
+        ' picPlayback
+        ' 
+        picPlayback.Image = My.Resources.Resources.microphone2
+        picPlayback.Location = New Point(12, 239)
+        picPlayback.Name = "picPlayback"
+        picPlayback.Size = New Size(29, 29)
+        picPlayback.SizeMode = PictureBoxSizeMode.StretchImage
+        picPlayback.TabIndex = 32
+        picPlayback.TabStop = False
+        ToolTip1.SetToolTip(picPlayback, "Playback recorded archives")
+        ' 
+        ' picBrowseFolder
+        ' 
+        picBrowseFolder.Image = CType(resources.GetObject("picBrowseFolder.Image"), Image)
+        picBrowseFolder.Location = New Point(280, 189)
+        picBrowseFolder.Name = "picBrowseFolder"
+        picBrowseFolder.Size = New Size(29, 29)
+        picBrowseFolder.SizeMode = PictureBoxSizeMode.StretchImage
+        picBrowseFolder.TabIndex = 31
+        picBrowseFolder.TabStop = False
+        ToolTip1.SetToolTip(picBrowseFolder, "Browse log folder")
+        ' 
+        ' btnExit
+        ' 
+        btnExit.Anchor = AnchorStyles.Bottom Or AnchorStyles.Right
+        btnExit.BackColor = Color.Pink
+        btnExit.DialogResult = DialogResult.Cancel
+        btnExit.FlatAppearance.BorderColor = Color.Black
+        btnExit.FlatAppearance.BorderSize = 0
+        btnExit.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
+        btnExit.FlatStyle = FlatStyle.Flat
+        btnExit.ForeColor = Color.Black
+        btnExit.Location = New Point(508, 319)
+        btnExit.Name = "btnExit"
+        btnExit.Size = New Size(100, 50)
+        btnExit.TabIndex = 28
+        btnExit.Text = "CLOSE &APP"
+        ToolTip1.SetToolTip(btnExit, "Close app and all monitors" & vbCrLf)
+        btnExit.UseVisualStyleBackColor = False
+        ' 
+        ' btnMonitor
+        ' 
+        btnMonitor.Anchor = AnchorStyles.Bottom Or AnchorStyles.Right
+        btnMonitor.BackColor = Color.LightBlue
+        btnMonitor.FlatAppearance.BorderColor = Color.Black
+        btnMonitor.FlatAppearance.BorderSize = 0
+        btnMonitor.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
+        btnMonitor.FlatStyle = FlatStyle.Flat
+        btnMonitor.ForeColor = Color.Black
+        btnMonitor.Location = New Point(373, 319)
+        btnMonitor.Name = "btnMonitor"
+        btnMonitor.Size = New Size(100, 50)
+        btnMonitor.TabIndex = 27
+        btnMonitor.Text = "&MONITOR"
+        ToolTip1.SetToolTip(btnMonitor, "Click to monitor selected device using the selected configuration")
+        btnMonitor.UseVisualStyleBackColor = False
         ' 
         ' lnkSigIntRepository
         ' 
+        lnkSigIntRepository.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
         lnkSigIntRepository.AutoSize = True
         lnkSigIntRepository.LinkColor = Color.CornflowerBlue
-        lnkSigIntRepository.Location = New Point(12, 127)
+        lnkSigIntRepository.Location = New Point(12, 334)
         lnkSigIntRepository.Name = "lnkSigIntRepository"
         lnkSigIntRepository.Size = New Size(163, 21)
         lnkSigIntRepository.TabIndex = 29
@@ -160,20 +222,77 @@ Partial Class frmMain
         lnkSigIntRepository.Text = "Visit SigInt Repository"
         lnkSigIntRepository.VisitedLinkColor = Color.FromArgb(CByte(224), CByte(224), CByte(224))
         ' 
+        ' lblViewLog
+        ' 
+        lblViewLog.AutoSize = True
+        lblViewLog.Location = New Point(49, 188)
+        lblViewLog.Name = "lblViewLog"
+        lblViewLog.Padding = New Padding(5)
+        lblViewLog.Size = New Size(166, 31)
+        lblViewLog.TabIndex = 34
+        lblViewLog.Text = "View Application Log"
+        ' 
+        ' lblExplorer
+        ' 
+        lblExplorer.AutoSize = True
+        lblExplorer.Location = New Point(315, 188)
+        lblExplorer.Name = "lblExplorer"
+        lblExplorer.Padding = New Padding(5)
+        lblExplorer.Size = New Size(136, 31)
+        lblExplorer.TabIndex = 35
+        lblExplorer.Text = "Open Log Folder"
+        ' 
+        ' lblPlayBack
+        ' 
+        lblPlayBack.AutoSize = True
+        lblPlayBack.Location = New Point(47, 237)
+        lblPlayBack.Name = "lblPlayBack"
+        lblPlayBack.Padding = New Padding(5)
+        lblPlayBack.Size = New Size(207, 31)
+        lblPlayBack.TabIndex = 36
+        lblPlayBack.Text = "Playback Recorded Archive"
+        ' 
+        ' Label12
+        ' 
+        Label12.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        Label12.BackColor = Color.RoyalBlue
+        Label12.Location = New Point(12, 174)
+        Label12.Name = "Label12"
+        Label12.Size = New Size(461, 2)
+        Label12.TabIndex = 37
+        ' 
+        ' Label2
+        ' 
+        Label2.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        Label2.BackColor = Color.RoyalBlue
+        Label2.Location = New Point(12, 284)
+        Label2.Name = "Label2"
+        Label2.Size = New Size(461, 2)
+        Label2.TabIndex = 38
+        ' 
         ' frmMain
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        ClientSize = New Size(684, 175)
+        ClientSize = New Size(620, 382)
+        Controls.Add(Label2)
+        Controls.Add(Label12)
+        Controls.Add(lblPlayBack)
+        Controls.Add(lblExplorer)
+        Controls.Add(lblViewLog)
+        Controls.Add(picViewLog)
+        Controls.Add(picPlayback)
+        Controls.Add(picBrowseFolder)
+        Controls.Add(picRefresh)
         Controls.Add(lnkSigIntRepository)
-        Controls.Add(btnCancel)
-        Controls.Add(btnApply)
-        Controls.Add(PictureBox1)
+        Controls.Add(btnExit)
+        Controls.Add(btnMonitor)
+        Controls.Add(picAdd)
         Controls.Add(picDelete)
         Controls.Add(picEdit)
         Controls.Add(Label1)
-        Controls.Add(ComboBox1)
+        Controls.Add(cboConfigs)
         Controls.Add(lblSdrDevices)
         Controls.Add(cboDeviceList)
         Font = New Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
@@ -184,7 +303,11 @@ Partial Class frmMain
         Text = "SigInt - RTL-SDR Signal Monitoring Utility"
         CType(picEdit, ComponentModel.ISupportInitialize).EndInit()
         CType(picDelete, ComponentModel.ISupportInitialize).EndInit()
-        CType(PictureBox1, ComponentModel.ISupportInitialize).EndInit()
+        CType(picAdd, ComponentModel.ISupportInitialize).EndInit()
+        CType(picRefresh, ComponentModel.ISupportInitialize).EndInit()
+        CType(picViewLog, ComponentModel.ISupportInitialize).EndInit()
+        CType(picPlayback, ComponentModel.ISupportInitialize).EndInit()
+        CType(picBrowseFolder, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
         PerformLayout()
     End Sub
@@ -192,12 +315,21 @@ Partial Class frmMain
     Friend WithEvents lblSdrDevices As Label
     Friend WithEvents cboDeviceList As ComboBox
     Friend WithEvents Label1 As Label
-    Friend WithEvents ComboBox1 As ComboBox
+    Friend WithEvents cboConfigs As ComboBox
     Friend WithEvents picEdit As PictureBox
     Friend WithEvents picDelete As PictureBox
     Friend WithEvents ToolTip1 As ToolTip
-    Friend WithEvents PictureBox1 As PictureBox
-    Friend WithEvents btnCancel As Button
-    Friend WithEvents btnApply As Button
+    Friend WithEvents picAdd As PictureBox
+    Friend WithEvents btnExit As Button
+    Friend WithEvents btnMonitor As Button
     Friend WithEvents lnkSigIntRepository As LinkLabel
+    Friend WithEvents picRefresh As PictureBox
+    Friend WithEvents picViewLog As PictureBox
+    Friend WithEvents picPlayback As PictureBox
+    Friend WithEvents picBrowseFolder As PictureBox
+    Friend WithEvents lblViewLog As Label
+    Friend WithEvents lblExplorer As Label
+    Friend WithEvents lblPlayBack As Label
+    Friend WithEvents Label12 As Label
+    Friend WithEvents Label2 As Label
 End Class

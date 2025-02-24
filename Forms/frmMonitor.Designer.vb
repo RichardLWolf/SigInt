@@ -24,8 +24,6 @@ Partial Class frmMonitor
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmMonitor))
-        cboDeviceList = New ComboBox()
-        lblSdrDevices = New Label()
         panSignal = New Panel()
         lblEvents = New Label()
         Panel1 = New Panel()
@@ -38,41 +36,12 @@ Partial Class frmMonitor
         Label2 = New Label()
         Label1 = New Label()
         picStartStop = New PictureBox()
-        picBrowseFolder = New PictureBox()
         ToolTip1 = New ToolTip(components)
-        picConfig = New PictureBox()
-        picPlayback = New PictureBox()
-        picViewLog = New PictureBox()
         panRollingGraph = New Panel()
+        lblConfiguration = New Label()
         Panel1.SuspendLayout()
         CType(picStartStop, ComponentModel.ISupportInitialize).BeginInit()
-        CType(picBrowseFolder, ComponentModel.ISupportInitialize).BeginInit()
-        CType(picConfig, ComponentModel.ISupportInitialize).BeginInit()
-        CType(picPlayback, ComponentModel.ISupportInitialize).BeginInit()
-        CType(picViewLog, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
-        ' 
-        ' cboDeviceList
-        ' 
-        cboDeviceList.BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        cboDeviceList.DropDownStyle = ComboBoxStyle.DropDownList
-        cboDeviceList.ForeColor = Color.White
-        cboDeviceList.FormattingEnabled = True
-        cboDeviceList.Location = New Point(13, 34)
-        cboDeviceList.Margin = New Padding(4)
-        cboDeviceList.Name = "cboDeviceList"
-        cboDeviceList.Size = New Size(253, 29)
-        cboDeviceList.TabIndex = 0
-        ' 
-        ' lblSdrDevices
-        ' 
-        lblSdrDevices.AutoSize = True
-        lblSdrDevices.ForeColor = Color.White
-        lblSdrDevices.Location = New Point(12, 9)
-        lblSdrDevices.Name = "lblSdrDevices"
-        lblSdrDevices.Size = New Size(135, 21)
-        lblSdrDevices.TabIndex = 1
-        lblSdrDevices.Text = "Select SDR Device"
         ' 
         ' panSignal
         ' 
@@ -85,14 +54,14 @@ Partial Class frmMonitor
         ' 
         ' lblEvents
         ' 
-        lblEvents.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        lblEvents.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
         lblEvents.ForeColor = Color.Coral
-        lblEvents.Location = New Point(574, 34)
+        lblEvents.Location = New Point(77, 22)
         lblEvents.Name = "lblEvents"
-        lblEvents.Size = New Size(443, 28)
+        lblEvents.Size = New Size(945, 28)
         lblEvents.TabIndex = 18
-        lblEvents.Text = "No Signals Deteceted"
-        lblEvents.TextAlign = ContentAlignment.MiddleRight
+        lblEvents.Text = "No Signals Detected"
+        lblEvents.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' Panel1
         ' 
@@ -226,57 +195,13 @@ Partial Class frmMonitor
         ' picStartStop
         ' 
         picStartStop.Image = CType(resources.GetObject("picStartStop.Image"), Image)
-        picStartStop.Location = New Point(273, 34)
+        picStartStop.Location = New Point(12, 12)
         picStartStop.Name = "picStartStop"
-        picStartStop.Size = New Size(29, 29)
+        picStartStop.Size = New Size(48, 48)
         picStartStop.SizeMode = PictureBoxSizeMode.StretchImage
         picStartStop.TabIndex = 21
         picStartStop.TabStop = False
         ToolTip1.SetToolTip(picStartStop, "Start/Stop monitoring")
-        ' 
-        ' picBrowseFolder
-        ' 
-        picBrowseFolder.Image = CType(resources.GetObject("picBrowseFolder.Image"), Image)
-        picBrowseFolder.Location = New Point(398, 34)
-        picBrowseFolder.Name = "picBrowseFolder"
-        picBrowseFolder.Size = New Size(29, 29)
-        picBrowseFolder.SizeMode = PictureBoxSizeMode.StretchImage
-        picBrowseFolder.TabIndex = 22
-        picBrowseFolder.TabStop = False
-        ToolTip1.SetToolTip(picBrowseFolder, "Browse log folder")
-        ' 
-        ' picConfig
-        ' 
-        picConfig.Image = My.Resources.Resources.gear_gray
-        picConfig.Location = New Point(308, 35)
-        picConfig.Name = "picConfig"
-        picConfig.Size = New Size(29, 29)
-        picConfig.SizeMode = PictureBoxSizeMode.StretchImage
-        picConfig.TabIndex = 23
-        picConfig.TabStop = False
-        ToolTip1.SetToolTip(picConfig, "Device configuration")
-        ' 
-        ' picPlayback
-        ' 
-        picPlayback.Image = My.Resources.Resources.microphone2
-        picPlayback.Location = New Point(447, 35)
-        picPlayback.Name = "picPlayback"
-        picPlayback.Size = New Size(29, 29)
-        picPlayback.SizeMode = PictureBoxSizeMode.StretchImage
-        picPlayback.TabIndex = 24
-        picPlayback.TabStop = False
-        ToolTip1.SetToolTip(picPlayback, "Playback recorded archives")
-        ' 
-        ' picViewLog
-        ' 
-        picViewLog.Image = My.Resources.Resources.scroll_view
-        picViewLog.Location = New Point(363, 34)
-        picViewLog.Name = "picViewLog"
-        picViewLog.Size = New Size(29, 29)
-        picViewLog.SizeMode = PictureBoxSizeMode.StretchImage
-        picViewLog.TabIndex = 25
-        picViewLog.TabStop = False
-        ToolTip1.SetToolTip(picViewLog, "View Application Log")
         ' 
         ' panRollingGraph
         ' 
@@ -288,23 +213,29 @@ Partial Class frmMonitor
         panRollingGraph.TabIndex = 26
         ToolTip1.SetToolTip(panRollingGraph, "Rolling signal graph: Shows signal strength (yellow) and noise floor (cyan) over time. Each point represents the average power level at that moment.")
         ' 
+        ' lblConfiguration
+        ' 
+        lblConfiguration.Font = New Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        lblConfiguration.ForeColor = Color.WhiteSmoke
+        lblConfiguration.Location = New Point(339, 51)
+        lblConfiguration.Name = "lblConfiguration"
+        lblConfiguration.Size = New Size(622, 16)
+        lblConfiguration.TabIndex = 27
+        lblConfiguration.Text = "Configuration"
+        lblConfiguration.TextAlign = ContentAlignment.MiddleRight
+        ' 
         ' frmMonitor
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
         ClientSize = New Size(1029, 597)
+        Controls.Add(lblConfiguration)
         Controls.Add(panRollingGraph)
-        Controls.Add(picViewLog)
-        Controls.Add(picPlayback)
-        Controls.Add(picConfig)
-        Controls.Add(picBrowseFolder)
         Controls.Add(picStartStop)
         Controls.Add(Panel1)
         Controls.Add(lblEvents)
         Controls.Add(panSignal)
-        Controls.Add(lblSdrDevices)
-        Controls.Add(cboDeviceList)
         DoubleBuffered = True
         Font = New Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         Icon = CType(resources.GetObject("$this.Icon"), Icon)
@@ -314,16 +245,8 @@ Partial Class frmMonitor
         Panel1.ResumeLayout(False)
         Panel1.PerformLayout()
         CType(picStartStop, ComponentModel.ISupportInitialize).EndInit()
-        CType(picBrowseFolder, ComponentModel.ISupportInitialize).EndInit()
-        CType(picConfig, ComponentModel.ISupportInitialize).EndInit()
-        CType(picPlayback, ComponentModel.ISupportInitialize).EndInit()
-        CType(picViewLog, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
-        PerformLayout()
     End Sub
-
-    Friend WithEvents cboDeviceList As ComboBox
-    Friend WithEvents lblSdrDevices As Label
     Friend WithEvents panSignal As Panel
     Friend WithEvents Label1 As Label
     Friend WithEvents txtLogFile As TextBox
@@ -337,11 +260,8 @@ Partial Class frmMonitor
     Friend WithEvents lblDiv As Label
     Friend WithEvents Label3 As Label
     Friend WithEvents picStartStop As PictureBox
-    Friend WithEvents picBrowseFolder As PictureBox
     Friend WithEvents ToolTip1 As ToolTip
-    Friend WithEvents picConfig As PictureBox
-    Friend WithEvents picPlayback As PictureBox
-    Friend WithEvents picViewLog As PictureBox
     Friend WithEvents panRollingGraph As Panel
+    Friend WithEvents lblConfiguration As Label
 
 End Class

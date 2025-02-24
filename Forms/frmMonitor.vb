@@ -22,17 +22,53 @@ Public Class frmMonitor
 
     Private foBmpRend As clsRenderWaveform
 
-
+    Private fiSdrDriverDeviceIndex As Integer
     Private fsDiscordWebHook As String = ""
     Private fsDiscordMention As String = ""
 
 
-    Public Sub ReadyForm(ByVal oConfigToUse As DeviceConfig, ByVal sDiscordWebHook As String, ByVal sDiscordMentionID As String)
+    Public Sub ReadyForm(ByVal iSdrDeviceIndex As Integer, ByVal oConfigToUse As DeviceConfig, ByVal sDiscordWebHook As String, ByVal sDiscordMentionID As String)
+        foConfig = oConfigToUse
+        fiSdrDriverDeviceIndex = iSdrDeviceIndex
+        fsDiscordMention = sDiscordMentionID
+        fsDiscordWebHook = sDiscordWebHook
+
+        ' make sure we're doublebuffered
+        Me.DoubleBuffered = True
+        Dim fi As System.Reflection.PropertyInfo = GetType(Control).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance Or System.Reflection.BindingFlags.NonPublic)
+        If fi IsNot Nothing Then fi.SetValue(panSignal, True, Nothing)
+        If fi IsNot Nothing Then fi.SetValue(panRollingGraph, True, Nothing)
+
+        ' Initialize bitmap rendering class
+        foBmpRend = New clsRenderWaveform(panSignal.Width, panSignal.Height)
+
+        ' update config
+        SetConfigLabel()
+
+        sldZoom.Value = foConfig.ZoomLevel
+        sldOffset.Value = foConfig.dBOffset
+        sldRange.Value = foConfig.dBRange
+        sldOffset_ValueChanged(Nothing, Nothing)
+        sldRange_ValueChanged(Nothing, Nothing)
+        sldZoom_ValueChanged(Nothing, Nothing)
+    End Sub
+
+    Public Sub ApplyConfiguration(ByVal oConfigToUse As DeviceConfig, ByVal sDiscordWebHook As String, ByVal sDiscordMentionID As String)
+        If foSDR IsNot Nothing Then
+            If foSDR.IsRunning Then
+                foSDR.StopMonitor()
+                foSDR = Nothing
+            End If
+        End If
+        ' load up new configs
         foConfig = oConfigToUse
         fsDiscordMention = sDiscordMentionID
         fsDiscordWebHook = sDiscordWebHook
+        ' update config
+        SetConfigLabel()
+        panSignal.Invalidate()
+        panRollingGraph.Invalidate()
     End Sub
-
 
 
     Private Sub foSDR_ErrorOccurred(sender As Object, message As String) Handles foSDR.ErrorOccurred
@@ -41,32 +77,17 @@ Public Class frmMonitor
 
     Private Sub foSDR_MonitorEnded(Sender As Object) Handles foSDR.MonitorEnded
         picStartStop.Image = My.Resources.media_play_green
-        picConfig.Image = My.Resources.gear_gray
         Me.Enabled = True
         Me.Cursor = Cursors.Arrow
         panSignal.Invalidate()
         panRollingGraph.Invalidate()
     End Sub
 
-
     Private Sub foSDR_SignalChange(sender As Object, SignalFound As Boolean) Handles foSDR.RecordingEvent
-        'update signal count
-        If foSDR.SignalEventCount = 0 And foSDR.NoiseFloorEventCount = 0 Then
-            lblEvents.Text = "No signals found during this session."
-        Else
-            Dim psLbl As String = ""
-            If foSDR.SignalEventCount > 0 Then
-                psLbl = psLbl & $"{foSDR.SignalEventCount} signal event{IIf(foSDR.SignalEventCount > 1, "s", "")}"
-            End If
-            If foSDR.NoiseFloorEventCount > 0 Then
-                psLbl = $"{If(psLbl = "", "", ", ")}{foSDR.NoiseFloorEventCount} noise floor event{IIf(foSDR.NoiseFloorEventCount > 1, "s", "")}"
-            End If
-            psLbl = psLbl & " detected this session."
-            lblEvents.Text = psLbl
-            If SignalFound Then
-                foNotify.Text = psLbl
-                foNotify.ShowBalloonTip(3000, "SigInt Event", psLbl, ToolTipIcon.Info)
-            End If
+        UpdateEventCount()
+        If SignalFound Then
+            foNotify.Text = "New Event Detected."
+            foNotify.ShowBalloonTip(3000, "SigInt Event", foNotify.Text, ToolTipIcon.Info)
         End If
     End Sub
 
@@ -75,16 +96,13 @@ Public Class frmMonitor
         Me.Enabled = True
         If success Then
             picStartStop.Image = My.Resources.media_stop_red
-            picConfig.Image = My.Resources.gear
             Dim worker As New Threading.Thread(AddressOf Worker_GenerateBitmap)
             worker.IsBackground = True
             worker.Start()
         Else
             picStartStop.Image = My.Resources.media_play_green
-            picConfig.Image = My.Resources.gear_gray
         End If
     End Sub
-
 
     Private Sub frmMain_Closing(sender As Object, e As CancelEventArgs) Handles Me.Closing
         If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
@@ -98,22 +116,12 @@ Public Class frmMonitor
         poAppCfg.SetDeviceConfig(foConfig)
     End Sub
 
-
     Private Sub frmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
         DoubleBuffered = True
 
         Dim fi As System.Reflection.PropertyInfo = GetType(Control).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance Or System.Reflection.BindingFlags.NonPublic)
         If fi IsNot Nothing Then fi.SetValue(panSignal, True, Nothing)
-
-        cboDeviceList.Items.Clear()
-        Dim poDevs As List(Of RtlSdrApi.SdrDevice) = RtlSdrApi.GetDevices()
-        If poDevs.Count = 0 Then
-            cboDeviceList.Items.Add(New RtlSdrApi.SdrDevice("No SDR devices found.", -1))
-        Else
-            cboDeviceList.Items.AddRange(poDevs.Cast(Of Object).ToArray())
-        End If
-        cboDeviceList.SelectedIndex = 0
 
         ' Initialize bitmap rendering class
         foBmpRend = New clsRenderWaveform(panSignal.Width, panSignal.Height)
@@ -185,23 +193,8 @@ Public Class frmMonitor
         End If
     End Sub
 
-    Private Sub picBrowseFolder_MouseClick(sender As Object, e As MouseEventArgs) Handles picBrowseFolder.MouseClick
-        Try
-            Process.Start("explorer.exe", clsLogger.LogPath)
-        Catch ex As Exception
-            MsgBox("Failed to start windows process in folder " & clsLogger.LogPath, MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "Cannot Start Process")
-        End Try
-    End Sub
 
-    Private Sub picBrowseFolder_MouseEnter(sender As Object, e As EventArgs) Handles picBrowseFolder.MouseEnter
-        picBrowseFolder.Image = My.Resources.folder_blue
-    End Sub
-
-    Private Sub picBrowseFolder_MouseLeave(sender As Object, e As EventArgs) Handles picBrowseFolder.MouseLeave
-        picBrowseFolder.Image = My.Resources.folder_green
-    End Sub
-
-    Private Sub picConfig_Click(sender As Object, e As EventArgs) Handles picConfig.Click
+    Private Sub picConfig_Click(sender As Object, e As EventArgs)
         'If cboDeviceList.SelectedItem IsNot Nothing Then
         '    If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
         '        Using poFrm As New frmConfig
@@ -266,92 +259,41 @@ Public Class frmMonitor
         'End If
     End Sub
 
-    Private Sub picConfig_MouseEnter(sender As Object, e As EventArgs) Handles picConfig.MouseEnter
-        If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
-            picConfig.Image = My.Resources.gear_blue
-        Else
-            picConfig.Image = My.Resources.gear_gray
-        End If
-    End Sub
-
-    Private Sub picConfig_MouseLeave(sender As Object, e As EventArgs) Handles picConfig.MouseLeave
-        If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
-            picConfig.Image = My.Resources.gear
-        Else
-            picConfig.Image = My.Resources.gear_gray
-        End If
-    End Sub
-
-    Private Sub picPlayback_Click(sender As Object, e As EventArgs) Handles picPlayback.Click
-        Using poFrm As New frmPlayback
-            poFrm.ReadyForm()
-            poFrm.ShowDialog(Me)
-        End Using
-    End Sub
-
-    Private Sub picPlayback_MouseEnter(sender As Object, e As EventArgs) Handles picPlayback.MouseEnter
-        picPlayback.Image = My.Resources.microphone2_blue
-    End Sub
-
-    Private Sub picPlayback_MouseLeave(sender As Object, e As EventArgs) Handles picPlayback.MouseLeave
-        picPlayback.Image = My.Resources.microphone2
-    End Sub
-
-    Private Sub picViewLog_Click(sender As Object, e As EventArgs) Handles picViewLog.Click
-        Using poFrm As New frmViewLog
-            poFrm.ShowDialog(Me)
-        End Using
-    End Sub
-
-    Private Sub picViewLog_MouseEnter(sender As Object, e As EventArgs) Handles picViewLog.MouseEnter
-        picViewLog.Image = My.Resources.scroll_view_hover
-    End Sub
-
-    Private Sub picViewLog_MouseLeave(sender As Object, e As EventArgs) Handles picViewLog.MouseLeave
-        picViewLog.Image = My.Resources.scroll_view
-    End Sub
 
 
     Private Sub picStartStop_Click(sender As Object, e As EventArgs) Handles picStartStop.MouseClick
-        If cboDeviceList.SelectedItem IsNot Nothing Then
-            Dim poItem As RtlSdrApi.SdrDevice = cboDeviceList.SelectedItem
-            If poItem.DeviceIndex < 0 Then
-                MsgBox("Please select a device from the dropdown.", MsgBoxStyle.OkOnly, "No SDR Device Selected")
-                cboDeviceList.Focus()
-            Else
-                If foSDR Is Nothing Then
-                    Dim poSdrCfg As New RtlSdrApi.SDRConfiguration(poItem.DeviceIndex)
-                    With poSdrCfg
-                        .iDeviceIndex = poItem.DeviceIndex
-                        .iCenterFrequency = foConfig.CenterFrequency
-                        .iSampleRate = foConfig.SampleRate
-                        .iSignalInitTime = foConfig.SignalInitTime
-                        .iSignalDetectionThreshold = foConfig.SignalDetectionThreshold
-                        .iSignalDetectionWindow = foConfig.SignalDetectionWindow
-                        .bAutomaticGain = If(foConfig.GainMode = 0, True, False)
-                        .iManualGainValue = foConfig.GainValue
-                        .dSignalEventResetTime = foConfig.SignalEventResetTime
-                        .iNoiseFloorBaselineInitTime = foConfig.NoiseFloorBaselineInitTime
-                        .iNoiseFloorCooldownDuration = foConfig.NoiseFloorCooldownDuration
-                        .iNoiseFloorEventResetTime = foConfig.NoiseFloorEventResetTime
-                        .iNoiseFloorMinEventDuration = foConfig.NoiseFloorMinEventDuration
-                        .dNoiseFloorThreshold = foConfig.NoiseFloorThreshold
-                        .sDiscordWebhook = fsDiscordWebHook
-                        .sDiscordMention = fsDiscordMention
-                    End With
-                    foSDR = New RtlSdrApi(poSdrCfg)
-                End If
-                If foSDR.IsRunning Then
-                    foSDR.StopMonitor()
-                Else
-                    foSDR.StartMonitor()
-                    Me.Cursor = Cursors.WaitCursor
-                    Me.Enabled = False
-                End If
-            End If
+        If fiSdrDriverDeviceIndex < 0 Then
+            MsgBox("Cannot start device.", MsgBoxStyle.OkOnly, "No SDR Device Selected")
         Else
-            MsgBox("Please select a device from the dropdown.", MsgBoxStyle.OkOnly, "No SDR Device Selected")
-            cboDeviceList.Focus()
+            If foSDR Is Nothing Then
+                Dim poSdrCfg As New RtlSdrApi.SDRConfiguration(fiSdrDriverDeviceIndex)
+                With poSdrCfg
+                    .iDeviceIndex = fiSdrDriverDeviceIndex
+                    .iCenterFrequency = foConfig.CenterFrequency
+                    .iSampleRate = foConfig.SampleRate
+                    .iSignalInitTime = foConfig.SignalInitTime
+                    .iSignalDetectionThreshold = foConfig.SignalDetectionThreshold
+                    .iSignalDetectionWindow = foConfig.SignalDetectionWindow
+                    .bAutomaticGain = If(foConfig.GainMode = 0, True, False)
+                    .iManualGainValue = foConfig.GainValue
+                    .dSignalEventResetTime = foConfig.SignalEventResetTime
+                    .iNoiseFloorBaselineInitTime = foConfig.NoiseFloorBaselineInitTime
+                    .iNoiseFloorCooldownDuration = foConfig.NoiseFloorCooldownDuration
+                    .iNoiseFloorEventResetTime = foConfig.NoiseFloorEventResetTime
+                    .iNoiseFloorMinEventDuration = foConfig.NoiseFloorMinEventDuration
+                    .dNoiseFloorThreshold = foConfig.NoiseFloorThreshold
+                    .sDiscordWebhook = fsDiscordWebHook
+                    .sDiscordMention = fsDiscordMention
+                End With
+                foSDR = New RtlSdrApi(poSdrCfg)
+            End If
+            If foSDR.IsRunning Then
+                foSDR.StopMonitor()
+            Else
+                foSDR.StartMonitor()
+                Me.Cursor = Cursors.WaitCursor
+                Me.Enabled = False
+            End If
         End If
     End Sub
 
@@ -452,6 +394,34 @@ Public Class frmMonitor
                                      , foSDR.DeviceName, foSDR.MonitorElapsed)
     End Function
 
+
+    Private Sub UpdateEventCount()
+        If foSDR IsNot Nothing Then
+            If foSDR.SignalEventCount = 0 And foSDR.NoiseFloorEventCount = 0 Then
+                lblEvents.Text = "No events detected during this session."
+            Else
+                Dim psLbl As String = ""
+                If foSDR.SignalEventCount > 0 Then
+                    psLbl = psLbl & $"{foSDR.SignalEventCount} signal event{IIf(foSDR.SignalEventCount > 1, "s", "")}"
+                End If
+                If foSDR.NoiseFloorEventCount > 0 Then
+                    psLbl = $"{If(psLbl = "", "", ", ")}{foSDR.NoiseFloorEventCount} noise floor event{IIf(foSDR.NoiseFloorEventCount > 1, "s", "")}"
+                End If
+                psLbl = psLbl & " detected this session."
+                lblEvents.Text = psLbl
+            End If
+        Else
+            lblEvents.Text = "No events detected during this session."
+        End If
+    End Sub
+
+    Private Sub SetConfigLabel()
+        If foConfig Is Nothing Then
+            lblConfiguration.Text = ""
+        Else
+            lblConfiguration.Text = $"{modMain.FormatHertz(foConfig.CenterFrequency)} - {modMain.FormatMSPS(foConfig.SampleRate)}"
+        End If
+    End Sub
 
 
     Private Function GetSignalPanelSize() As Size
