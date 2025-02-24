@@ -100,7 +100,23 @@ Public Class frmMain
 
 
     Private Sub picAdd_Click(sender As Object, e As EventArgs) Handles picAdd.Click
-
+        Dim poCfg As New DeviceConfig
+        Using poFrm As New frmEditConfig
+            poFrm.ReadyForm(poCfg)
+            If poFrm.ShowDialog(Me) = DialogResult.OK Then
+                poCfg = poFrm.ConfigValues
+                foAppConfig.SetDeviceConfig(poCfg)
+                LoadConfigs()
+                ' relsect the one we just edited
+                For piIndex As Integer = 0 To cboConfigs.Items.Count - 1
+                    Dim poKvp As KeyValuePair(Of String, DeviceConfig) = DirectCast(cboConfigs.Items(piIndex), KeyValuePair(Of String, DeviceConfig))
+                    If poKvp.Value.ConfigurationKey = poCfg.ConfigurationKey Then
+                        cboConfigs.SelectedIndex = piIndex
+                        Exit For
+                    End If
+                Next
+            End If
+        End Using
     End Sub
 
     Private Sub picAdd_MouseEnter(sender As Object, e As EventArgs) Handles picAdd.MouseEnter
@@ -129,23 +145,6 @@ Public Class frmMain
         lblExplorer.BackColor = Color.Transparent
     End Sub
 
-    Private Sub picEdit_Click(sender As Object, e As EventArgs) Handles picEdit.Click
-        If cboConfigs.SelectedItem IsNot Nothing Then
-
-        Else
-            MsgBox("Please select a configuration from the dropdown.")
-            cboConfigs.Focus()
-        End If
-    End Sub
-
-    Private Sub picEdit_MouseEnter(sender As Object, e As EventArgs) Handles picEdit.MouseEnter
-        picEdit.Image = My.Resources.pencil2_blue
-    End Sub
-
-    Private Sub picEdit_MouseLeave(sender As Object, e As EventArgs) Handles picEdit.MouseLeave
-        picEdit.Image = My.Resources.pencil2
-    End Sub
-
     Private Sub picDelete_Click(sender As Object, e As EventArgs) Handles picDelete.Click
         If cboConfigs.SelectedItem IsNot Nothing Then
             Dim poCfg As DeviceConfig = cboConfigs.SelectedItem.value
@@ -165,6 +164,61 @@ Public Class frmMain
 
     Private Sub picDelete_MouseLeave(sender As Object, e As EventArgs) Handles picDelete.MouseLeave
         picDelete.Image = My.Resources.trash_red
+    End Sub
+
+    Private Sub picEdit_Click(sender As Object, e As EventArgs) Handles picEdit.Click
+        If cboConfigs.SelectedItem IsNot Nothing Then
+            Dim poCfg As DeviceConfig = DirectCast(cboConfigs.SelectedItem, KeyValuePair(Of String, DeviceConfig)).Value
+            Using poFrm As New frmEditConfig
+                poFrm.ReadyForm(poCfg)
+                If poFrm.ShowDialog(Me) = DialogResult.OK Then
+                    poCfg = poFrm.ConfigValues
+                    foAppConfig.SetDeviceConfig(poCfg)
+                    LoadConfigs()
+                    ' relsect the one we just edited
+                    For piIndex As Integer = 0 To cboConfigs.Items.Count - 1
+                        Dim poKvp As KeyValuePair(Of String, DeviceConfig) = DirectCast(cboConfigs.Items(piIndex), KeyValuePair(Of String, DeviceConfig))
+                        If poKvp.Value.ConfigurationKey = poCfg.ConfigurationKey Then
+                            cboConfigs.SelectedIndex = piIndex
+                            Exit For
+                        End If
+                    Next
+                End If
+            End Using
+        Else
+            MsgBox("Please select a configuration from the dropdown.")
+            cboConfigs.Focus()
+        End If
+    End Sub
+
+    Private Sub picEdit_MouseEnter(sender As Object, e As EventArgs) Handles picEdit.MouseEnter
+        picEdit.Image = My.Resources.pencil2_blue
+    End Sub
+
+    Private Sub picEdit_MouseLeave(sender As Object, e As EventArgs) Handles picEdit.MouseLeave
+        picEdit.Image = My.Resources.pencil2
+    End Sub
+
+    Private Sub picGenConfig_Click(sender As Object, e As EventArgs) Handles picGenConfig.Click, lblGenConfig.Click
+        Using poFrm As New frmAppConfig
+            poFrm.ReadyForm(foAppConfig)
+            If poFrm.ShowDialog(Me) = DialogResult.OK Then
+                foAppConfig.DiscordNotifications = poFrm.DiscordNotifications
+                foAppConfig.DiscordMentionID = poFrm.DiscordMentionID
+                foAppConfig.DiscordServerWebhook = poFrm.DiscordServerWebhook
+                foAppConfig.Save()
+            End If
+        End Using
+    End Sub
+
+    Private Sub picGenConfig_MouseEnter(sender As Object, e As EventArgs) Handles picGenConfig.MouseEnter, lblGenConfig.MouseEnter
+        picGenConfig.Image = My.Resources.gear_blue
+        lblGenConfig.BackColor = Color.FromArgb(128, 100, 149, 237)
+    End Sub
+
+    Private Sub picGenConfig_MouseLeave(sender As Object, e As EventArgs) Handles picGenConfig.MouseLeave, lblGenConfig.MouseLeave
+        picGenConfig.Image = My.Resources.gear
+        lblGenConfig.BackColor = Color.Transparent
     End Sub
 
 

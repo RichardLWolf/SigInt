@@ -130,7 +130,7 @@ Public Class DeviceConfig
     Public Property GainMode As Integer = 1     ' 0=auto, 1=manual
     Public Property GainValue As Integer = 166  ' 16.6dB
     '  Detection parameters
-    Public Property SignalEventResetTime As Integer = 600       ' 10 mins between signals (1 to 3600)
+    Public Property SignalEventResetTime As Integer = 300       ' 5 mins between signal events (1 to 3600)
     Public Property SignalDetectionThreshold As Integer = 15    ' Default: 15 dB signal spike
     Public Property SignalDetectionWindow As Integer = 1        ' 3 FFT bins to average for signal detection
     Public Property SignalInitTime As Integer = 3               ' Seconds to delay before looking for signal spike (seconds, 1 to 10)              
@@ -138,12 +138,17 @@ Public Class DeviceConfig
     Public Property NoiseFloorThreshold As Double = 4.0         ' dB rise to trigger event (2dB to 8dB)
     Public Property NoiseFloorMinEventDuration As Integer = 5   ' Seconds the rise must sustain (2 sec to 15 sec)
     Public Property NoiseFloorCooldownDuration As Integer = 10  ' Seconds to pause averaging after event (5 sec to 30 sec)
-    Public Property NoiseFloorEventResetTime As Integer = 30    ' Quiet time before new event  (seconds, 10 to 60)
+    Public Property NoiseFloorEventResetTime As Integer = 300   ' Quiet time before new event  (seconds, 10 to 60)
     '   UI Preferences
     Public Property ZoomLevel As Integer = 0    ' Default: Full view (0 to 100)
     Public Property dBOffset As Integer = -20   ' Default: -20 dB  (0 to -100)
     Public Property dBRange As Integer = 100    ' Default: 100 dB graphed (10-150)
     Public Property MaxRollingBufferSize As Integer = 200       ' For rolling buffer display ~7 seconds of buffer Default at ~50 FPS, not configurable at this time
+
+    Public Function Clone() As DeviceConfig
+        ' return a new shallow copy of this class
+        Return DirectCast(Me.MemberwiseClone(), DeviceConfig)
+    End Function
 End Class
 
 

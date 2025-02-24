@@ -38,12 +38,14 @@ Partial Class frmMain
         picBrowseFolder = New PictureBox()
         btnExit = New Button()
         btnMonitor = New Button()
+        picGenConfig = New PictureBox()
         lnkSigIntRepository = New LinkLabel()
         lblViewLog = New Label()
         lblExplorer = New Label()
         lblPlayBack = New Label()
         Label12 = New Label()
         Label2 = New Label()
+        lblGenConfig = New Label()
         CType(picEdit, ComponentModel.ISupportInitialize).BeginInit()
         CType(picDelete, ComponentModel.ISupportInitialize).BeginInit()
         CType(picAdd, ComponentModel.ISupportInitialize).BeginInit()
@@ -51,6 +53,7 @@ Partial Class frmMain
         CType(picViewLog, ComponentModel.ISupportInitialize).BeginInit()
         CType(picPlayback, ComponentModel.ISupportInitialize).BeginInit()
         CType(picBrowseFolder, ComponentModel.ISupportInitialize).BeginInit()
+        CType(picGenConfig, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
         ' lblSdrDevices
@@ -81,9 +84,9 @@ Partial Class frmMain
         Label1.ForeColor = Color.White
         Label1.Location = New Point(13, 90)
         Label1.Name = "Label1"
-        Label1.Size = New Size(204, 21)
+        Label1.Size = New Size(264, 21)
         Label1.TabIndex = 5
-        Label1.Text = "Select Configuration Setting"
+        Label1.Text = "Select Monitor Configuration Setting"
         ' 
         ' cboConfigs
         ' 
@@ -209,6 +212,17 @@ Partial Class frmMain
         ToolTip1.SetToolTip(btnMonitor, "Click to monitor selected device using the selected configuration")
         btnMonitor.UseVisualStyleBackColor = False
         ' 
+        ' picGenConfig
+        ' 
+        picGenConfig.Image = My.Resources.Resources.gear
+        picGenConfig.Location = New Point(280, 238)
+        picGenConfig.Name = "picGenConfig"
+        picGenConfig.Size = New Size(29, 29)
+        picGenConfig.SizeMode = PictureBoxSizeMode.StretchImage
+        picGenConfig.TabIndex = 39
+        picGenConfig.TabStop = False
+        ToolTip1.SetToolTip(picGenConfig, "Browse log folder")
+        ' 
         ' lnkSigIntRepository
         ' 
         lnkSigIntRepository.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
@@ -270,12 +284,24 @@ Partial Class frmMain
         Label2.Size = New Size(461, 2)
         Label2.TabIndex = 38
         ' 
+        ' lblGenConfig
+        ' 
+        lblGenConfig.AutoSize = True
+        lblGenConfig.Location = New Point(315, 237)
+        lblGenConfig.Name = "lblGenConfig"
+        lblGenConfig.Padding = New Padding(5)
+        lblGenConfig.Size = New Size(148, 31)
+        lblGenConfig.TabIndex = 40
+        lblGenConfig.Text = "App Configuration"
+        ' 
         ' frmMain
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
         ClientSize = New Size(620, 382)
+        Controls.Add(lblGenConfig)
+        Controls.Add(picGenConfig)
         Controls.Add(Label2)
         Controls.Add(Label12)
         Controls.Add(lblPlayBack)
@@ -297,9 +323,12 @@ Partial Class frmMain
         Controls.Add(cboDeviceList)
         Font = New Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         ForeColor = Color.White
+        FormBorderStyle = FormBorderStyle.FixedSingle
         Icon = CType(resources.GetObject("$this.Icon"), Icon)
         Margin = New Padding(4)
+        MaximizeBox = False
         Name = "frmMain"
+        StartPosition = FormStartPosition.CenterScreen
         Text = "SigInt - RTL-SDR Signal Monitoring Utility"
         CType(picEdit, ComponentModel.ISupportInitialize).EndInit()
         CType(picDelete, ComponentModel.ISupportInitialize).EndInit()
@@ -308,6 +337,7 @@ Partial Class frmMain
         CType(picViewLog, ComponentModel.ISupportInitialize).EndInit()
         CType(picPlayback, ComponentModel.ISupportInitialize).EndInit()
         CType(picBrowseFolder, ComponentModel.ISupportInitialize).EndInit()
+        CType(picGenConfig, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
         PerformLayout()
     End Sub
@@ -332,4 +362,6 @@ Partial Class frmMain
     Friend WithEvents lblPlayBack As Label
     Friend WithEvents Label12 As Label
     Friend WithEvents Label2 As Label
+    Friend WithEvents lblGenConfig As Label
+    Friend WithEvents picGenConfig As PictureBox
 End Class

@@ -60,7 +60,7 @@ Partial Class frmMonitor
         lblEvents.Name = "lblEvents"
         lblEvents.Size = New Size(945, 28)
         lblEvents.TabIndex = 18
-        lblEvents.Text = "No Signals Detected"
+        lblEvents.Text = "Click the play button to begin monitoring."
         lblEvents.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' Panel1
@@ -217,9 +217,9 @@ Partial Class frmMonitor
         ' 
         lblConfiguration.Font = New Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         lblConfiguration.ForeColor = Color.WhiteSmoke
-        lblConfiguration.Location = New Point(339, 51)
+        lblConfiguration.Location = New Point(77, 51)
         lblConfiguration.Name = "lblConfiguration"
-        lblConfiguration.Size = New Size(622, 16)
+        lblConfiguration.Size = New Size(884, 16)
         lblConfiguration.TabIndex = 27
         lblConfiguration.Text = "Configuration"
         lblConfiguration.TextAlign = ContentAlignment.MiddleRight

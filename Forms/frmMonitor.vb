@@ -57,8 +57,8 @@ Public Class frmMonitor
         If foSDR IsNot Nothing Then
             If foSDR.IsRunning Then
                 foSDR.StopMonitor()
-                foSDR = Nothing
             End If
+            foSDR = Nothing
         End If
         ' load up new configs
         foConfig = oConfigToUse
@@ -193,74 +193,6 @@ Public Class frmMonitor
         End If
     End Sub
 
-
-    Private Sub picConfig_Click(sender As Object, e As EventArgs)
-        'If cboDeviceList.SelectedItem IsNot Nothing Then
-        '    If foSDR IsNot Nothing AndAlso foSDR.IsRunning Then
-        '        Using poFrm As New frmConfig
-        '            Dim poItem As RtlSdrApi.SdrDevice = cboDeviceList.SelectedItem
-        '            poFrm.ReadyForm(poItem.DeviceName, foSDR, foConfig)
-        '            If poFrm.ShowDialog(Me) = DialogResult.OK Then
-        '                ' stop monitor
-        '                foSDR.StopMonitor()
-        '                Dim poSdrCfg As New RtlSdrApi.SDRConfiguration(poItem.DeviceIndex)
-        '                With poSdrCfg
-        '                    .iDeviceIndex = poItem.DeviceIndex
-        '                    .iCenterFrequency = poFrm.CenterFreq
-        '                    .iSampleRate = poFrm.SampleRate
-        '                    .iSignalInitTime = poFrm.SignalInitTime
-        '                    .iSignalDetectionThreshold = poFrm.DetectionThreshold
-        '                    .iSignalDetectionWindow = poFrm.DetectionWindow
-        '                    .bAutomaticGain = If(poFrm.GainMode = 0, True, False)
-        '                    .iManualGainValue = poFrm.GainValue
-        '                    .dSignalEventResetTime = poFrm.SignalEventResetTime
-        '                    .iNoiseFloorBaselineInitTime = poFrm.NoiseFloorBaselineInitTime
-        '                    .iNoiseFloorCooldownDuration = poFrm.NoiseFloorCooldownDuration
-        '                    .iNoiseFloorEventResetTime = poFrm.NoiseFloorEventResetTime
-        '                    .iNoiseFloorMinEventDuration = poFrm.NoiseFloorMinEventDuration
-        '                    .dNoiseFloorThreshold = poFrm.NoiseFloorThreshold
-        '                    .sDiscordWebhook = poFrm.DiscordServerWebhook
-        '                    .sDiscordMention = poFrm.DiscordMentionID
-        '                End With
-        '                foSDR = New RtlSdrApi(poSdrCfg)
-        '                foSDR.StartMonitor()
-        '                ' update config values from API class as it will enforce property value limits
-        '                foConfig.CenterFrequency = foSDR.CenterFrequency
-        '                foConfig.SampleRate = foSDR.SampleRate
-        '                foConfig.GainMode = foSDR.GainMode
-        '                foConfig.GainValue = foSDR.GainValue
-        '                foConfig.SignalEventResetTime = foSDR.SignalEventResetTime
-        '                foConfig.SignalDetectionThreshold = foSDR.SignalDetectionThreshold
-        '                foConfig.SignalDetectionWindow = foSDR.SignalDetectionWindow
-        '                foConfig.SignalInitTime = foSDR.SignalInitTime
-        '                foConfig.NoiseFloorBaselineInitTime = foSDR.NoiseFloorBaselineInitTime
-        '                foConfig.NoiseFloorCooldownDuration = foSDR.NoiseFloorCooldownDuration
-        '                foConfig.NoiseFloorEventResetTime = foSDR.NoiseFloorEventResetTime
-        '                foConfig.NoiseFloorMinEventDuration = foSDR.NoiseFloorMinEventDuration
-        '                foConfig.NoiseFloorThreshold = foSDR.NoiseFloorThreshold
-        '                foConfig.DiscordNotifications = poFrm.DiscordNotifications
-        '                If Not foConfig.DiscordNotifications Then
-        '                    foConfig.DiscordServerWebhook = ""
-        '                    foConfig.DiscordMentionID = ""
-        '                Else
-        '                    foConfig.DiscordServerWebhook = poFrm.DiscordServerWebhook
-        '                    foConfig.DiscordMentionID = poFrm.DiscordMentionID
-        '                End If
-        '                ' update config
-        '                foConfig.Save()
-        '            End If
-        '        End Using
-        '    Else
-        '        MsgBox("Please begin monitoring before adjusting device settings.")
-        '    End If
-        'Else
-        '    cboDeviceList.Focus()
-        '    MsgBox("Please select a RTL-SDR device from the list.")
-        'End If
-    End Sub
-
-
-
     Private Sub picStartStop_Click(sender As Object, e As EventArgs) Handles picStartStop.MouseClick
         If fiSdrDriverDeviceIndex < 0 Then
             MsgBox("Cannot start device.", MsgBoxStyle.OkOnly, "No SDR Device Selected")
@@ -291,6 +223,7 @@ Public Class frmMonitor
                 foSDR.StopMonitor()
             Else
                 foSDR.StartMonitor()
+                UpdateEventCount()
                 Me.Cursor = Cursors.WaitCursor
                 Me.Enabled = False
             End If
@@ -354,33 +287,37 @@ Public Class frmMonitor
     End Sub
 
     Private Sub UpdateSpectrum()
-        If Me.InvokeRequired Then
-            ' Marshal the update to the UI thread
-            Me.BeginInvoke(New MethodInvoker(AddressOf UpdateSpectrum))
-            Exit Sub
-        End If
-
-        If foSignalBMP IsNot Nothing Then
-            If panSignal IsNot Nothing AndAlso panSignal.Handle <> IntPtr.Zero Then
-                Using g As Graphics = panSignal.CreateGraphics()
-                    SyncLock foBitmapsLock
-                        g.DrawImageUnscaled(foSignalBMP, 0, 0) ' Direct draw, no Paint flickering
-                    End SyncLock
-                End Using
+        Try
+            If Me.InvokeRequired Then
+                ' Marshal the update to the UI thread
+                Me.BeginInvoke(New MethodInvoker(AddressOf UpdateSpectrum))
+                Exit Sub
             End If
-        End If
 
-        If foRollingBMP IsNot Nothing Then
-            If panRollingGraph IsNot Nothing AndAlso panRollingGraph.Handle <> IntPtr.Zero Then
-                Using g As Graphics = panRollingGraph.CreateGraphics()
-                    SyncLock foBitmapsLock
-                        If foRollingBMP IsNot Nothing Then
-                            g.DrawImageUnscaled(foRollingBMP, 0, 0) ' Direct draw, no Paint flickering
-                        End If
-                    End SyncLock
-                End Using
+            If foSignalBMP IsNot Nothing Then
+                If panSignal IsNot Nothing AndAlso panSignal.Handle <> IntPtr.Zero Then
+                    Using g As Graphics = panSignal.CreateGraphics()
+                        SyncLock foBitmapsLock
+                            g.DrawImageUnscaled(foSignalBMP, 0, 0) ' Direct draw, no Paint flickering
+                        End SyncLock
+                    End Using
+                End If
             End If
-        End If
+
+            If foRollingBMP IsNot Nothing Then
+                If panRollingGraph IsNot Nothing AndAlso panRollingGraph.Handle <> IntPtr.Zero Then
+                    Using g As Graphics = panRollingGraph.CreateGraphics()
+                        SyncLock foBitmapsLock
+                            If foRollingBMP IsNot Nothing Then
+                                g.DrawImageUnscaled(foRollingBMP, 0, 0) ' Direct draw, no Paint flickering
+                            End If
+                        End SyncLock
+                    End Using
+                End If
+            End If
+        Catch ex As Exception
+            ' assume disposed object error because form was closed or end-tasked.
+        End Try
     End Sub
 
 
@@ -419,29 +356,37 @@ Public Class frmMonitor
         If foConfig Is Nothing Then
             lblConfiguration.Text = ""
         Else
-            lblConfiguration.Text = $"{modMain.FormatHertz(foConfig.CenterFrequency)} - {modMain.FormatMSPS(foConfig.SampleRate)}"
+            lblConfiguration.Text = $"{foConfig.ConfigurationName} - {modMain.FormatHertz(foConfig.CenterFrequency)} - {modMain.FormatMSPS(foConfig.SampleRate)}"
         End If
     End Sub
 
 
     Private Function GetSignalPanelSize() As Size
-        If panSignal.InvokeRequired Then
-            ' Invoke on the UI thread if called from a worker thread
-            Return CType(panSignal.Invoke(Function() GetSignalPanelSize()), Size)
-        Else
-            ' Directly return panel size if already on UI thread
-            Return New Size(panSignal.Width, panSignal.Height)
-        End If
+        Try
+            If panSignal.InvokeRequired Then
+                ' Invoke on the UI thread if called from a worker thread
+                Return CType(panSignal.Invoke(Function() GetSignalPanelSize()), Size)
+            Else
+                ' Directly return panel size if already on UI thread
+                Return New Size(panSignal.Width, panSignal.Height)
+            End If
+        Catch ex As Exception
+            Return New Size(0, 0)
+        End Try
     End Function
 
     Private Function GetRollingPanelSize() As Size
-        If panRollingGraph.InvokeRequired Then
-            ' Invoke on the UI thread if called from a worker thread
-            Return CType(panRollingGraph.Invoke(Function() GetRollingPanelSize()), Size)
-        Else
-            ' Directly return panel size if already on UI thread
-            Return New Size(panRollingGraph.Width, panRollingGraph.Height)
-        End If
+        Try
+            If panRollingGraph.InvokeRequired Then
+                ' Invoke on the UI thread if called from a worker thread
+                Return CType(panRollingGraph.Invoke(Function() GetRollingPanelSize()), Size)
+            Else
+                ' Directly return panel size if already on UI thread
+                Return New Size(panRollingGraph.Width, panRollingGraph.Height)
+            End If
+        Catch ex As Exception
+            Return New Size(0, 0)
+        End Try
     End Function
 
 End Class
