@@ -37,7 +37,7 @@ Ideal for **radio enthusiasts, spectrum monitoring, and signal intelligence (SIG
 ## Screenshots
 ![SigInt Main Window](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/main_screen.png)
 
-![SigInt Monitor Window](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/monitor_screen_.png)  
+![SigInt Monitor Window](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/monitor_screen.png)  
 
 ![Playback Window](https://raw.githubusercontent.com/RichardLWolf/SigInt/master/playback.png)
 
