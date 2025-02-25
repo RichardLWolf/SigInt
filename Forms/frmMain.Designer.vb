@@ -39,6 +39,7 @@ Partial Class frmMain
         btnExit = New Button()
         btnMonitor = New Button()
         picGenConfig = New PictureBox()
+        btnMinimize = New Button()
         lnkSigIntRepository = New LinkLabel()
         lblViewLog = New Label()
         lblExplorer = New Label()
@@ -223,6 +224,23 @@ Partial Class frmMain
         picGenConfig.TabStop = False
         ToolTip1.SetToolTip(picGenConfig, "Browse log folder")
         ' 
+        ' btnMinimize
+        ' 
+        btnMinimize.Anchor = AnchorStyles.Bottom Or AnchorStyles.Right
+        btnMinimize.BackColor = Color.LightGray
+        btnMinimize.FlatAppearance.BorderColor = Color.Black
+        btnMinimize.FlatAppearance.BorderSize = 0
+        btnMinimize.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
+        btnMinimize.FlatStyle = FlatStyle.Flat
+        btnMinimize.ForeColor = Color.Black
+        btnMinimize.Location = New Point(240, 319)
+        btnMinimize.Name = "btnMinimize"
+        btnMinimize.Size = New Size(100, 50)
+        btnMinimize.TabIndex = 41
+        btnMinimize.Text = "MINIMI&ZE"
+        ToolTip1.SetToolTip(btnMinimize, "Minimize all app windows")
+        btnMinimize.UseVisualStyleBackColor = False
+        ' 
         ' lnkSigIntRepository
         ' 
         lnkSigIntRepository.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
@@ -300,6 +318,7 @@ Partial Class frmMain
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
         ClientSize = New Size(620, 382)
+        Controls.Add(btnMinimize)
         Controls.Add(lblGenConfig)
         Controls.Add(picGenConfig)
         Controls.Add(Label2)
@@ -364,4 +383,5 @@ Partial Class frmMain
     Friend WithEvents Label2 As Label
     Friend WithEvents lblGenConfig As Label
     Friend WithEvents picGenConfig As PictureBox
+    Friend WithEvents btnMinimize As Button
 End Class

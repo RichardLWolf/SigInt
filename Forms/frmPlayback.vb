@@ -34,6 +34,18 @@ Public Class frmPlayback
             .Columns.Add("DUR", "Duration", 65)
         End With
         ReloadListview()
+
+        sldZoom.Minimum = 0
+        sldZoom.Maximum = 100
+
+        sldOffset.Minimum = -100
+        sldOffset.Maximum = 0
+
+        sldRange.Minimum = 10
+        sldRange.Maximum = 150
+
+        sldContrast.Minimum = 0
+        sldContrast.Maximum = 100
     End Sub
 
 

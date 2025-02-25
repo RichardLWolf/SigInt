@@ -35,21 +35,21 @@ Partial Class frmPlayback
         picStartStop = New PictureBox()
         splRight = New SplitContainer()
         hsbSeekPos = New CustomSeekbar()
+        panSignal = New Panel()
+        panWaterfall = New Panel()
         panSignalCtrls = New Panel()
         panSignalSliders = New Panel()
+        Label4 = New Label()
+        Label5 = New Label()
         Label3 = New Label()
         lblDiv = New Label()
-        sldOffset = New CustomSlider()
-        sldRange = New CustomSlider()
-        sldZoom = New CustomSlider()
         lblOffset = New Label()
         Label2 = New Label()
         Label1 = New Label()
-        panSignal = New Panel()
-        Panel1 = New Panel()
-        sldContrast = New CustomSlider()
-        Label8 = New Label()
-        panWaterfall = New Panel()
+        sldZoom = New ctlRoundTrackbar()
+        sldRange = New ctlRoundTrackbar()
+        sldOffset = New ctlRoundTrackbar()
+        sldContrast = New ctlRoundTrackbar()
         ToolTip1 = New ToolTip(components)
         panLeft.SuspendLayout()
         CType(picExport, ComponentModel.ISupportInitialize).BeginInit()
@@ -64,7 +64,6 @@ Partial Class frmPlayback
         splRight.SuspendLayout()
         panSignalCtrls.SuspendLayout()
         panSignalSliders.SuspendLayout()
-        Panel1.SuspendLayout()
         SuspendLayout()
         ' 
         ' panLeft
@@ -80,13 +79,13 @@ Partial Class frmPlayback
         panLeft.Dock = DockStyle.Left
         panLeft.Location = New Point(0, 0)
         panLeft.Name = "panLeft"
-        panLeft.Size = New Size(304, 678)
+        panLeft.Size = New Size(304, 650)
         panLeft.TabIndex = 0
         ' 
         ' picExport
         ' 
         picExport.Image = My.Resources.Resources.wav_file
-        picExport.Location = New Point(136, 224)
+        picExport.Location = New Point(136, 249)
         picExport.Name = "picExport"
         picExport.Size = New Size(29, 29)
         picExport.SizeMode = PictureBoxSizeMode.StretchImage
@@ -108,7 +107,7 @@ Partial Class frmPlayback
         ' picPause
         ' 
         picPause.Image = My.Resources.Resources.media_pause
-        picPause.Location = New Point(58, 224)
+        picPause.Location = New Point(58, 249)
         picPause.Name = "picPause"
         picPause.Size = New Size(29, 29)
         picPause.SizeMode = PictureBoxSizeMode.StretchImage
@@ -118,9 +117,9 @@ Partial Class frmPlayback
         ' 
         ' picArchiveInfo
         ' 
-        picArchiveInfo.Location = New Point(12, 268)
+        picArchiveInfo.Location = New Point(12, 315)
         picArchiveInfo.Name = "picArchiveInfo"
-        picArchiveInfo.Size = New Size(275, 263)
+        picArchiveInfo.Size = New Size(280, 285)
         picArchiveInfo.TabIndex = 26
         picArchiveInfo.TabStop = False
         ' 
@@ -151,14 +150,14 @@ Partial Class frmPlayback
         lvwArchives.ForeColor = Color.White
         lvwArchives.Location = New Point(12, 33)
         lvwArchives.Name = "lvwArchives"
-        lvwArchives.Size = New Size(286, 185)
+        lvwArchives.Size = New Size(286, 210)
         lvwArchives.TabIndex = 23
         lvwArchives.UseCompatibleStateImageBehavior = False
         ' 
         ' picStartStop
         ' 
         picStartStop.Image = CType(resources.GetObject("picStartStop.Image"), Image)
-        picStartStop.Location = New Point(9, 224)
+        picStartStop.Location = New Point(9, 249)
         picStartStop.Name = "picStartStop"
         picStartStop.Size = New Size(29, 29)
         picStartStop.SizeMode = PictureBoxSizeMode.StretchImage
@@ -176,54 +175,95 @@ Partial Class frmPlayback
         ' splRight.Panel1
         ' 
         splRight.Panel1.Controls.Add(hsbSeekPos)
-        splRight.Panel1.Controls.Add(panSignalCtrls)
         splRight.Panel1.Controls.Add(panSignal)
         ' 
         ' splRight.Panel2
         ' 
-        splRight.Panel2.Controls.Add(Panel1)
         splRight.Panel2.Controls.Add(panWaterfall)
-        splRight.Size = New Size(962, 678)
-        splRight.SplitterDistance = 300
+        splRight.Size = New Size(962, 650)
+        splRight.SplitterDistance = 287
         splRight.TabIndex = 1
         ' 
         ' hsbSeekPos
         ' 
         hsbSeekPos.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
-        hsbSeekPos.Location = New Point(6, 277)
+        hsbSeekPos.Location = New Point(0, 264)
         hsbSeekPos.Maximum = 100
         hsbSeekPos.Minimum = 0
         hsbSeekPos.Name = "hsbSeekPos"
-        hsbSeekPos.Size = New Size(869, 20)
+        hsbSeekPos.Size = New Size(900, 20)
         hsbSeekPos.TabIndex = 5
         hsbSeekPos.Value = 0
         ' 
+        ' panSignal
+        ' 
+        panSignal.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
+        panSignal.BackColor = Color.Black
+        panSignal.Location = New Point(0, 0)
+        panSignal.Name = "panSignal"
+        panSignal.Size = New Size(900, 264)
+        panSignal.TabIndex = 3
+        ' 
+        ' panWaterfall
+        ' 
+        panWaterfall.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
+        panWaterfall.BackColor = Color.Black
+        panWaterfall.Location = New Point(0, 0)
+        panWaterfall.Name = "panWaterfall"
+        panWaterfall.Size = New Size(900, 359)
+        panWaterfall.TabIndex = 4
+        ' 
         ' panSignalCtrls
         ' 
-        panSignalCtrls.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Right
         panSignalCtrls.AutoScroll = True
         panSignalCtrls.AutoSizeMode = AutoSizeMode.GrowAndShrink
         panSignalCtrls.Controls.Add(panSignalSliders)
-        panSignalCtrls.Location = New Point(881, 3)
+        panSignalCtrls.Dock = DockStyle.Right
+        panSignalCtrls.Location = New Point(1205, 0)
         panSignalCtrls.Name = "panSignalCtrls"
-        panSignalCtrls.Size = New Size(78, 289)
+        panSignalCtrls.Size = New Size(61, 650)
         panSignalCtrls.TabIndex = 4
         ' 
         ' panSignalSliders
         ' 
         panSignalSliders.BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        panSignalSliders.Controls.Add(Label4)
+        panSignalSliders.Controls.Add(Label5)
         panSignalSliders.Controls.Add(Label3)
         panSignalSliders.Controls.Add(lblDiv)
-        panSignalSliders.Controls.Add(sldOffset)
-        panSignalSliders.Controls.Add(sldRange)
-        panSignalSliders.Controls.Add(sldZoom)
         panSignalSliders.Controls.Add(lblOffset)
         panSignalSliders.Controls.Add(Label2)
         panSignalSliders.Controls.Add(Label1)
+        panSignalSliders.Controls.Add(sldZoom)
+        panSignalSliders.Controls.Add(sldRange)
+        panSignalSliders.Controls.Add(sldOffset)
+        panSignalSliders.Controls.Add(sldContrast)
         panSignalSliders.Location = New Point(0, 0)
         panSignalSliders.Name = "panSignalSliders"
-        panSignalSliders.Size = New Size(59, 475)
+        panSignalSliders.Size = New Size(60, 645)
         panSignalSliders.TabIndex = 21
+        ' 
+        ' Label4
+        ' 
+        Label4.BackColor = Color.Silver
+        Label4.Location = New Point(1, 479)
+        Label4.Name = "Label4"
+        Label4.Size = New Size(56, 3)
+        Label4.TabIndex = 31
+        ' 
+        ' Label5
+        ' 
+        Label5.AutoSize = True
+        Label5.BackColor = Color.Transparent
+        Label5.Font = New Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        Label5.ForeColor = Color.White
+        Label5.Location = New Point(-2, 488)
+        Label5.Name = "Label5"
+        Label5.Size = New Size(64, 20)
+        Label5.TabIndex = 30
+        Label5.Text = "Contrast"
+        Label5.TextAlign = ContentAlignment.MiddleCenter
+        ToolTip1.SetToolTip(Label5, "Waterfall signal strength contrast")
         ' 
         ' Label3
         ' 
@@ -240,63 +280,6 @@ Partial Class frmPlayback
         lblDiv.Name = "lblDiv"
         lblDiv.Size = New Size(56, 3)
         lblDiv.TabIndex = 28
-        ' 
-        ' sldOffset
-        ' 
-        sldOffset.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldOffset.KnobColor = Color.DodgerBlue
-        sldOffset.Location = New Point(4, 339)
-        sldOffset.Maximum = 50
-        sldOffset.Minimum = -100
-        sldOffset.Name = "sldOffset"
-        sldOffset.Size = New Size(50, 120)
-        sldOffset.TabIndex = 27
-        sldOffset.TextColor = Color.White
-        sldOffset.TickColor = Color.LightGray
-        sldOffset.TickSpacing = 10
-        ToolTip1.SetToolTip(sldOffset, "Y-Axis dB sttarting offset")
-        sldOffset.TrackColor = Color.Gray
-        sldOffset.TrackHighlightColor = Color.LightGray
-        sldOffset.Value = -20
-        sldOffset.Vertical = True
-        ' 
-        ' sldRange
-        ' 
-        sldRange.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldRange.KnobColor = Color.DodgerBlue
-        sldRange.Location = New Point(4, 179)
-        sldRange.Maximum = 150
-        sldRange.Minimum = 10
-        sldRange.Name = "sldRange"
-        sldRange.Size = New Size(50, 120)
-        sldRange.TabIndex = 26
-        sldRange.TextColor = Color.White
-        sldRange.TickColor = Color.LightGray
-        sldRange.TickSpacing = 10
-        ToolTip1.SetToolTip(sldRange, "dB range (Y-axis) to display")
-        sldRange.TrackColor = Color.Gray
-        sldRange.TrackHighlightColor = Color.LightGray
-        sldRange.Value = 100
-        sldRange.Vertical = True
-        ' 
-        ' sldZoom
-        ' 
-        sldZoom.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldZoom.KnobColor = Color.DodgerBlue
-        sldZoom.Location = New Point(4, 24)
-        sldZoom.Maximum = 100
-        sldZoom.Minimum = 0
-        sldZoom.Name = "sldZoom"
-        sldZoom.Size = New Size(50, 120)
-        sldZoom.TabIndex = 25
-        sldZoom.TextColor = Color.White
-        sldZoom.TickColor = Color.LightGray
-        sldZoom.TickSpacing = 10
-        ToolTip1.SetToolTip(sldZoom, "Zoom level 100%=full spectrum, 10%=small spectrum")
-        sldZoom.TrackColor = Color.Gray
-        sldZoom.TrackHighlightColor = Color.LightGray
-        sldZoom.Value = 0
-        sldZoom.Vertical = True
         ' 
         ' lblOffset
         ' 
@@ -337,72 +320,101 @@ Partial Class frmPlayback
         Label1.TextAlign = ContentAlignment.MiddleCenter
         ToolTip1.SetToolTip(Label1, "Zoom level 100%=full spectrum, 10%=small spectrum")
         ' 
-        ' panSignal
+        ' sldZoom
         ' 
-        panSignal.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
-        panSignal.BackColor = Color.Black
-        panSignal.Location = New Point(0, 0)
-        panSignal.Name = "panSignal"
-        panSignal.Size = New Size(879, 278)
-        panSignal.TabIndex = 3
+        sldZoom.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldZoom.InnerPadding = 5
+        sldZoom.KnobColor = Color.RoyalBlue
+        sldZoom.KnobSize = 24
+        sldZoom.KnobTextColor = Color.LightGoldenrodYellow
+        sldZoom.Location = New Point(2, 11)
+        sldZoom.Maximum = 100
+        sldZoom.Minimum = 0
+        sldZoom.Name = "sldZoom"
+        sldZoom.Orientation = Orientation.Vertical
+        sldZoom.ShowValueInKnob = True
+        sldZoom.Size = New Size(53, 135)
+        sldZoom.TabIndex = 32
+        sldZoom.TickColor = Color.LightGray
+        sldZoom.TickSize = 25
+        sldZoom.TickSpacing = 10
+        sldZoom.TrackColor = Color.Gray
+        sldZoom.TrackWidth = 3
+        sldZoom.Value = 50
         ' 
-        ' Panel1
+        ' sldRange
         ' 
-        Panel1.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Right
-        Panel1.Controls.Add(sldContrast)
-        Panel1.Controls.Add(Label8)
-        Panel1.Location = New Point(881, 3)
-        Panel1.Name = "Panel1"
-        Panel1.Size = New Size(78, 368)
-        Panel1.TabIndex = 5
+        sldRange.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldRange.InnerPadding = 5
+        sldRange.KnobColor = Color.RoyalBlue
+        sldRange.KnobSize = 24
+        sldRange.KnobTextColor = Color.LightGoldenrodYellow
+        sldRange.Location = New Point(3, 167)
+        sldRange.Maximum = 100
+        sldRange.Minimum = 0
+        sldRange.Name = "sldRange"
+        sldRange.Orientation = Orientation.Vertical
+        sldRange.ShowValueInKnob = True
+        sldRange.Size = New Size(53, 135)
+        sldRange.TabIndex = 33
+        sldRange.TickColor = Color.LightGray
+        sldRange.TickSize = 25
+        sldRange.TickSpacing = 10
+        sldRange.TrackColor = Color.Gray
+        sldRange.TrackWidth = 3
+        sldRange.Value = 50
+        ' 
+        ' sldOffset
+        ' 
+        sldOffset.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldOffset.InnerPadding = 5
+        sldOffset.KnobColor = Color.RoyalBlue
+        sldOffset.KnobSize = 24
+        sldOffset.KnobTextColor = Color.LightGoldenrodYellow
+        sldOffset.Location = New Point(2, 324)
+        sldOffset.Maximum = 100
+        sldOffset.Minimum = 0
+        sldOffset.Name = "sldOffset"
+        sldOffset.Orientation = Orientation.Vertical
+        sldOffset.ShowValueInKnob = True
+        sldOffset.Size = New Size(53, 135)
+        sldOffset.TabIndex = 34
+        sldOffset.TickColor = Color.LightGray
+        sldOffset.TickSize = 25
+        sldOffset.TickSpacing = 10
+        sldOffset.TrackColor = Color.Gray
+        sldOffset.TrackWidth = 3
+        sldOffset.Value = 50
         ' 
         ' sldContrast
         ' 
         sldContrast.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldContrast.KnobColor = Color.DodgerBlue
-        sldContrast.Location = New Point(9, 45)
+        sldContrast.InnerPadding = 5
+        sldContrast.KnobColor = Color.RoyalBlue
+        sldContrast.KnobSize = 24
+        sldContrast.KnobTextColor = Color.LightGoldenrodYellow
+        sldContrast.Location = New Point(3, 498)
         sldContrast.Maximum = 100
         sldContrast.Minimum = 0
         sldContrast.Name = "sldContrast"
-        sldContrast.Size = New Size(60, 219)
-        sldContrast.TabIndex = 31
-        sldContrast.TextColor = Color.White
+        sldContrast.Orientation = Orientation.Vertical
+        sldContrast.ShowValueInKnob = True
+        sldContrast.Size = New Size(53, 135)
+        sldContrast.TabIndex = 35
         sldContrast.TickColor = Color.LightGray
+        sldContrast.TickSize = 25
         sldContrast.TickSpacing = 10
-        ToolTip1.SetToolTip(sldContrast, "Zoom level 100%=full spectrum, 10%=small spectrum")
         sldContrast.TrackColor = Color.Gray
-        sldContrast.TrackHighlightColor = Color.LightGray
-        sldContrast.Value = 0
-        sldContrast.Vertical = True
-        ' 
-        ' Label8
-        ' 
-        Label8.AutoSize = True
-        Label8.BackColor = Color.Transparent
-        Label8.Font = New Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
-        Label8.ForeColor = Color.White
-        Label8.Location = New Point(5, 21)
-        Label8.Name = "Label8"
-        Label8.Size = New Size(69, 21)
-        Label8.TabIndex = 30
-        Label8.Text = "Contrast"
-        Label8.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' panWaterfall
-        ' 
-        panWaterfall.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
-        panWaterfall.BackColor = Color.Black
-        panWaterfall.Location = New Point(0, 0)
-        panWaterfall.Name = "panWaterfall"
-        panWaterfall.Size = New Size(879, 368)
-        panWaterfall.TabIndex = 4
+        sldContrast.TrackWidth = 3
+        sldContrast.Value = 50
         ' 
         ' frmPlayback
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        ClientSize = New Size(1266, 678)
+        ClientSize = New Size(1266, 650)
+        Controls.Add(panSignalCtrls)
         Controls.Add(splRight)
         Controls.Add(panLeft)
         Font = New Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
@@ -427,8 +439,6 @@ Partial Class frmPlayback
         panSignalCtrls.ResumeLayout(False)
         panSignalSliders.ResumeLayout(False)
         panSignalSliders.PerformLayout()
-        Panel1.ResumeLayout(False)
-        Panel1.PerformLayout()
         ResumeLayout(False)
     End Sub
 
@@ -438,8 +448,6 @@ Partial Class frmPlayback
     Friend WithEvents panSignal As Panel
     Friend WithEvents picStartStop As PictureBox
     Friend WithEvents lvwArchives As ListView
-    Friend WithEvents Panel1 As Panel
-    Friend WithEvents Label8 As Label
     Friend WithEvents panWaterfall As Panel
     Friend WithEvents picRefresh As PictureBox
     Friend WithEvents lblHeading As Label
@@ -450,13 +458,15 @@ Partial Class frmPlayback
     Friend WithEvents panSignalSliders As Panel
     Friend WithEvents Label3 As Label
     Friend WithEvents lblDiv As Label
-    Friend WithEvents sldOffset As CustomSlider
-    Friend WithEvents sldRange As CustomSlider
-    Friend WithEvents sldZoom As CustomSlider
     Friend WithEvents lblOffset As Label
     Friend WithEvents Label2 As Label
     Friend WithEvents Label1 As Label
-    Friend WithEvents sldContrast As CustomSlider
     Friend WithEvents picBrowseFolder As PictureBox
     Friend WithEvents picExport As PictureBox
+    Friend WithEvents Label4 As Label
+    Friend WithEvents Label5 As Label
+    Friend WithEvents sldZoom As ctlRoundTrackbar
+    Friend WithEvents sldRange As ctlRoundTrackbar
+    Friend WithEvents sldOffset As ctlRoundTrackbar
+    Friend WithEvents sldContrast As ctlRoundTrackbar
 End Class

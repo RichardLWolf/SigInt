@@ -9,8 +9,19 @@
     <ApplicationIcon>SigInt_Icon.ico</ApplicationIcon>
     <ImportedNamespaces>System.Data=False,System.Drawing=False,System.Windows.Forms=False,Microsoft.VisualBasic=True,System=True,System.Collections=True,System.Collections.Generic=True,System.Diagnostics=True,System.Linq=True,System.Xml.Linq=True,System.Threading.Tasks=True,SigInt=True</ImportedNamespaces>
     <AssemblyVersion>1.0.0.1</AssemblyVersion>
-    <FileVersion>1.0.1.0</FileVersion>
+    <FileVersion>1.0.1.1</FileVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="User Controls\CustomSeekbar.Designer.vb" />
+    <Compile Remove="User Controls\CustomSlider.Designer.vb" />
+    <Compile Remove="User Controls\CustomSlider.vb" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="User Controls\CustomSeekbar.resx" />
+    <EmbeddedResource Remove="User Controls\CustomSlider.resx" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="SigInt_Icon.ico" />

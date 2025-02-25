@@ -45,9 +45,18 @@ Public Class frmMonitor
         ' update config
         SetConfigLabel()
 
+        sldZoom.Minimum = 0
+        sldZoom.Maximum = 100
         sldZoom.Value = foConfig.ZoomLevel
+
+        sldOffset.Minimum = -100
+        sldOffset.Maximum = 0
         sldOffset.Value = foConfig.dBOffset
+
+        sldRange.Minimum = 10
+        sldRange.Maximum = 150
         sldRange.Value = foConfig.dBRange
+
         sldOffset_ValueChanged(Nothing, Nothing)
         sldRange_ValueChanged(Nothing, Nothing)
         sldZoom_ValueChanged(Nothing, Nothing)
@@ -260,7 +269,7 @@ Public Class frmMonitor
 
     Private Sub sldZoom_ValueChanged(sender As Object, e As EventArgs) Handles sldZoom.ValueChanged
         If foBmpRend IsNot Nothing Then
-            foBmpRend.ZoomFactor = (sldZoom.Value * 0.009D) + 0.1D ' Convert range 0-100 → 0.1-1.0
+            foBmpRend.ZoomFactor = sldZoom.Value * 0.009D + 0.1D ' Convert range 0-100 → 0.1-1.0
         End If
     End Sub
 

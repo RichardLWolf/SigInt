@@ -29,16 +29,16 @@ Partial Class frmMonitor
         Panel1 = New Panel()
         Label3 = New Label()
         lblDiv = New Label()
-        sldOffset = New CustomSlider()
-        sldRange = New CustomSlider()
-        sldZoom = New CustomSlider()
         lblOffset = New Label()
         Label2 = New Label()
         Label1 = New Label()
+        sldZoom = New ctlRoundTrackbar()
         picStartStop = New PictureBox()
         ToolTip1 = New ToolTip(components)
         panRollingGraph = New Panel()
         lblConfiguration = New Label()
+        sldRange = New ctlRoundTrackbar()
+        sldOffset = New ctlRoundTrackbar()
         Panel1.SuspendLayout()
         CType(picStartStop, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
@@ -69,12 +69,12 @@ Partial Class frmMonitor
         Panel1.BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
         Panel1.Controls.Add(Label3)
         Panel1.Controls.Add(lblDiv)
-        Panel1.Controls.Add(sldOffset)
-        Panel1.Controls.Add(sldRange)
-        Panel1.Controls.Add(sldZoom)
         Panel1.Controls.Add(lblOffset)
         Panel1.Controls.Add(Label2)
         Panel1.Controls.Add(Label1)
+        Panel1.Controls.Add(sldZoom)
+        Panel1.Controls.Add(sldRange)
+        Panel1.Controls.Add(sldOffset)
         Panel1.Location = New Point(968, 70)
         Panel1.Name = "Panel1"
         Panel1.Size = New Size(59, 525)
@@ -95,63 +95,6 @@ Partial Class frmMonitor
         lblDiv.Name = "lblDiv"
         lblDiv.Size = New Size(56, 3)
         lblDiv.TabIndex = 28
-        ' 
-        ' sldOffset
-        ' 
-        sldOffset.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldOffset.KnobColor = Color.DodgerBlue
-        sldOffset.Location = New Point(4, 339)
-        sldOffset.Maximum = 50
-        sldOffset.Minimum = -100
-        sldOffset.Name = "sldOffset"
-        sldOffset.Size = New Size(50, 120)
-        sldOffset.TabIndex = 27
-        sldOffset.TextColor = Color.White
-        sldOffset.TickColor = Color.LightGray
-        sldOffset.TickSpacing = 10
-        ToolTip1.SetToolTip(sldOffset, "Y-Axis dB sttarting offset")
-        sldOffset.TrackColor = Color.Gray
-        sldOffset.TrackHighlightColor = Color.LightGray
-        sldOffset.Value = -20
-        sldOffset.Vertical = True
-        ' 
-        ' sldRange
-        ' 
-        sldRange.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldRange.KnobColor = Color.DodgerBlue
-        sldRange.Location = New Point(4, 179)
-        sldRange.Maximum = 150
-        sldRange.Minimum = 10
-        sldRange.Name = "sldRange"
-        sldRange.Size = New Size(50, 120)
-        sldRange.TabIndex = 26
-        sldRange.TextColor = Color.White
-        sldRange.TickColor = Color.LightGray
-        sldRange.TickSpacing = 10
-        ToolTip1.SetToolTip(sldRange, "dB range (Y-axis) to display")
-        sldRange.TrackColor = Color.Gray
-        sldRange.TrackHighlightColor = Color.LightGray
-        sldRange.Value = 100
-        sldRange.Vertical = True
-        ' 
-        ' sldZoom
-        ' 
-        sldZoom.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        sldZoom.KnobColor = Color.DodgerBlue
-        sldZoom.Location = New Point(4, 24)
-        sldZoom.Maximum = 100
-        sldZoom.Minimum = 0
-        sldZoom.Name = "sldZoom"
-        sldZoom.Size = New Size(50, 120)
-        sldZoom.TabIndex = 25
-        sldZoom.TextColor = Color.White
-        sldZoom.TickColor = Color.LightGray
-        sldZoom.TickSpacing = 10
-        ToolTip1.SetToolTip(sldZoom, "Zoom level 100%=full spectrum, 10%=small spectrum")
-        sldZoom.TrackColor = Color.Gray
-        sldZoom.TrackHighlightColor = Color.LightGray
-        sldZoom.Value = 0
-        sldZoom.Vertical = True
         ' 
         ' lblOffset
         ' 
@@ -192,6 +135,28 @@ Partial Class frmMonitor
         Label1.TextAlign = ContentAlignment.MiddleCenter
         ToolTip1.SetToolTip(Label1, "Zoom level 100%=full spectrum, 10%=small spectrum")
         ' 
+        ' sldZoom
+        ' 
+        sldZoom.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldZoom.InnerPadding = 0
+        sldZoom.KnobColor = Color.RoyalBlue
+        sldZoom.KnobSize = 30
+        sldZoom.KnobTextColor = Color.LightGoldenrodYellow
+        sldZoom.Location = New Point(8, 12)
+        sldZoom.Maximum = 100
+        sldZoom.Minimum = 0
+        sldZoom.Name = "sldZoom"
+        sldZoom.Orientation = Orientation.Vertical
+        sldZoom.ShowValueInKnob = True
+        sldZoom.Size = New Size(41, 130)
+        sldZoom.TabIndex = 0
+        sldZoom.TickColor = Color.LightGray
+        sldZoom.TickSize = 25
+        sldZoom.TickSpacing = 10
+        sldZoom.TrackColor = Color.Gray
+        sldZoom.TrackWidth = 3
+        sldZoom.Value = 0
+        ' 
         ' picStartStop
         ' 
         picStartStop.Image = CType(resources.GetObject("picStartStop.Image"), Image)
@@ -224,6 +189,50 @@ Partial Class frmMonitor
         lblConfiguration.Text = "Configuration"
         lblConfiguration.TextAlign = ContentAlignment.MiddleRight
         ' 
+        ' sldRange
+        ' 
+        sldRange.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldRange.InnerPadding = 0
+        sldRange.KnobColor = Color.RoyalBlue
+        sldRange.KnobSize = 30
+        sldRange.KnobTextColor = Color.LightGoldenrodYellow
+        sldRange.Location = New Point(8, 169)
+        sldRange.Maximum = 100
+        sldRange.Minimum = 0
+        sldRange.Name = "sldRange"
+        sldRange.Orientation = Orientation.Vertical
+        sldRange.ShowValueInKnob = True
+        sldRange.Size = New Size(41, 130)
+        sldRange.TabIndex = 30
+        sldRange.TickColor = Color.LightGray
+        sldRange.TickSize = 25
+        sldRange.TickSpacing = 10
+        sldRange.TrackColor = Color.Gray
+        sldRange.TrackWidth = 3
+        sldRange.Value = 0
+        ' 
+        ' sldOffset
+        ' 
+        sldOffset.BackgroundColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
+        sldOffset.InnerPadding = 0
+        sldOffset.KnobColor = Color.RoyalBlue
+        sldOffset.KnobSize = 30
+        sldOffset.KnobTextColor = Color.LightGoldenrodYellow
+        sldOffset.Location = New Point(8, 329)
+        sldOffset.Maximum = 100
+        sldOffset.Minimum = 0
+        sldOffset.Name = "sldOffset"
+        sldOffset.Orientation = Orientation.Vertical
+        sldOffset.ShowValueInKnob = True
+        sldOffset.Size = New Size(41, 130)
+        sldOffset.TabIndex = 31
+        sldOffset.TickColor = Color.LightGray
+        sldOffset.TickSize = 25
+        sldOffset.TickSpacing = 10
+        sldOffset.TrackColor = Color.Gray
+        sldOffset.TrackWidth = 3
+        sldOffset.Value = 0
+        ' 
         ' frmMonitor
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
@@ -254,14 +263,14 @@ Partial Class frmMonitor
     Friend WithEvents Panel1 As Panel
     Friend WithEvents Label2 As Label
     Friend WithEvents lblOffset As Label
-    Friend WithEvents sldZoom As CustomSlider
-    Friend WithEvents sldRange As CustomSlider
-    Friend WithEvents sldOffset As CustomSlider
     Friend WithEvents lblDiv As Label
     Friend WithEvents Label3 As Label
     Friend WithEvents picStartStop As PictureBox
     Friend WithEvents ToolTip1 As ToolTip
     Friend WithEvents panRollingGraph As Panel
     Friend WithEvents lblConfiguration As Label
+    Friend WithEvents sldZoom As ctlRoundTrackbar
+    Friend WithEvents sldRange As ctlRoundTrackbar
+    Friend WithEvents sldOffset As ctlRoundTrackbar
 
 End Class

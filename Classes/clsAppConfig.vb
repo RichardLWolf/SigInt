@@ -141,7 +141,7 @@ Public Class DeviceConfig
     Public Property NoiseFloorEventResetTime As Integer = 300   ' Quiet time before new event  (seconds, 10 to 60)
     '   UI Preferences
     Public Property ZoomLevel As Integer = 0    ' Default: Full view (0 to 100)
-    Public Property dBOffset As Integer = -20   ' Default: -20 dB  (0 to -100)
+    Public Property dBOffset As Integer = -20   ' Default: -20 dB  (-100 to 0)
     Public Property dBRange As Integer = 100    ' Default: 100 dB graphed (10-150)
     Public Property MaxRollingBufferSize As Integer = 200       ' For rolling buffer display ~7 seconds of buffer Default at ~50 FPS, not configurable at this time
 

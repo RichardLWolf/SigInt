@@ -15,12 +15,20 @@ Public Class frmMain
         Me.Close()
     End Sub
 
+    Private Sub btnMinimize_Click(sender As Object, e As EventArgs) Handles btnMinimize.Click
+        For Each foForm As Form In Application.OpenForms.Cast(Of Form).ToList()
+            If foForm IsNot Me Then foForm.WindowState = FormWindowState.Minimized
+        Next
+        ' minimuze main form
+        Me.WindowState = FormWindowState.Minimized
+    End Sub
+
     Private Sub btnMonitor_Click(sender As Object, e As EventArgs) Handles btnMonitor.Click
         If cboDeviceList.SelectedItem Is Nothing Then
             MsgBox("Please select a RTL-SDR device from the list.", MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "No Device Selected")
             cboDeviceList.Focus()
         Else
-            Dim poDev As RtlSdrApi.SdrDevice = DirectCast(cboDeviceList.SelectedItem, RtlSdrApi.SdrDevice)
+            Dim poDev As RtlSdrApi.SdrDevice = cboDeviceList.SelectedItem
             If poDev.DeviceIndex < 0 Then
                 MsgBox("Please plug in a RTL-SDR device and click the refresh button.", MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "No Devices Detected")
                 cboDeviceList.Focus()
@@ -29,18 +37,18 @@ Public Class frmMain
                     MsgBox("Please select a configuration to use from the list or create a new one.", MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "No Configuration Selected")
                     cboConfigs.Focus()
                 Else
-                    Dim poCfg As DeviceConfig = DirectCast(cboConfigs.SelectedItem.value, DeviceConfig)
+                    Dim poCfg = DirectCast(cboConfigs.SelectedItem.value, DeviceConfig)
                     If poCfg Is Nothing Then
                         MsgBox("Please select a configuration to use from the list or create a new one.", MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "No Configuration Selected")
                         cboConfigs.Focus()
                     Else
-                        Dim psFormTitle As String = $"SigInt ({poDev.DeviceIndex})-{poDev.DeviceName} Monitor"
+                        Dim psFormTitle = $"SigInt ({poDev.DeviceIndex})-{poDev.DeviceName} Monitor"
                         ' we already have this form up?
-                        For Each poForm As Form In Application.OpenForms.Cast(Of Form).ToList()
-                            If TypeOf (poForm) Is frmMonitor Then
+                        For Each poForm In Application.OpenForms.Cast(Of Form).ToList
+                            If TypeOf poForm Is frmMonitor Then
                                 If poForm.Text = psFormTitle Then
                                     ' reapply selected configuration to the existing form
-                                    Dim poMonFrm As frmMonitor = DirectCast(poForm, frmMonitor)
+                                    Dim poMonFrm = DirectCast(poForm, frmMonitor)
                                     poMonFrm.ApplyConfiguration(poCfg, foAppConfig.DiscordServerWebhook, foAppConfig.DiscordMentionID)
                                     poMonFrm.WindowState = FormWindowState.Normal
                                     poMonFrm.Visible = True

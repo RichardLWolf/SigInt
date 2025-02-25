@@ -3,6 +3,7 @@ Imports System.Drawing.Drawing2D
 Imports System.Windows.Forms
 
 Public Class CustomSeekbar
+    Inherits UserControl
 
     ' Event to notify parent form when the value changes (like HScrollBar)
     Public Shadows Event Scroll(ByVal sender As Object, ByVal e As EventArgs)
