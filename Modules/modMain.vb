@@ -26,9 +26,9 @@ Module modMain
 
     Public Function FormatMSPS(ByVal iSampleRate As UInteger) As String
         If iSampleRate >= 1000000 Then
-            Return $"{iSampleRate / 1000000.0:F2} MSPS"
+            Return $"{iSampleRate / 1000000.0:G4} MSPS"
         ElseIf iSampleRate >= 1000 Then
-            Return $"{iSampleRate / 1000.0:F0} kSPS"
+            Return $"{iSampleRate / 1000.0:G4} kSPS"
         Else
             Return $"{iSampleRate} SPS"
         End If
