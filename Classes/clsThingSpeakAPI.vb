@@ -12,7 +12,7 @@ Public Class clsThingSpeakAPI
 
     Private msLatLon As String = ""
     Private msUserGUID As String = ""
-    Private mdLastThingSpeakLog As DateTime = DateTime.MinValue
+    Private mdLastThingSpeakLog As DateTime = DateTime.Now.AddSeconds(-15D)  'Initialize to 15 seconds ago so we may log an event immediately
 
     ' Event Type Enum
     Public Enum EventTypeEnum
@@ -26,6 +26,19 @@ Public Class clsThingSpeakAPI
             Return mdLastThingSpeakLog
         End Get
     End Property
+
+    Public ReadOnly Property HoursSinceLastLog As Double
+        Get
+            Return DateTime.Now.Subtract(mdLastThingSpeakLog).TotalHours
+        End Get
+    End Property
+
+    Public ReadOnly Property SecondsSinceLastLog As Double
+        Get
+            Return DateTime.Now.Subtract(mdLastThingSpeakLog).TotalSeconds
+        End Get
+    End Property
+
 
     Public Sub New(ByVal psLatLon As String, ByVal psUserGUID As String)
         msLatLon = psLatLon

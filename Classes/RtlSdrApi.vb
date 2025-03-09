@@ -1079,13 +1079,19 @@ Public Class RtlSdrApi
                 End If
                 If mbRunning Then
                     If mbThingSpeakEnabled And moThingSpeak IsNot Nothing AndAlso Not mbRecordingActive Then
-                        If DateTime.Now.Subtract(moThingSpeak.LastLogWrite).TotalHours >= 24 AndAlso moThingSpeak.LastLogWrite <> DateTime.MinValue Then
-                            LogToThingSpeak(clsThingSpeakAPI.EventTypeEnum.NoEvent, pdNoiseFloorAverage, DateTime.Now.Subtract(moThingSpeak.LastLogWrite).TotalSeconds)
+                        If moThingSpeak.HoursSinceLastLog >= 24D Then
+                            ' been a day without any event, log the quiet time to ThingSpeak
+                            LogToThingSpeak(clsThingSpeakAPI.EventTypeEnum.NoEvent, pdNoiseFloorAverage, moThingSpeak.SecondsSinceLastLog)
                         End If
                     End If
                 End If
             End While
-
+            ' log ThingSpeak if we've got 10+ hours since last log
+            If mbThingSpeakEnabled And moThingSpeak IsNot Nothing AndAlso Not mbRecordingActive Then
+                If moThingSpeak.HoursSinceLastLog >= 10D Then
+                    LogToThingSpeak(clsThingSpeakAPI.EventTypeEnum.NoEvent, pdNoiseFloorAverage, moThingSpeak.SecondsSinceLastLog)
+                End If
+            End If
             ' Log end of monitoring session
             Dim ptEnd As Date = DateTime.Now
             Dim poElapsed As TimeSpan = ptEnd.Subtract(mtStartMonitor)
@@ -1187,7 +1193,7 @@ Public Class RtlSdrApi
 
         ' Send to ThingSpeak
         If mbThingSpeakEnabled And moThingSpeak IsNot Nothing Then
-            LogToThingSpeak(clsThingSpeakAPI.EventTypeEnum.NoEvent, dAvgNoiseFloor, poEl.TotalSeconds)
+            LogToThingSpeak(clsThingSpeakAPI.EventTypeEnum.SignalDetected, dAvgNoiseFloor, poEl.TotalSeconds)
         End If
 
 

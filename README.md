@@ -30,6 +30,8 @@ The **Playback Viewer** allows users to:
 ⏪ **Seekable Playback** – Scrub through recordings with a timeline control.  
 🎛 **WAV Export for SDRSharp** – Convert recorded IQ data into a Baseband WAV file for external analysis.  
 🔔 **Real-Time Discord Channel Notifications** – Get alerts when signals are detected.  
+🛰️ **ThingSpeak Integration** - Optional ability to upload event data to a public [ThingSpeak channel](https://thingspeak.mathworks.com/channels/2869584).  
+
 
 ## Use Case
 Ideal for **radio enthusiasts, spectrum monitoring, and signal intelligence (SIGINT) applications**, this tool enables efficient detection, recording, and review of intermittent RF signals.

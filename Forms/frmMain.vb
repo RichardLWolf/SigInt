@@ -80,6 +80,12 @@ Public Class frmMain
         ' keep the size down
         clsLogger.PurgeLog()
 
+        Dim psFilePath As String = System.Reflection.Assembly.GetExecutingAssembly().Location
+        Dim poFileVersionInfo As FileVersionInfo = FileVersionInfo.GetVersionInfo(psFilePath)
+        Me.Text = $"SigInt - Version {poFileVersionInfo.FileVersion}"
+
+
+
         ' start the unhandled exception handler
         clsUEH.StartUEH()
         ' load devices
