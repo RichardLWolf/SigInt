@@ -15,9 +15,11 @@ Public Class frmMonitor
     Private foSignalBMP As Bitmap = Nothing
     Private foRollingBMP As Bitmap = Nothing
     Private foBitmapsLock As New Object()
+    Private foThingSpeak As clsThingSpeakAPI
 
     Private foNotify As New NotifyIcon With {.Icon = SystemIcons.Information}
 
+    Private foAppConfig As clsAppConfig
     Private foConfig As DeviceConfig
 
     Private foBmpRend As clsRenderWaveform
@@ -25,13 +27,25 @@ Public Class frmMonitor
     Private fiSdrDriverDeviceIndex As Integer
     Private fsDiscordWebHook As String = ""
     Private fsDiscordMention As String = ""
+    Private fbUseThingSpeak As Boolean = False
+    Private fsUserGUID As String = ""
+    Private fdUserLat As Double = 0D
+    Private fdUserLon As Double = 0D
 
 
-    Public Sub ReadyForm(ByVal iSdrDeviceIndex As Integer, ByVal oConfigToUse As DeviceConfig, ByVal sDiscordWebHook As String, ByVal sDiscordMentionID As String)
+    Public Sub ReadyForm(ByVal iSdrDeviceIndex As Integer, ByVal oConfigToUse As DeviceConfig _
+                         , ByVal sDiscordWebHook As String, ByVal sDiscordMentionID As String _
+                         , ByVal bThingSpeak As Boolean, ByVal sUserGUID As String, ByVal dUserLat As Double, ByVal dUserLon As Double)
+
         foConfig = oConfigToUse
         fiSdrDriverDeviceIndex = iSdrDeviceIndex
         fsDiscordMention = sDiscordMentionID
         fsDiscordWebHook = sDiscordWebHook
+        fbUseThingSpeak = bThingSpeak
+        fsUserGUID = sUserGUID
+        fdUserLat = dUserLat
+        fdUserLon = dUserLon
+
 
         ' make sure we're doublebuffered
         Me.DoubleBuffered = True
@@ -233,6 +247,10 @@ Public Class frmMonitor
             Else
                 foSDR.StartMonitor()
                 UpdateEventCount()
+                ' ready ThingSpeak recording
+                If fbUseThingSpeak AndAlso foThingSpeak Is Nothing Then
+                    foThingSpeak = New clsThingSpeakAPI(String.Format("{0:F6},{1:F6}", fdUserLat, fdUserLon), fsUserGUID)
+                End If
                 Me.Cursor = Cursors.WaitCursor
                 Me.Enabled = False
             End If

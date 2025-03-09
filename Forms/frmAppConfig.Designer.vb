@@ -33,25 +33,36 @@ Partial Class frmAppConfig
         lblMention = New Label()
         ToolTip1 = New ToolTip(components)
         btnReset = New Button()
+        btnTestDiscord = New Button()
+        btnLookupIP = New Button()
+        txtLon = New TextBox()
+        txtLat = New TextBox()
+        chkThingSpeak = New CheckBox()
         lblMentionInfo = New Label()
         Label4 = New Label()
         Label13 = New Label()
         panDiscordVals = New Panel()
         Label6 = New Label()
-        btnTestDiscord = New Button()
+        lblLon = New Label()
+        lblLat = New Label()
+        Label8 = New Label()
+        Label1 = New Label()
+        panThingSpeak = New Panel()
+        lnkThingSpeak = New LinkLabel()
         panDiscordVals.SuspendLayout()
+        panThingSpeak.SuspendLayout()
         SuspendLayout()
         ' 
         ' btnApply
         ' 
-        btnApply.Anchor = AnchorStyles.Bottom Or AnchorStyles.Right
+        btnApply.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
         btnApply.BackColor = Color.LightBlue
         btnApply.FlatAppearance.BorderColor = Color.Black
         btnApply.FlatAppearance.BorderSize = 0
         btnApply.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
         btnApply.FlatStyle = FlatStyle.Flat
         btnApply.ForeColor = Color.Black
-        btnApply.Location = New Point(12, 325)
+        btnApply.Location = New Point(12, 543)
         btnApply.Name = "btnApply"
         btnApply.Size = New Size(100, 50)
         btnApply.TabIndex = 4
@@ -68,7 +79,7 @@ Partial Class frmAppConfig
         btnCancel.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
         btnCancel.FlatStyle = FlatStyle.Flat
         btnCancel.ForeColor = Color.Black
-        btnCancel.Location = New Point(510, 325)
+        btnCancel.Location = New Point(450, 543)
         btnCancel.Name = "btnCancel"
         btnCancel.Size = New Size(100, 50)
         btnCancel.TabIndex = 6
@@ -136,13 +147,71 @@ Partial Class frmAppConfig
         btnReset.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
         btnReset.FlatStyle = FlatStyle.Flat
         btnReset.ForeColor = Color.Black
-        btnReset.Location = New Point(261, 325)
+        btnReset.Location = New Point(231, 543)
         btnReset.Name = "btnReset"
         btnReset.Size = New Size(100, 50)
         btnReset.TabIndex = 5
         btnReset.Text = "CLEAR"
         ToolTip1.SetToolTip(btnReset, "Reset all settings to default values.")
         btnReset.UseVisualStyleBackColor = False
+        ' 
+        ' btnTestDiscord
+        ' 
+        btnTestDiscord.FlatAppearance.BorderSize = 0
+        btnTestDiscord.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
+        btnTestDiscord.FlatStyle = FlatStyle.Flat
+        btnTestDiscord.Image = My.Resources.Resources.bell
+        btnTestDiscord.Location = New Point(449, 156)
+        btnTestDiscord.Name = "btnTestDiscord"
+        btnTestDiscord.Size = New Size(48, 48)
+        btnTestDiscord.TabIndex = 6
+        ToolTip1.SetToolTip(btnTestDiscord, "Click To Send Test Message")
+        btnTestDiscord.UseVisualStyleBackColor = True
+        ' 
+        ' btnLookupIP
+        ' 
+        btnLookupIP.BackColor = SystemColors.ActiveBorder
+        btnLookupIP.FlatAppearance.BorderColor = Color.Black
+        btnLookupIP.FlatAppearance.BorderSize = 0
+        btnLookupIP.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
+        btnLookupIP.FlatStyle = FlatStyle.Flat
+        btnLookupIP.ForeColor = Color.Black
+        btnLookupIP.Location = New Point(308, 40)
+        btnLookupIP.Name = "btnLookupIP"
+        btnLookupIP.Size = New Size(29, 30)
+        btnLookupIP.TabIndex = 49
+        btnLookupIP.Text = "🌐"
+        ToolTip1.SetToolTip(btnLookupIP, "Attempt to get location from IP.")
+        btnLookupIP.UseVisualStyleBackColor = False
+        ' 
+        ' txtLon
+        ' 
+        txtLon.Location = New Point(170, 41)
+        txtLon.MaxLength = 100
+        txtLon.Name = "txtLon"
+        txtLon.Size = New Size(123, 29)
+        txtLon.TabIndex = 47
+        ToolTip1.SetToolTip(txtLon, "Your logitude position in Decimal Degrees (DD) format.")
+        ' 
+        ' txtLat
+        ' 
+        txtLat.Location = New Point(18, 41)
+        txtLat.MaxLength = 100
+        txtLat.Name = "txtLat"
+        txtLat.Size = New Size(123, 29)
+        txtLat.TabIndex = 45
+        ToolTip1.SetToolTip(txtLat, "Your latitude position in Decimal Degrees (DD) format.")
+        ' 
+        ' chkThingSpeak
+        ' 
+        chkThingSpeak.AutoSize = True
+        chkThingSpeak.Location = New Point(12, 369)
+        chkThingSpeak.Name = "chkThingSpeak"
+        chkThingSpeak.Size = New Size(206, 25)
+        chkThingSpeak.TabIndex = 43
+        chkThingSpeak.Text = "Participate in data &Upload"
+        ToolTip1.SetToolTip(chkThingSpeak, "Check this to participate in uploading your event " & vbCrLf & "data to ThinkSpeak")
+        chkThingSpeak.UseVisualStyleBackColor = True
         ' 
         ' lblMentionInfo
         ' 
@@ -174,7 +243,7 @@ Partial Class frmAppConfig
         Label13.BackColor = Color.RoyalBlue
         Label13.Location = New Point(152, 23)
         Label13.Name = "Label13"
-        Label13.Size = New Size(458, 3)
+        Label13.Size = New Size(398, 3)
         Label13.TabIndex = 1
         ' 
         ' panDiscordVals
@@ -202,24 +271,80 @@ Partial Class frmAppConfig
         Label6.Size = New Size(564, 3)
         Label6.TabIndex = 5
         ' 
-        ' btnTestDiscord
+        ' lblLon
         ' 
-        btnTestDiscord.FlatAppearance.BorderSize = 0
-        btnTestDiscord.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
-        btnTestDiscord.FlatStyle = FlatStyle.Flat
-        btnTestDiscord.Image = My.Resources.Resources.bell
-        btnTestDiscord.Location = New Point(449, 156)
-        btnTestDiscord.Name = "btnTestDiscord"
-        btnTestDiscord.Size = New Size(48, 48)
-        btnTestDiscord.TabIndex = 6
-        ToolTip1.SetToolTip(btnTestDiscord, "Send Test Message")
-        btnTestDiscord.UseVisualStyleBackColor = True
+        lblLon.AutoSize = True
+        lblLon.Location = New Point(170, 17)
+        lblLon.Name = "lblLon"
+        lblLon.Size = New Size(152, 21)
+        lblLon.TabIndex = 46
+        lblLon.Text = "Your L&ongitude (DD)"
+        ' 
+        ' lblLat
+        ' 
+        lblLat.AutoSize = True
+        lblLat.Location = New Point(18, 17)
+        lblLat.Name = "lblLat"
+        lblLat.Size = New Size(138, 21)
+        lblLat.TabIndex = 44
+        lblLat.Text = "Your L&atitude (DD)"
+        ' 
+        ' Label8
+        ' 
+        Label8.AutoSize = True
+        Label8.BackColor = Color.CornflowerBlue
+        Label8.Font = New Font("Segoe UI", 12F, FontStyle.Bold)
+        Label8.ForeColor = Color.White
+        Label8.Location = New Point(12, 322)
+        Label8.Name = "Label8"
+        Label8.Padding = New Padding(4, 4, 4, 6)
+        Label8.Size = New Size(208, 31)
+        Label8.TabIndex = 42
+        Label8.Text = "ThingSpeak Data Upload"
+        ' 
+        ' Label1
+        ' 
+        Label1.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        Label1.BackColor = Color.RoyalBlue
+        Label1.Location = New Point(170, 336)
+        Label1.Name = "Label1"
+        Label1.Size = New Size(381, 3)
+        Label1.TabIndex = 48
+        ' 
+        ' panThingSpeak
+        ' 
+        panThingSpeak.Controls.Add(txtLat)
+        panThingSpeak.Controls.Add(btnLookupIP)
+        panThingSpeak.Controls.Add(lblLat)
+        panThingSpeak.Controls.Add(txtLon)
+        panThingSpeak.Controls.Add(lblLon)
+        panThingSpeak.Location = New Point(31, 396)
+        panThingSpeak.Name = "panThingSpeak"
+        panThingSpeak.Size = New Size(520, 100)
+        panThingSpeak.TabIndex = 50
+        ' 
+        ' lnkThingSpeak
+        ' 
+        lnkThingSpeak.AutoSize = True
+        lnkThingSpeak.LinkColor = Color.LightCyan
+        lnkThingSpeak.Location = New Point(378, 357)
+        lnkThingSpeak.Name = "lnkThingSpeak"
+        lnkThingSpeak.Size = New Size(173, 21)
+        lnkThingSpeak.TabIndex = 51
+        lnkThingSpeak.TabStop = True
+        lnkThingSpeak.Text = "Mathworks ThingSpeak"
+        ToolTip1.SetToolTip(lnkThingSpeak, "Vist ThingSpeak Website")
         ' 
         ' frmAppConfig
         ' 
         AutoScaleMode = AutoScaleMode.None
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        ClientSize = New Size(622, 387)
+        ClientSize = New Size(562, 605)
+        Controls.Add(lnkThingSpeak)
+        Controls.Add(panThingSpeak)
+        Controls.Add(chkThingSpeak)
+        Controls.Add(Label8)
+        Controls.Add(Label1)
         Controls.Add(Label4)
         Controls.Add(Label13)
         Controls.Add(btnReset)
@@ -240,6 +365,8 @@ Partial Class frmAppConfig
         Text = "App Configuration"
         panDiscordVals.ResumeLayout(False)
         panDiscordVals.PerformLayout()
+        panThingSpeak.ResumeLayout(False)
+        panThingSpeak.PerformLayout()
         ResumeLayout(False)
         PerformLayout()
     End Sub
@@ -259,4 +386,14 @@ Partial Class frmAppConfig
     Friend WithEvents Label13 As Label
     Friend WithEvents btnReset As Button
     Friend WithEvents btnTestDiscord As Button
+    Friend WithEvents btnLookupIP As Button
+    Friend WithEvents txtLon As TextBox
+    Friend WithEvents lblLon As Label
+    Friend WithEvents txtLat As TextBox
+    Friend WithEvents lblLat As Label
+    Friend WithEvents chkThingSpeak As CheckBox
+    Friend WithEvents Label8 As Label
+    Friend WithEvents Label1 As Label
+    Friend WithEvents panThingSpeak As Panel
+    Friend WithEvents lnkThingSpeak As LinkLabel
 End Class

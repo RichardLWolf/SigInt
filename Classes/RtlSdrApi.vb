@@ -113,6 +113,10 @@ Public Class RtlSdrApi
         Public iNoiseFloorEventResetTime As Integer
         Public sDiscordWebhook As String
         Public sDiscordMention As String
+        Public bThingSpeakEnabled As Boolean
+        Public sUserGUID As String
+        Public dUserLat As Double
+        Public dUserLon As Double
 
         ' Constructor - must have the driver device index
         Public Sub New(iDeviceIdx As Integer)
@@ -132,6 +136,10 @@ Public Class RtlSdrApi
             iNoiseFloorEventResetTime = 30
             sDiscordWebhook = ""
             sDiscordMention = ""
+            bThingSpeakEnabled = False
+            sUserGUID = ""
+            dUserLat = 0D
+            dUserLon = 0D
         End Sub
     End Structure
 
@@ -160,6 +168,10 @@ Public Class RtlSdrApi
     Private miDeviceIndex As Integer
     Private msDiscordWebhook As String = ""
     Private msDiscordMention As String = ""
+    Private mbThingSpeakEnabled As Boolean
+    Private msUserGUID As String
+    Private mdUserLat As Double
+    Private mdUserLon As Double
     Private msLogFolder As String = "C:\"
     Private moMonitorThread As Thread
     Private mbRunning As Boolean = False
@@ -211,6 +223,10 @@ Public Class RtlSdrApi
     ' Buffer for UI visualization
     Private myIqBuffer() As Byte
     Private miBufferSize As Integer = 16384 ' Standard RTL-SDR buffer size
+
+    ' ThingSpeak class
+    Private moThingSpeak As clsThingSpeakAPI
+
 
 
 #Region "  Read ONLY Properties "
@@ -475,6 +491,10 @@ Public Class RtlSdrApi
         miSampleRate = oSdrConfig.iSampleRate
         miGainMode = If(oSdrConfig.bAutomaticGain, 0, 1)
         miGainValue = oSdrConfig.iManualGainValue
+        mbThingSpeakEnabled = oSdrConfig.bThingSpeakEnabled
+        msUserGUID = oSdrConfig.sUserGUID
+        mdUserLat = oSdrConfig.dUserLat
+        mdUserLon = oSdrConfig.dUserLon
         ' read/write properties, set via properties in order to enforce value limits
         Me.SignalInitTime = oSdrConfig.iSignalInitTime
         Me.SignalEventResetTime = oSdrConfig.dSignalEventResetTime
@@ -485,6 +505,7 @@ Public Class RtlSdrApi
         Me.NoiseFloorMinEventDuration = oSdrConfig.iNoiseFloorMinEventDuration
         Me.NoiseFloorCooldownDuration = oSdrConfig.iNoiseFloorCooldownDuration
         Me.NoiseFloorEventResetTime = oSdrConfig.iNoiseFloorEventResetTime
+
         ' not properties
         msDiscordWebhook = oSdrConfig.sDiscordWebhook
         msDiscordMention = oSdrConfig.sDiscordMention
@@ -826,6 +847,8 @@ Public Class RtlSdrApi
             miSignalEvents = 0
             miNoiseFloorEvents = 0
             mbRunning = True
+            moThingSpeak = New clsThingSpeakAPI(String.Format("{0:F6},{1:F6}", mdUserLat, mdUserLon), msUserGUID)
+
             clsLogger.Log("RtlSdrApi.MonitorThread", $"Starting monitor IQ data stream {mtStartMonitor:MM/dd/yyyy HH:mm:ss} - {modMain.FormatHertz(miCenterFrequency)}, {modMain.FormatMSPS(miSampleRate)}, {modMain.FormatBytes(miBufferSize)} buffer.")
             RaiseStarted(True)
 
@@ -965,6 +988,7 @@ Public Class RtlSdrApi
                         ptLastSignalEvent = DateTime.Now
                         miSignalEvents += 1
                         pbSignalEventActive = True
+
                     End If
                 Else
                     piSignalDetectCount = 0
@@ -1053,6 +1077,13 @@ Public Class RtlSdrApi
                 If piSleepTime > 0 Then
                     Thread.Sleep(piSleepTime)
                 End If
+                If mbRunning Then
+                    If mbThingSpeakEnabled And moThingSpeak IsNot Nothing AndAlso Not mbRecordingActive Then
+                        If DateTime.Now.Subtract(moThingSpeak.LastLogWrite).TotalHours >= 24 AndAlso moThingSpeak.LastLogWrite <> DateTime.MinValue Then
+                            LogToThingSpeak(clsThingSpeakAPI.EventTypeEnum.NoEvent, pdNoiseFloorAverage, DateTime.Now.Subtract(moThingSpeak.LastLogWrite).TotalSeconds)
+                        End If
+                    End If
+                End If
             End While
 
             ' Log end of monitoring session
@@ -1087,6 +1118,14 @@ Public Class RtlSdrApi
             clsLogger.Log("RtlSdrApi.MonitorThread", $"Exiting monitor thread.")
         End Try
     End Sub
+
+    Private Sub LogToThingSpeak(ByVal iEventType As clsThingSpeakAPI.EventTypeEnum, ByVal dNoiseFloor As Double, ByVal iDurationSeconds As Integer)
+        If Not mbThingSpeakEnabled OrElse moThingSpeak IsNot Nothing Then
+            Exit Sub
+        End If
+        Call moThingSpeak.LogEventAsync(iEventType, miCenterFrequency, miSampleRate, dNoiseFloor, iDurationSeconds)
+    End Sub
+
 
 
     Private Sub UpdateRollingBufferSize(ByVal dLoopTime As Double)
@@ -1145,6 +1184,12 @@ Public Class RtlSdrApi
             moWriteThread.IsBackground = True
             moWriteThread.Start()
         End If
+
+        ' Send to ThingSpeak
+        If mbThingSpeakEnabled And moThingSpeak IsNot Nothing Then
+            LogToThingSpeak(clsThingSpeakAPI.EventTypeEnum.NoEvent, dAvgNoiseFloor, poEl.TotalSeconds)
+        End If
+
 
         RaiseSignalChange(False)
     End Sub

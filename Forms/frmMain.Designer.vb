@@ -47,6 +47,7 @@ Partial Class frmMain
         Label12 = New Label()
         Label2 = New Label()
         lblGenConfig = New Label()
+        lnkThingSpeak = New LinkLabel()
         CType(picEdit, ComponentModel.ISupportInitialize).BeginInit()
         CType(picDelete, ComponentModel.ISupportInitialize).BeginInit()
         CType(picAdd, ComponentModel.ISupportInitialize).BeginInit()
@@ -245,14 +246,14 @@ Partial Class frmMain
         ' 
         lnkSigIntRepository.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
         lnkSigIntRepository.AutoSize = True
-        lnkSigIntRepository.LinkColor = Color.CornflowerBlue
+        lnkSigIntRepository.LinkColor = Color.DeepSkyBlue
         lnkSigIntRepository.Location = New Point(12, 334)
         lnkSigIntRepository.Name = "lnkSigIntRepository"
         lnkSigIntRepository.Size = New Size(163, 21)
         lnkSigIntRepository.TabIndex = 29
         lnkSigIntRepository.TabStop = True
         lnkSigIntRepository.Text = "Visit SigInt Repository"
-        lnkSigIntRepository.VisitedLinkColor = Color.FromArgb(CByte(224), CByte(224), CByte(224))
+        lnkSigIntRepository.VisitedLinkColor = Color.MediumPurple
         ' 
         ' lblViewLog
         ' 
@@ -312,12 +313,26 @@ Partial Class frmMain
         lblGenConfig.TabIndex = 40
         lblGenConfig.Text = "App Configuration"
         ' 
+        ' lnkThingSpeak
+        ' 
+        lnkThingSpeak.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
+        lnkThingSpeak.AutoSize = True
+        lnkThingSpeak.LinkColor = Color.DeepSkyBlue
+        lnkThingSpeak.Location = New Point(12, 304)
+        lnkThingSpeak.Name = "lnkThingSpeak"
+        lnkThingSpeak.Size = New Size(169, 21)
+        lnkThingSpeak.TabIndex = 42
+        lnkThingSpeak.TabStop = True
+        lnkThingSpeak.Text = "Visit SigInt ThingSpeak"
+        lnkThingSpeak.VisitedLinkColor = Color.MediumPurple
+        ' 
         ' frmMain
         ' 
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
         ClientSize = New Size(620, 382)
+        Controls.Add(lnkThingSpeak)
         Controls.Add(btnMinimize)
         Controls.Add(lblGenConfig)
         Controls.Add(picGenConfig)
@@ -384,4 +399,5 @@ Partial Class frmMain
     Friend WithEvents lblGenConfig As Label
     Friend WithEvents picGenConfig As PictureBox
     Friend WithEvents btnMinimize As Button
+    Friend WithEvents lnkThingSpeak As LinkLabel
 End Class

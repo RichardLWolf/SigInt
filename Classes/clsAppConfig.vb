@@ -12,7 +12,11 @@ Public Class clsAppConfig
     Public Property DiscordNotifications As Boolean = False
     Public Property DiscordServerWebhook As String = ""
     Public Property DiscordMentionID As String = ""
-
+    '  ThingSpeak participation
+    Public Property ThingSpeakEnabled As Boolean = False
+    Public Property UserGUID As String = Guid.NewGuid.ToString
+    Public Property UserLat As Double = 0.0D
+    Public Property UserLon As Double = 0.0D
 
 
     Public Shared Function Load() As clsAppConfig
@@ -144,6 +148,7 @@ Public Class DeviceConfig
     Public Property dBOffset As Integer = -20   ' Default: -20 dB  (-100 to 0)
     Public Property dBRange As Integer = 100    ' Default: 100 dB graphed (10-150)
     Public Property MaxRollingBufferSize As Integer = 200       ' For rolling buffer display ~7 seconds of buffer Default at ~50 FPS, not configurable at this time
+
 
     Public Function Clone() As DeviceConfig
         ' return a new shallow copy of this class

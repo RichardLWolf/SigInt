@@ -1,4 +1,5 @@
-﻿Public Class frmEditConfig
+﻿
+Public Class frmEditConfig
 
     Private Const MIN_FREQUENCY_HZ As Integer = 24000000   ' 24 MHz
     Private Const MAX_FREQUENCY_HZ As Integer = 1766000000 ' 1.766 GHz
@@ -264,6 +265,7 @@
         txtFrequency.Focus()
     End Sub
 
+
     Private Sub btnReset_Click(sender As Object, e As EventArgs) Handles btnReset.Click
         Dim poCfg As New DeviceConfig
         poCfg.ConfigurationKey = foConfig.ConfigurationKey
@@ -274,13 +276,14 @@
         LoadUIControls()
     End Sub
 
-
     Private Sub cboScale_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboScale.SelectedIndexChanged
         ConvertFrequency()
         ' put focus back in frequency box
         txtFrequency.SelectAll()
         txtFrequency.Focus()
     End Sub
+
+
 
     Private Sub txtConfigName_TextChanged(sender As Object, e As EventArgs) Handles txtConfigName.TextChanged
         SetFormTitle()
@@ -327,6 +330,7 @@
         txtFrequency.TextAlign = HorizontalAlignment.Right
         txtFrequency.Text = String.Format("{0:#########0}", foConfig.CenterFrequency)
         txtFrequency.Tag = foConfig.CenterFrequency
+
 
         SetFormTitle()
 
@@ -473,7 +477,6 @@
             txtFrequency.Tag = pdInput
         End If
     End Sub
-
 
 
 

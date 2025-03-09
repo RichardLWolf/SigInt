@@ -115,7 +115,7 @@ Partial Class frmEditConfig
         cboSampleRate.MaxDropDownItems = 4
         cboSampleRate.Name = "cboSampleRate"
         cboSampleRate.Size = New Size(311, 29)
-        cboSampleRate.TabIndex = 13
+        cboSampleRate.TabIndex = 12
         ' 
         ' Label5
         ' 
@@ -123,7 +123,7 @@ Partial Class frmEditConfig
         Label5.Location = New Point(428, 87)
         Label5.Name = "Label5"
         Label5.Size = New Size(97, 21)
-        Label5.TabIndex = 12
+        Label5.TabIndex = 11
         Label5.Text = "Sample &Rate"
         ' 
         ' btnClearFreq
@@ -194,7 +194,7 @@ Partial Class frmEditConfig
         Label3.Name = "Label3"
         Label3.Padding = New Padding(4, 4, 4, 6)
         Label3.Size = New Size(145, 31)
-        Label3.TabIndex = 14
+        Label3.TabIndex = 13
         Label3.Text = "Signal Detection"
         ' 
         ' Label12
@@ -204,7 +204,7 @@ Partial Class frmEditConfig
         Label12.Location = New Point(139, 152)
         Label12.Name = "Label12"
         Label12.Size = New Size(792, 3)
-        Label12.TabIndex = 15
+        Label12.TabIndex = 14
         ' 
         ' cboSignalInit
         ' 
@@ -217,7 +217,7 @@ Partial Class frmEditConfig
         cboSignalInit.MaxDropDownItems = 4
         cboSignalInit.Name = "cboSignalInit"
         cboSignalInit.Size = New Size(300, 29)
-        cboSignalInit.TabIndex = 17
+        cboSignalInit.TabIndex = 16
         ' 
         ' Label2
         ' 
@@ -225,7 +225,7 @@ Partial Class frmEditConfig
         Label2.Location = New Point(12, 185)
         Label2.Name = "Label2"
         Label2.Size = New Size(274, 21)
-        Label2.TabIndex = 16
+        Label2.TabIndex = 15
         Label2.Text = "Detection Initialization Time (Seconds)"
         ' 
         ' cboDetWind
@@ -239,7 +239,7 @@ Partial Class frmEditConfig
         cboDetWind.MaxDropDownItems = 4
         cboDetWind.Name = "cboDetWind"
         cboDetWind.Size = New Size(300, 29)
-        cboDetWind.TabIndex = 19
+        cboDetWind.TabIndex = 18
         ' 
         ' Label9
         ' 
@@ -247,7 +247,7 @@ Partial Class frmEditConfig
         Label9.Location = New Point(320, 185)
         Label9.Name = "Label9"
         Label9.Size = New Size(256, 21)
-        Label9.TabIndex = 18
+        Label9.TabIndex = 17
         Label9.Text = "Signal Detection &Window (FFT Bins)" & vbCrLf
         ' 
         ' cboDetThresh
@@ -261,7 +261,7 @@ Partial Class frmEditConfig
         cboDetThresh.MaxDropDownItems = 4
         cboDetThresh.Name = "cboDetThresh"
         cboDetThresh.Size = New Size(300, 29)
-        cboDetThresh.TabIndex = 21
+        cboDetThresh.TabIndex = 20
         ' 
         ' Label7
         ' 
@@ -269,7 +269,7 @@ Partial Class frmEditConfig
         Label7.Location = New Point(628, 185)
         Label7.Name = "Label7"
         Label7.Size = New Size(273, 21)
-        Label7.TabIndex = 20
+        Label7.TabIndex = 19
         Label7.Text = "&Detection Threshold (dB Above Noise)" & vbCrLf
         ' 
         ' cboSigEventReset
@@ -283,7 +283,7 @@ Partial Class frmEditConfig
         cboSigEventReset.MaxDropDownItems = 4
         cboSigEventReset.Name = "cboSigEventReset"
         cboSigEventReset.Size = New Size(300, 29)
-        cboSigEventReset.TabIndex = 23
+        cboSigEventReset.TabIndex = 22
         ' 
         ' Label4
         ' 
@@ -291,7 +291,7 @@ Partial Class frmEditConfig
         Label4.Location = New Point(12, 243)
         Label4.Name = "Label4"
         Label4.Size = New Size(225, 21)
-        Label4.TabIndex = 22
+        Label4.TabIndex = 21
         Label4.Text = "Event Reset Duration (Minutes)"
         ' 
         ' cboNFReset
@@ -305,7 +305,7 @@ Partial Class frmEditConfig
         cboNFReset.MaxDropDownItems = 4
         cboNFReset.Name = "cboNFReset"
         cboNFReset.Size = New Size(300, 29)
-        cboNFReset.TabIndex = 35
+        cboNFReset.TabIndex = 34
         ' 
         ' Label20
         ' 
@@ -313,7 +313,7 @@ Partial Class frmEditConfig
         Label20.Location = New Point(320, 431)
         Label20.Name = "Label20"
         Label20.Size = New Size(225, 21)
-        Label20.TabIndex = 34
+        Label20.TabIndex = 33
         Label20.Text = "Event Reset Duration (Minutes)"
         ' 
         ' cboNFCooldown
@@ -327,7 +327,7 @@ Partial Class frmEditConfig
         cboNFCooldown.MaxDropDownItems = 4
         cboNFCooldown.Name = "cboNFCooldown"
         cboNFCooldown.Size = New Size(300, 29)
-        cboNFCooldown.TabIndex = 33
+        cboNFCooldown.TabIndex = 32
         ' 
         ' Label19
         ' 
@@ -335,7 +335,7 @@ Partial Class frmEditConfig
         Label19.Location = New Point(12, 431)
         Label19.Name = "Label19"
         Label19.Size = New Size(293, 21)
-        Label19.TabIndex = 32
+        Label19.TabIndex = 31
         Label19.Text = "Averaging Cooldown Duration (Seconds)"
         ' 
         ' cboNFMinDur
@@ -349,7 +349,7 @@ Partial Class frmEditConfig
         cboNFMinDur.MaxDropDownItems = 4
         cboNFMinDur.Name = "cboNFMinDur"
         cboNFMinDur.Size = New Size(300, 29)
-        cboNFMinDur.TabIndex = 31
+        cboNFMinDur.TabIndex = 30
         ' 
         ' Label18
         ' 
@@ -357,7 +357,7 @@ Partial Class frmEditConfig
         Label18.Location = New Point(628, 373)
         Label18.Name = "Label18"
         Label18.Size = New Size(257, 21)
-        Label18.TabIndex = 30
+        Label18.TabIndex = 29
         Label18.Text = "Minimum Event Duration (Seconds)"
         ' 
         ' cboNFDetThresh
@@ -371,7 +371,7 @@ Partial Class frmEditConfig
         cboNFDetThresh.MaxDropDownItems = 4
         cboNFDetThresh.Name = "cboNFDetThresh"
         cboNFDetThresh.Size = New Size(300, 29)
-        cboNFDetThresh.TabIndex = 29
+        cboNFDetThresh.TabIndex = 28
         ' 
         ' Label17
         ' 
@@ -379,7 +379,7 @@ Partial Class frmEditConfig
         Label17.Location = New Point(320, 373)
         Label17.Name = "Label17"
         Label17.Size = New Size(263, 21)
-        Label17.TabIndex = 28
+        Label17.TabIndex = 27
         Label17.Text = "Detection Threshold (dB Above Avg.)"
         ' 
         ' cboNFBaselineInit
@@ -393,7 +393,7 @@ Partial Class frmEditConfig
         cboNFBaselineInit.MaxDropDownItems = 4
         cboNFBaselineInit.Name = "cboNFBaselineInit"
         cboNFBaselineInit.Size = New Size(300, 29)
-        cboNFBaselineInit.TabIndex = 27
+        cboNFBaselineInit.TabIndex = 26
         ' 
         ' Label16
         ' 
@@ -401,7 +401,7 @@ Partial Class frmEditConfig
         Label16.Location = New Point(12, 373)
         Label16.Name = "Label16"
         Label16.Size = New Size(274, 21)
-        Label16.TabIndex = 26
+        Label16.TabIndex = 25
         Label16.Text = "Detection Initialization Time (Seconds)"
         ' 
         ' Label14
@@ -414,7 +414,7 @@ Partial Class frmEditConfig
         Label14.Name = "Label14"
         Label14.Padding = New Padding(4, 4, 4, 6)
         Label14.Size = New Size(184, 31)
-        Label14.TabIndex = 24
+        Label14.TabIndex = 23
         Label14.Text = "Noise Floor Detection"
         ' 
         ' Label15
@@ -424,7 +424,7 @@ Partial Class frmEditConfig
         Label15.Location = New Point(170, 342)
         Label15.Name = "Label15"
         Label15.Size = New Size(761, 3)
-        Label15.TabIndex = 25
+        Label15.TabIndex = 24
         ' 
         ' btnReset
         ' 
@@ -435,10 +435,10 @@ Partial Class frmEditConfig
         btnReset.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
         btnReset.FlatStyle = FlatStyle.Flat
         btnReset.ForeColor = Color.Black
-        btnReset.Location = New Point(422, 519)
+        btnReset.Location = New Point(422, 524)
         btnReset.Name = "btnReset"
         btnReset.Size = New Size(100, 50)
-        btnReset.TabIndex = 37
+        btnReset.TabIndex = 43
         btnReset.Text = "RESET"
         btnReset.UseVisualStyleBackColor = False
         ' 
@@ -452,10 +452,10 @@ Partial Class frmEditConfig
         btnCancel.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
         btnCancel.FlatStyle = FlatStyle.Flat
         btnCancel.ForeColor = Color.Black
-        btnCancel.Location = New Point(833, 519)
+        btnCancel.Location = New Point(833, 524)
         btnCancel.Name = "btnCancel"
         btnCancel.Size = New Size(100, 50)
-        btnCancel.TabIndex = 38
+        btnCancel.TabIndex = 44
         btnCancel.Text = "CA&NCEL"
         btnCancel.UseVisualStyleBackColor = False
         ' 
@@ -468,10 +468,10 @@ Partial Class frmEditConfig
         btnApply.FlatAppearance.MouseOverBackColor = Color.CornflowerBlue
         btnApply.FlatStyle = FlatStyle.Flat
         btnApply.ForeColor = Color.Black
-        btnApply.Location = New Point(12, 519)
+        btnApply.Location = New Point(12, 524)
         btnApply.Name = "btnApply"
         btnApply.Size = New Size(100, 50)
-        btnApply.TabIndex = 36
+        btnApply.TabIndex = 42
         btnApply.Text = "&APPLY"
         btnApply.UseVisualStyleBackColor = False
         ' 
@@ -486,7 +486,7 @@ Partial Class frmEditConfig
         cboSignalGain.MaxDropDownItems = 4
         cboSignalGain.Name = "cboSignalGain"
         cboSignalGain.Size = New Size(205, 29)
-        cboSignalGain.TabIndex = 11
+        cboSignalGain.TabIndex = 10
         ' 
         ' Label6
         ' 
@@ -494,7 +494,7 @@ Partial Class frmEditConfig
         Label6.Location = New Point(75, 87)
         Label6.Name = "Label6"
         Label6.Size = New Size(89, 21)
-        Label6.TabIndex = 10
+        Label6.TabIndex = 9
         Label6.Text = "Signal &Gain"
         ' 
         ' frmEditConfig
@@ -502,7 +502,7 @@ Partial Class frmEditConfig
         AutoScaleDimensions = New SizeF(9F, 21F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(43), CByte(43), CByte(43))
-        ClientSize = New Size(945, 581)
+        ClientSize = New Size(945, 586)
         Controls.Add(btnClearFreq)
         Controls.Add(Label6)
         Controls.Add(cboSignalGain)

@@ -61,7 +61,8 @@ Public Class frmMain
                         ' open a new monitor form
                         Dim poFrm As New frmMonitor
                         poFrm.Text = $"SigInt ({poDev.DeviceIndex})-{poDev.DeviceName} Monitor"
-                        poFrm.ReadyForm(poDev.DeviceIndex, poCfg, foAppConfig.DiscordServerWebhook, foAppConfig.DiscordMentionID)
+                        poFrm.ReadyForm(poDev.DeviceIndex, poCfg, foAppConfig.DiscordServerWebhook, foAppConfig.DiscordMentionID _
+                                        , foAppConfig.ThingSpeakEnabled, foAppConfig.UserGUID, foAppConfig.UserLat, foAppConfig.UserLon)
                         poFrm.Show(Me)
                         poFrm.Focus()
                     End If
@@ -214,6 +215,12 @@ Public Class frmMain
                 foAppConfig.DiscordNotifications = poFrm.DiscordNotifications
                 foAppConfig.DiscordMentionID = poFrm.DiscordMentionID
                 foAppConfig.DiscordServerWebhook = poFrm.DiscordServerWebhook
+                foAppConfig.ThingSpeakEnabled = poFrm.ThingSpeakEabled
+                foAppConfig.UserLat = poFrm.UserLatitude
+                foAppConfig.UserLon = poFrm.UserLongitude
+                If String.IsNullOrEmpty(foAppConfig.UserGUID) Then
+                    foAppConfig.UserGUID = Guid.NewGuid.ToString
+                End If
                 foAppConfig.Save()
             End If
         End Using
@@ -332,4 +339,15 @@ Public Class frmMain
         cboDeviceList.SelectedIndex = 0
     End Sub
 
+    Private Sub lnkThingSpeak_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles lnkThingSpeak.LinkClicked
+        Dim psURL As String = "https://thingspeak.mathworks.com/channels/2869584"
+        Try
+            Process.Start(New ProcessStartInfo With {
+                .FileName = psURL,
+                .UseShellExecute = True
+            })
+        Catch ex As Exception
+            MessageBox.Show($"Failed to launch process, please visit the site below via your Internet browser:{vbCrLf}{vbCrLf}{psURL}", "Failed To Start Process", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        End Try
+    End Sub
 End Class
