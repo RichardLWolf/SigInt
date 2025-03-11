@@ -1087,7 +1087,7 @@ Public Class RtlSdrApi
                 End If
             End While
             ' log ThingSpeak if we've got 10+ hours since last log
-            If mbThingSpeakEnabled And moThingSpeak IsNot Nothing AndAlso Not mbRecordingActive Then
+            If mbThingSpeakEnabled AndAlso moThingSpeak IsNot Nothing AndAlso Not mbRecordingActive Then
                 If moThingSpeak.HoursSinceLastLog >= 10D Then
                     LogToThingSpeak(clsThingSpeakAPI.EventTypeEnum.NoEvent, pdNoiseFloorAverage, moThingSpeak.SecondsSinceLastLog)
                 End If
@@ -1126,7 +1126,7 @@ Public Class RtlSdrApi
     End Sub
 
     Private Sub LogToThingSpeak(ByVal iEventType As clsThingSpeakAPI.EventTypeEnum, ByVal dNoiseFloor As Double, ByVal iDurationSeconds As Integer)
-        If Not mbThingSpeakEnabled OrElse moThingSpeak IsNot Nothing Then
+        If Not mbThingSpeakEnabled OrElse moThingSpeak Is Nothing Then
             Exit Sub
         End If
         Call moThingSpeak.LogEventAsync(iEventType, miCenterFrequency, miSampleRate, dNoiseFloor, iDurationSeconds)
