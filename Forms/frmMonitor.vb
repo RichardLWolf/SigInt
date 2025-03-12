@@ -239,6 +239,7 @@ Public Class frmMonitor
                     .dNoiseFloorThreshold = foConfig.NoiseFloorThreshold
                     .sDiscordWebhook = fsDiscordWebHook
                     .sDiscordMention = fsDiscordMention
+                    .bThingSpeakEnabled = fbUseThingSpeak
                 End With
                 foSDR = New RtlSdrApi(poSdrCfg)
             End If
