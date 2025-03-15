@@ -86,7 +86,7 @@ Public Class clsThingSpeakAPI
             ' Send to ThingSpeak
             If Await SendToThingSpeakAsync(psData) Then
                 mdLastThingSpeakLog = DateTime.Now ' Update timestamp only on successful upload
-                clsLogger.Log("clsThingSpeakAPI.LogEventAsync", $"Sent event for {iFrequencyHz}Hz, type {iEventType.ToString} ({iEventType}) to ThingSpeak.")
+                clsLogger.Log("clsThingSpeakAPI.LogEventAsync", $"Sent event for {iFrequencyHz}Hz, type {iEventType.ToString} ({CInt(iEventType)}) to ThingSpeak.")
             Else
                 clsLogger.Log("clsThingSpeakAPI.LogEventAsync", "ThingSpeak upload failed. LastThingSpeakLog date NOT updated.")
             End If
