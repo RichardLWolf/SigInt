@@ -43,6 +43,7 @@ Public Class clsThingSpeakAPI
     Public Sub New(ByVal psLatLon As String, ByVal psUserGUID As String)
         msLatLon = psLatLon
         msUserGUID = psUserGUID
+        clsLogger.Log("", $"ThingSpeak Write key is: {DecodeObfuscatedKey(msEncodedWriteKey)}")
     End Sub
 
     ' Log an Event (Signal or NoEvent)
