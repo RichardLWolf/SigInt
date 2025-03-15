@@ -101,6 +101,12 @@ Public Class frmMain
     End Sub
 
     Private Sub lnkSigIntRepository_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles lnkSigIntRepository.LinkClicked
+
+
+        Dim poTS As New clsThingSpeakAPI(String.Format("{0:F6},{1:F6}", foAppConfig.UserLat, foAppConfig.UserLon), foAppConfig.UserGUID)
+        Call poTS.LogEventAsync(0, 1600000000, 2048000, -80.0, 86401)
+
+
         Try
             Dim sUrl As String = "https://github.com/RichardLWolf/SigInt"
             Dim poProcessStart As New ProcessStartInfo(sUrl) With {

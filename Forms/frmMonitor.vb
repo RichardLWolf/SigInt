@@ -15,7 +15,6 @@ Public Class frmMonitor
     Private foSignalBMP As Bitmap = Nothing
     Private foRollingBMP As Bitmap = Nothing
     Private foBitmapsLock As New Object()
-    Private foThingSpeak As clsThingSpeakAPI
 
     Private foNotify As New NotifyIcon With {.Icon = SystemIcons.Information}
 
@@ -248,10 +247,6 @@ Public Class frmMonitor
             Else
                 foSDR.StartMonitor()
                 UpdateEventCount()
-                ' ready ThingSpeak recording
-                If fbUseThingSpeak AndAlso foThingSpeak Is Nothing Then
-                    foThingSpeak = New clsThingSpeakAPI(String.Format("{0:F6},{1:F6}", fdUserLat, fdUserLon), fsUserGUID)
-                End If
                 Me.Cursor = Cursors.WaitCursor
                 Me.Enabled = False
             End If

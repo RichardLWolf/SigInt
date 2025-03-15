@@ -1078,9 +1078,9 @@ Public Class RtlSdrApi
                     Thread.Sleep(piSleepTime)
                 End If
                 If mbRunning Then
-                    If mbThingSpeakEnabled And moThingSpeak IsNot Nothing AndAlso Not mbRecordingActive Then
+                    If mbThingSpeakEnabled And moThingSpeak IsNot Nothing AndAlso Not moThingSpeak.IsSendingEvent AndAlso Not mbRecordingActive Then
                         If moThingSpeak.HoursSinceLastLog >= 24D Then
-                            ' been a day without any event, log the quiet time to ThingSpeak
+                            ' been a day without any event, fire-and-forget to log the quiet time to ThingSpeak
                             LogToThingSpeak(clsThingSpeakAPI.EventTypeEnum.NoEvent, pdNoiseFloorAverage, moThingSpeak.SecondsSinceLastLog)
                         End If
                     End If
@@ -1126,10 +1126,13 @@ Public Class RtlSdrApi
     End Sub
 
     Private Sub LogToThingSpeak(ByVal iEventType As clsThingSpeakAPI.EventTypeEnum, ByVal dNoiseFloor As Double, ByVal iDurationSeconds As Integer)
-        If Not mbThingSpeakEnabled OrElse moThingSpeak Is Nothing Then
+        If Not mbThingSpeakEnabled OrElse moThingSpeak Is Nothing OrElse moThingSpeak.IsSendingEvent Then
             Exit Sub
         End If
-        Call moThingSpeak.LogEventAsync(iEventType, miCenterFrequency, miSampleRate, dNoiseFloor, iDurationSeconds)
+        ' Fire-and-forget without blocking the caller
+        Task.Run(Async Function()
+                     Await moThingSpeak.LogEventAsync(iEventType, miCenterFrequency, miSampleRate, dNoiseFloor, iDurationSeconds)
+                 End Function)
     End Sub
 
 
